@@ -301,3 +301,33 @@ print(classification_report(
 
 
 
+# ============================================================
+# STEP 8.8 — SAVE TRAINED ANN AND SCALER
+# ============================================================
+
+MODEL_DIR = os.path.join(PROJECT_ROOT, "models")
+os.makedirs(MODEL_DIR, exist_ok=True)
+
+# Save the best trained ANN weights
+torch.save(
+    model.state_dict(),
+    os.path.join(MODEL_DIR, "ann_model.pth")
+)
+
+# Save the fitted scaler
+import joblib
+
+joblib.dump(
+    scaler,
+    os.path.join(MODEL_DIR, "ann_scaler.joblib")
+)
+
+# Save the expected feature order
+joblib.dump(
+    list(X.columns),
+    os.path.join(MODEL_DIR, "ann_feature_names.joblib")
+)
+
+print("\nANN model, scaler, and feature names saved successfully.")
+
+
