@@ -113,132 +113,243 @@ textarea {
   outline-offset: 2px;
 }
 
-/* ── 3. Doctor Login Page (Split-Screen Layout) ────────────────────────────── */
+/* ── 3. PREMIUM FULL-SCREEN DOCTOR LOGIN ───────────────────────────────────── */
+
+/* Full-viewport split-screen container */
 .login-page {
+  width: 100vw;
   min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--bg-gradient);
-  padding: 1rem;
-}
-
-@media (min-width: 768px) {
-  .login-page {
-    padding: 2rem 1.5rem;
-  }
-}
-
-.login-card-container {
-  width: 100%;
-  max-width: 1060px;
-  min-height: 640px;
-  background: var(--surface-card);
-  border: 1px solid var(--surface-border);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-lg);
-  overflow: hidden;
+  min-height: 100svh;
   display: flex;
   flex-direction: column;
+  overflow-x: hidden;
 }
 
 @media (min-width: 900px) {
-  .login-card-container {
+  .login-page {
     flex-direction: row;
   }
 }
 
-/* ── Left Branding Panel ──────────────────────────────────────────────────── */
-.login-brand-panel {
-  background: linear-gradient(145deg, #0f172a 0%, #1e293b 50%, #0369a1 100%);
+/* ─── LEFT PANEL: Premium Clinical Branding ─────────────────────────────── */
+.login-left-panel {
+  position: relative;
+  width: 100%;
+  min-height: 320px;
+  background:
+    radial-gradient(ellipse at 20% 0%, rgba(3, 105, 161, 0.35) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 100%, rgba(6, 182, 212, 0.2) 0%, transparent 55%),
+    radial-gradient(ellipse at 50% 50%, rgba(14, 116, 144, 0.12) 0%, transparent 70%),
+    linear-gradient(160deg, #0a0f1e 0%, #0f172a 30%, #132e4a 65%, #0e4a6f 100%);
   color: #ffffff;
-  padding: 2rem 1.5rem;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  gap: 1.5rem;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
 }
 
 @media (min-width: 900px) {
-  .login-brand-panel {
-    width: 46%;
-    padding: 3rem 2.5rem;
+  .login-left-panel {
+    width: 45%;
+    min-height: 100vh;
+    min-height: 100svh;
   }
 }
 
-.brand-panel-header {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.85rem;
+/* Layered background decorations (pseudo-elements) */
+.left-panel-bg-layer {
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 39px,
+      rgba(56, 189, 248, 0.03) 39px,
+      rgba(56, 189, 248, 0.03) 40px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 39px,
+      rgba(56, 189, 248, 0.03) 39px,
+      rgba(56, 189, 248, 0.03) 40px
+    );
+  pointer-events: none;
 }
 
-.login-brand-icon {
-  width: 46px;
-  height: 46px;
+/* Glowing orb effects */
+.left-panel-glow-1 {
+  position: absolute;
+  width: 280px;
+  height: 280px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.12) 0%, transparent 70%);
+  top: -60px;
+  right: -60px;
+  pointer-events: none;
+}
+
+.left-panel-glow-2 {
+  position: absolute;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(6, 182, 212, 0.1) 0%, transparent 70%);
+  bottom: -40px;
+  left: -40px;
+  pointer-events: none;
+}
+
+/* Subtle grid overlay for depth */
+.left-panel-grid-overlay {
+  position: absolute;
+  inset: 0;
+  opacity: 0.4;
+  background:
+    radial-gradient(circle at 25% 25%, rgba(255,255,255,0.015) 1px, transparent 1px),
+    radial-gradient(circle at 75% 75%, rgba(255,255,255,0.01) 1px, transparent 1px);
+  background-size: 30px 30px;
+  pointer-events: none;
+}
+
+/* ECG waveform SVG decoration */
+.ecg-decoration {
+  position: absolute;
+  bottom: 18%;
+  left: 0;
+  width: 100%;
+  height: 60px;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+@media (max-width: 899px) {
+  .ecg-decoration {
+    display: none;
+  }
+}
+
+/* Left panel content wrapper */
+.left-panel-content {
+  position: relative;
+  z-index: 2;
+  padding: 2rem 1.75rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2rem;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+@media (min-width: 900px) {
+  .left-panel-content {
+    padding: 3.5rem 2.75rem;
+    gap: 2.5rem;
+    height: 100%;
+    margin: 0;
+  }
+}
+
+/* Brand Header */
+.brand-header {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.brand-icon-container {
+  width: 56px;
+  height: 56px;
   background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
-  border-radius: var(--radius-md);
+  border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #ffffff;
   flex-shrink: 0;
-  box-shadow: 0 6px 16px rgba(239, 68, 68, 0.35);
+  box-shadow:
+    0 8px 24px rgba(239, 68, 68, 0.35),
+    0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
-.brand-badge {
-  display: inline-block;
-  font-size: 0.675rem;
+.brand-text-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.brand-intelligence-badge {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  font-size: 0.65rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.12em;
   color: #7dd3fc;
-  background: rgba(125, 211, 252, 0.12);
-  border: 1px solid rgba(125, 211, 252, 0.25);
+  background: rgba(125, 211, 252, 0.1);
+  border: 1px solid rgba(125, 211, 252, 0.2);
   border-radius: 9999px;
-  padding: 0.15rem 0.55rem;
-  margin-bottom: 0.35rem;
+  padding: 0.2rem 0.75rem;
+  backdrop-filter: blur(4px);
 }
 
-.brand-panel-title {
+.brand-product-name {
   font-family: var(--font-heading);
-  font-size: 1.35rem;
+  font-size: 1.55rem;
   font-weight: 700;
-  line-height: 1.25;
+  line-height: 1.2;
   color: #ffffff;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.025em;
 }
 
-@media (min-width: 640px) {
-  .brand-panel-title {
-    font-size: 1.5rem;
+@media (min-width: 900px) {
+  .brand-product-name {
+    font-size: 1.85rem;
   }
 }
 
-.brand-panel-desc {
-  font-size: 0.875rem;
+.brand-tagline {
+  font-size: 0.9rem;
   color: #94a3b8;
-  line-height: 1.6;
+  line-height: 1.5;
+  font-weight: 400;
 }
 
-.brand-features-list {
+/* Feature Highlights */
+.brand-features {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
-  margin: 1rem 0;
+  gap: 0;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  padding: 0;
+  backdrop-filter: blur(8px);
 }
 
-.brand-feature-item {
+.brand-feature-card {
   display: flex;
   align-items: flex-start;
   gap: 0.85rem;
+  padding: 1rem 1.15rem;
 }
 
-.feature-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+.feature-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.06);
+  margin: 0 1rem;
+}
+
+.feature-card-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: rgba(56, 189, 248, 0.08);
+  border: 1px solid rgba(56, 189, 248, 0.15);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -246,126 +357,145 @@ textarea {
   flex-shrink: 0;
 }
 
-.feature-text {
+.feature-card-text {
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
 }
 
-.feature-text strong {
+.feature-card-text strong {
   font-size: 0.85rem;
   color: #f1f5f9;
+  font-weight: 600;
 }
 
-.feature-text span {
+.feature-card-text span {
   font-size: 0.775rem;
   color: #94a3b8;
   line-height: 1.45;
 }
 
-.brand-panel-footer {
-  padding-top: 1.25rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.secure-badge {
+/* Bottom Secure Badge */
+.brand-footer-badge {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
   font-size: 0.75rem;
-  color: #cbd5e1;
+  color: #64748b;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-.secure-badge svg {
+.brand-footer-badge svg {
   color: #38bdf8;
+  flex-shrink: 0;
 }
 
-/* ── Right Section: Doctor Login Form ─────────────────────────────────────── */
-.login-form-panel {
-  padding: 2rem 1.5rem;
+/* ─── RIGHT PANEL: Premium Doctor Login Form ────────────────────────────── */
+.login-right-panel {
+  position: relative;
+  width: 100%;
+  flex: 1;
   display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  background: #ffffff;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(ellipse at 30% 20%, rgba(224, 242, 254, 0.5) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, rgba(240, 249, 255, 0.4) 0%, transparent 50%),
+    linear-gradient(180deg, #f8fbff 0%, #ffffff 40%, #f0f7ff 100%);
+  overflow-y: auto;
 }
 
 @media (min-width: 900px) {
-  .login-form-panel {
-    width: 54%;
-    padding: 3rem 2.75rem;
+  .login-right-panel {
+    width: 55%;
+    min-height: 100vh;
+    min-height: 100svh;
   }
 }
 
-.login-form-header {
-  margin-bottom: 1.25rem;
+/* Soft decorative radial */
+.right-panel-radial {
+  position: absolute;
+  width: 350px;
+  height: 350px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(2, 132, 199, 0.06) 0%, transparent 70%);
+  top: -80px;
+  right: -80px;
+  pointer-events: none;
 }
 
-.login-kicker {
-  font-size: 0.75rem;
+/* Login form wrapper */
+.login-form-wrapper {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 440px;
+  padding: 2rem 1.5rem;
+}
+
+@media (min-width: 900px) {
+  .login-form-wrapper {
+    padding: 3rem 2rem;
+  }
+}
+
+/* Premium Login Card */
+.login-form-card {
+  background: #ffffff;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  border-radius: 20px;
+  padding: 2rem 1.75rem;
+  box-shadow:
+    0 20px 60px -12px rgba(15, 23, 42, 0.08),
+    0 4px 16px -4px rgba(15, 23, 42, 0.04),
+    0 0 0 1px rgba(255, 255, 255, 0.6) inset;
+}
+
+@media (min-width: 900px) {
+  .login-form-card {
+    padding: 2.5rem 2.25rem;
+  }
+}
+
+/* Card Header */
+.login-card-header {
+  margin-bottom: 1.75rem;
+}
+
+.login-access-kicker {
+  display: block;
+  font-size: 0.7rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   color: var(--primary);
-  display: block;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.5rem;
 }
 
-.login-heading {
+.login-card-title {
   font-family: var(--font-heading);
   font-size: 1.65rem;
   font-weight: 700;
   color: var(--text-primary);
-  letter-spacing: -0.02em;
+  letter-spacing: -0.025em;
   margin-bottom: 0.35rem;
 }
 
-.login-subheading {
-  font-size: 0.85rem;
+.login-card-subtitle {
+  font-size: 0.875rem;
   color: var(--text-muted);
   line-height: 1.5;
 }
 
-/* Backend Authentication Notice */
-.backend-auth-notice {
-  background: #f0f9ff;
-  border: 1px solid #bae6fd;
-  border-radius: var(--radius-md);
-  padding: 0.75rem 0.85rem;
-  margin-bottom: 1.25rem;
-  display: flex;
-  align-items: flex-start;
-  gap: 0.65rem;
-  font-size: 0.775rem;
-  color: #0369a1;
-  line-height: 1.45;
-}
-
-.auth-notice-icon {
-  flex-shrink: 0;
-  margin-top: 2px;
-  color: var(--primary);
-}
-
-.auth-notice-text strong {
-  display: block;
-  font-weight: 600;
-  margin-bottom: 0.15rem;
-}
-
-.auth-notice-text code {
-  background: #e0f2fe;
-  padding: 0.1rem 0.3rem;
-  border-radius: 4px;
-  font-family: var(--font-mono);
-  font-size: 0.725rem;
-}
-
+/* Forgot password notice (preserved) */
 .forgot-notice {
   background: #fffbeb;
   border: 1px solid #fde68a;
   border-radius: var(--radius-md);
   padding: 0.65rem 0.85rem;
-  margin-bottom: 1rem;
+  margin-bottom: 1.25rem;
   font-size: 0.775rem;
   color: var(--warning-dark);
   display: flex;
@@ -381,19 +511,32 @@ textarea {
   color: var(--warning-dark);
   cursor: pointer;
   line-height: 1;
+  flex-shrink: 0;
 }
 
-/* Login Form Controls */
+/* Login Form */
 .login-form {
   display: flex;
   flex-direction: column;
-  gap: 1.1rem;
+  gap: 1.15rem;
 }
 
-.label-row {
+.login-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.login-label-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+
+.login-field-label {
+  font-size: 0.825rem;
+  font-weight: 600;
+  color: var(--text-secondary);
 }
 
 .link-forgot-password {
@@ -402,25 +545,76 @@ textarea {
   font-size: 0.775rem;
   color: var(--primary);
   cursor: pointer;
-  text-decoration: underline;
-  text-underline-offset: 2px;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color var(--transition-fast);
 }
 
 .link-forgot-password:hover {
   color: var(--primary-hover);
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
-.password-wrapper {
+/* Input containers with icons */
+.login-input-container {
   position: relative;
   display: flex;
   align-items: center;
 }
 
-.password-wrapper .form-input {
-  padding-right: 2.75rem;
+.login-input-icon {
+  position: absolute;
+  left: 0.85rem;
+  color: var(--text-light);
+  pointer-events: none;
+  flex-shrink: 0;
+  transition: color var(--transition-fast);
 }
 
-.btn-toggle-password {
+.login-input-container:focus-within .login-input-icon {
+  color: var(--primary);
+}
+
+.login-input {
+  width: 100%;
+  padding: 0.7rem 0.85rem 0.7rem 2.75rem;
+  font-size: 0.925rem;
+  color: var(--text-primary);
+  background: #f8fafc;
+  border: 1.5px solid var(--surface-border);
+  border-radius: 12px;
+  transition: all var(--transition-fast);
+  min-height: 46px;
+}
+
+.login-input::placeholder {
+  color: var(--text-light);
+  font-size: 0.85rem;
+}
+
+.login-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  background: #ffffff;
+  box-shadow: 0 0 0 3.5px var(--primary-glow);
+}
+
+.login-input.has-error {
+  border-color: var(--danger);
+  background: #fffbfb;
+}
+
+.login-input.has-error:focus {
+  box-shadow: 0 0 0 3.5px var(--danger-glow);
+}
+
+/* Password field specifics */
+.password-container .login-input {
+  padding-right: 3rem;
+}
+
+.btn-toggle-pw {
   position: absolute;
   right: 0.75rem;
   background: transparent;
@@ -435,18 +629,30 @@ textarea {
   transition: color var(--transition-fast);
 }
 
-.btn-toggle-password:hover {
-  color: var(--text-primary);
+.btn-toggle-pw:hover {
+  color: var(--primary);
 }
 
-.login-options-row {
+/* Field error messages */
+.login-field-error {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  margin-top: -0.25rem;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  color: var(--danger);
+  line-height: 1.35;
 }
 
-.checkbox-label {
+.login-field-error svg {
+  flex-shrink: 0;
+}
+
+/* Remember me checkbox */
+.login-options-row {
+  margin-top: -0.15rem;
+}
+
+.login-checkbox-label {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
@@ -456,33 +662,197 @@ textarea {
   user-select: none;
 }
 
-.checkbox-label input[type="checkbox"] {
+.login-checkbox-label input[type="checkbox"] {
   width: 16px;
   height: 16px;
   accent-color: var(--primary);
   border-radius: 4px;
+  cursor: pointer;
 }
 
-.btn-signin {
+/* Premium Sign In Button */
+.btn-login-primary {
   width: 100%;
-  margin-top: 0.35rem;
-  min-height: 46px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 0.8rem 1.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #ffffff;
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 50%, #075985 100%);
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  min-height: 48px;
+  box-shadow:
+    0 4px 14px rgba(2, 132, 199, 0.35),
+    0 1px 3px rgba(2, 132, 199, 0.2);
+  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  margin-top: 0.25rem;
 }
 
-.btn-demo-doctor {
+.btn-login-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #0369a1 0%, #075985 50%, #0c4a6e 100%);
+  transform: translateY(-1px);
+  box-shadow:
+    0 8px 20px rgba(2, 132, 199, 0.4),
+    0 2px 6px rgba(2, 132, 199, 0.25);
+}
+
+.btn-login-primary:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.3);
+}
+
+.btn-login-primary:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Login Spinner */
+.login-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+/* Divider */
+.login-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0.25rem 0;
+}
+
+.login-divider::before,
+.login-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--surface-border);
+}
+
+.login-divider span {
+  font-size: 0.75rem;
+  color: var(--text-light);
+  white-space: nowrap;
+  text-transform: lowercase;
+}
+
+/* Demo Access Button */
+.btn-login-demo {
   width: 100%;
-  border-style: dashed;
-  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: #ffffff;
+  border: 1.5px dashed var(--surface-border);
+  border-radius: 12px;
+  cursor: pointer;
+  min-height: 44px;
+  transition: all var(--transition-fast);
 }
 
-.login-panel-disclaimer {
+.btn-login-demo:hover:not(:disabled) {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--primary-subtle);
+}
+
+.btn-login-demo:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Card Footer */
+.login-card-footer {
   margin-top: 1.5rem;
   padding-top: 1rem;
   border-top: 1px solid var(--surface-border);
-  font-size: 0.725rem;
-  color: var(--text-muted);
   text-align: center;
-  line-height: 1.45;
+}
+
+.login-card-footer p {
+  font-size: 0.7rem;
+  color: var(--text-light);
+  line-height: 1.5;
+}
+
+/* ── Login Responsive ──────────────────────────────────────────────────────── */
+@media (max-width: 899px) {
+  .login-left-panel {
+    min-height: auto;
+    padding: 0;
+  }
+  .left-panel-content {
+    padding: 2rem 1.5rem;
+    gap: 1.5rem;
+  }
+  .brand-product-name {
+    font-size: 1.35rem;
+  }
+  .brand-product-name br {
+    display: none;
+  }
+  .brand-features {
+    display: none;
+  }
+  .brand-footer-badge {
+    display: none;
+  }
+  .login-form-wrapper {
+    max-width: none;
+    padding: 1.5rem 1rem;
+  }
+  .login-form-card {
+    border-radius: 16px;
+    padding: 1.75rem 1.5rem;
+    box-shadow: 0 8px 30px -8px rgba(15, 23, 42, 0.06);
+  }
+}
+
+@media (max-width: 430px) {
+  .left-panel-content {
+    padding: 1.5rem 1.25rem;
+    gap: 1rem;
+  }
+  .brand-icon-container {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+  }
+  .brand-icon-container svg {
+    width: 22px;
+    height: 22px;
+  }
+  .brand-product-name {
+    font-size: 1.15rem;
+  }
+  .brand-intelligence-badge {
+    font-size: 0.6rem;
+  }
+  .login-form-wrapper {
+    padding: 1.25rem 0.75rem;
+  }
+  .login-form-card {
+    padding: 1.5rem 1.15rem;
+    border-radius: 14px;
+  }
+  .login-card-title {
+    font-size: 1.4rem;
+  }
 }
 
 /* ── 4. Doctor Dashboard Layout ───────────────────────────────────────────── */
