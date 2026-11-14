@@ -35,17 +35,20 @@ export default function DoctorLogin({ onLogin }) {
 
     setIsSubmitting(true)
 
-    // NOTE: No real backend authentication endpoint exists yet.
-    // This simulates a login flow for UI demonstration purposes only.
-    // When a real auth API is implemented, replace this setTimeout
-    // with an actual fetch() call to your authentication endpoint.
+    // NOTE: Simulated login for UI demonstration.
+    // Replace with real fetch() authentication endpoint when backend auth is provisioned.
     setTimeout(() => {
       setIsSubmitting(false)
       const username = email.split('@')[0]
-      const formattedName = username
+      // Strip any leading "dr.", "dr", "doctor" to prevent duplicate titles like "Dr. Dr Carter"
+      const cleanUsername = username.replace(/^(dr[\._\s-]*|doctor[\._\s-]*)/i, '')
+      const nameParts = (cleanUsername || username)
         .replace(/[^a-zA-Z]/g, ' ')
         .trim()
-        .split(' ')
+        .split(/\s+/)
+        .filter(Boolean)
+
+      const formattedName = nameParts
         .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
         .join(' ')
 
@@ -89,48 +92,71 @@ export default function DoctorLogin({ onLogin }) {
 
   return (
     <div className="login-page">
-      {/* ───── LEFT PANEL: Premium Clinical Branding ───── */}
+      {/* ───── LEFT PANEL: Premium Clinical Branding (54% width) ───── */}
       <div className="login-left-panel">
-        {/* Decorative background layers */}
+        {/* Layered decorative backgrounds */}
         <div className="left-panel-bg-layer" aria-hidden="true" />
         <div className="left-panel-glow-1" aria-hidden="true" />
         <div className="left-panel-glow-2" aria-hidden="true" />
+        <div className="left-panel-glow-3" aria-hidden="true" />
         <div className="left-panel-grid-overlay" aria-hidden="true" />
 
-        {/* ECG waveform decoration */}
-        <svg className="ecg-decoration" viewBox="0 0 600 80" fill="none" aria-hidden="true" preserveAspectRatio="none">
+        {/* Dynamic ECG Waveform SVG decoration */}
+        <svg
+          className="ecg-decoration"
+          viewBox="0 0 800 90"
+          fill="none"
+          aria-hidden="true"
+          preserveAspectRatio="none"
+        >
           <path
-            d="M0 40 L80 40 L100 40 L120 20 L135 65 L150 10 L165 55 L180 40 L220 40 L300 40 L320 40 L340 20 L355 65 L370 10 L385 55 L400 40 L440 40 L520 40 L540 40 L555 25 L565 60 L575 15 L585 50 L600 40"
-            stroke="rgba(56, 189, 248, 0.15)"
-            strokeWidth="2"
+            d="M0 45 L110 45 L135 45 L150 25 L165 70 L180 12 L195 62 L210 45 L260 45 L380 45 L405 45 L420 22 L435 72 L450 10 L465 65 L480 45 L530 45 L650 45 L675 45 L690 28 L705 66 L718 15 L730 58 L745 45 L800 45"
+            stroke="url(#ecgGradient)"
+            strokeWidth="2.5"
             strokeLinecap="round"
             strokeLinejoin="round"
           />
+          <defs>
+            <linearGradient id="ecgGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.05" />
+              <stop offset="35%" stopColor="#38bdf8" stopOpacity="0.3" />
+              <stop offset="65%" stopColor="#0d9488" stopOpacity="0.35" />
+              <stop offset="100%" stopColor="#38bdf8" stopOpacity="0.08" />
+            </linearGradient>
+          </defs>
         </svg>
 
         <div className="left-panel-content">
           {/* Brand Header */}
           <div className="brand-header">
-            <div className="brand-icon-container">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
+            <div className="brand-icon-container" aria-hidden="true">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
               </svg>
             </div>
             <div className="brand-text-group">
-              <span className="brand-intelligence-badge">Clinical Intelligence</span>
+              <div className="brand-badge-row">
+                <span className="brand-intelligence-badge">
+                  <span className="badge-pulse-dot" aria-hidden="true" />
+                  Clinical Intelligence
+                </span>
+              </div>
               <h1 className="brand-product-name">
                 Heart Failure<br />
                 Mortality Risk Predictor
               </h1>
               <p className="brand-tagline">Advanced Clinical Risk Assessment</p>
+              <p className="brand-description">
+                A clinical decision-support platform comparing classical statistical inference and deep neural architectures using 11 validated patient biomarkers.
+              </p>
             </div>
           </div>
 
-          {/* Feature Highlights */}
+          {/* Feature Highlights Grid */}
           <div className="brand-features">
             <div className="brand-feature-card">
-              <div className="feature-card-icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+              <div className="feature-card-icon" aria-hidden="true">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
                 </svg>
               </div>
@@ -140,14 +166,18 @@ export default function DoctorLogin({ onLogin }) {
               </div>
             </div>
 
-            <div className="feature-divider" aria-hidden="true" />
-
             <div className="brand-feature-card">
-              <div className="feature-card-icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                  <rect x="2" y="3" width="20" height="14" rx="2" />
-                  <line x1="8" y1="21" x2="16" y2="21" />
-                  <line x1="12" y1="17" x2="12" y2="21" />
+              <div className="feature-card-icon" aria-hidden="true">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="5" cy="6" r="2.5" />
+                  <circle cx="5" cy="18" r="2.5" />
+                  <circle cx="12" cy="12" r="2.5" />
+                  <circle cx="19" cy="6" r="2.5" />
+                  <circle cx="19" cy="18" r="2.5" />
+                  <line x1="7.5" y1="7" x2="9.5" y2="11" />
+                  <line x1="7.5" y1="17" x2="9.5" y2="13" />
+                  <line x1="14.5" y1="11" x2="16.5" y2="7" />
+                  <line x1="14.5" y1="13" x2="16.5" y2="17" />
                 </svg>
               </div>
               <div className="feature-card-text">
@@ -156,11 +186,9 @@ export default function DoctorLogin({ onLogin }) {
               </div>
             </div>
 
-            <div className="feature-divider" aria-hidden="true" />
-
             <div className="brand-feature-card">
-              <div className="feature-card-icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+              <div className="feature-card-icon" aria-hidden="true">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                   <polyline points="14 2 14 8 20 8" />
                   <line x1="16" y1="13" x2="8" y2="13" />
@@ -176,19 +204,20 @@ export default function DoctorLogin({ onLogin }) {
 
           {/* Bottom Secure Badge */}
           <div className="brand-footer-badge">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
               <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
               <path d="M7 11V7a5 5 0 0 1 10 0v4" />
             </svg>
-            <span>Secure Physician &amp; Research Portal</span>
+            <span>Secure Physician &amp; Clinical Research Portal</span>
           </div>
         </div>
       </div>
 
-      {/* ───── RIGHT PANEL: Premium Doctor Login Form ───── */}
+      {/* ───── RIGHT PANEL: Substantially Larger Doctor Login Card (46% width) ───── */}
       <div className="login-right-panel">
-        {/* Soft decorative background elements */}
+        {/* Soft decorative ambient lighting */}
         <div className="right-panel-radial" aria-hidden="true" />
+        <div className="right-panel-radial-2" aria-hidden="true" />
 
         <div className="login-form-wrapper">
           <div className="login-form-card">
@@ -204,7 +233,7 @@ export default function DoctorLogin({ onLogin }) {
             {/* Forgot Password Notice */}
             {showForgotNotice && (
               <div className="forgot-notice" role="alert">
-                <span>Password recovery will be available once backend authentication is implemented.</span>
+                <span>Password recovery will connect to your clinical directory once backend authentication is provisioned.</span>
                 <button
                   type="button"
                   className="btn-dismiss-notice"
@@ -218,13 +247,13 @@ export default function DoctorLogin({ onLogin }) {
 
             {/* Login Form */}
             <form onSubmit={handleSubmit} noValidate className="login-form">
-              {/* Email */}
+              {/* Email Address */}
               <div className="login-field-group">
                 <label className="login-field-label" htmlFor="doctor-email">
                   Email Address
                 </label>
                 <div className="login-input-container">
-                  <svg className="login-input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                  <svg className="login-input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                     <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
                     <polyline points="22,6 12,13 2,6" />
                   </svg>
@@ -233,7 +262,7 @@ export default function DoctorLogin({ onLogin }) {
                     type="email"
                     autoComplete="email"
                     className={`login-input ${errors.email ? 'has-error' : ''}`}
-                    placeholder="doctor@hospital.org"
+                    placeholder="dr.carter@hospital.org"
                     value={email}
                     onChange={(e) => {
                       setEmail(e.target.value)
@@ -246,7 +275,7 @@ export default function DoctorLogin({ onLogin }) {
                 </div>
                 {errors.email && (
                   <span id="email-error" className="login-field-error">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
                       <circle cx="12" cy="12" r="10" />
                       <line x1="12" y1="8" x2="12" y2="12" />
                       <line x1="12" y1="16" x2="12.01" y2="16" />
@@ -271,7 +300,7 @@ export default function DoctorLogin({ onLogin }) {
                   </button>
                 </div>
                 <div className="login-input-container password-container">
-                  <svg className="login-input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                  <svg className="login-input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                     <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
                     <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                   </svg>
@@ -280,7 +309,7 @@ export default function DoctorLogin({ onLogin }) {
                     type={showPassword ? 'text' : 'password'}
                     autoComplete="current-password"
                     className={`login-input ${errors.password ? 'has-error' : ''}`}
-                    placeholder="Enter your password"
+                    placeholder="••••••••••••"
                     value={password}
                     onChange={(e) => {
                       setPassword(e.target.value)
@@ -299,12 +328,12 @@ export default function DoctorLogin({ onLogin }) {
                     tabIndex={0}
                   >
                     {showPassword ? (
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
                         <line x1="1" y1="1" x2="23" y2="23" />
                       </svg>
                     ) : (
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
                         <circle cx="12" cy="12" r="3" />
                       </svg>
@@ -313,7 +342,7 @@ export default function DoctorLogin({ onLogin }) {
                 </div>
                 {errors.password && (
                   <span id="password-error" className="login-field-error">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
                       <circle cx="12" cy="12" r="10" />
                       <line x1="12" y1="8" x2="12" y2="12" />
                       <line x1="12" y1="16" x2="12.01" y2="16" />
@@ -347,11 +376,11 @@ export default function DoctorLogin({ onLogin }) {
                 {isSubmitting ? (
                   <>
                     <span className="login-spinner" aria-hidden="true" />
-                    <span>Signing In&hellip;</span>
+                    <span>Signing In to Portal&hellip;</span>
                   </>
                 ) : (
                   <>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true">
                       <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
                       <polyline points="10 17 15 12 10 7" />
                       <line x1="15" y1="12" x2="3" y2="12" />

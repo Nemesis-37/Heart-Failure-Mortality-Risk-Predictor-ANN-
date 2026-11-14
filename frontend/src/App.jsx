@@ -1,6 +1,13 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import DoctorLogin from './DoctorLogin.jsx'
 import DoctorDashboard from './DoctorDashboard.jsx'
+import AppLayout from './layouts/AppLayout.jsx'
+import DashboardHome from './pages/DashboardHome.jsx'
+import PatientAssessmentsPage from './pages/PatientAssessmentsPage.jsx'
+import ClinicalGuidePage from './pages/ClinicalGuidePage.jsx'
+import PredictionHistoryPage from './pages/PredictionHistoryPage.jsx'
+import ModelPerformancePage from './pages/ModelPerformancePage.jsx'
+import PlaceholderPage from './pages/PlaceholderPage.jsx'
 
 const DOCTOR_AUTH_KEY = 'hf_predictor_doctor_auth_v1'
 
@@ -17,8 +24,12 @@ export default function App() {
     return null
   })
 
+  const [activePage, setActivePage] = useState('dashboard')
+  const [selectedRecordForPrediction, setSelectedRecordForPrediction] = useState(null)
+
   const handleLogin = (profile, rememberMe) => {
     setDoctorUser(profile)
+    setActivePage('dashboard')
     try {
       if (rememberMe) {
         localStorage.setItem(DOCTOR_AUTH_KEY, JSON.stringify(profile))
@@ -34,6 +45,8 @@ export default function App() {
 
   const handleLogout = () => {
     setDoctorUser(null)
+    setActivePage('dashboard')
+    setSelectedRecordForPrediction(null)
     try {
       localStorage.removeItem(DOCTOR_AUTH_KEY)
       sessionStorage.removeItem(DOCTOR_AUTH_KEY)
@@ -42,9 +55,66 @@ export default function App() {
     }
   }
 
+  const handleSelectRecordForPrediction = (record) => {
+    setSelectedRecordForPrediction(record)
+    setActivePage('prediction')
+  }
+
   if (!doctorUser) {
     return <DoctorLogin onLogin={handleLogin} />
   }
 
-  return <DoctorDashboard doctorUser={doctorUser} onLogout={handleLogout} />
+  return (
+    <AppLayout
+      doctorUser={doctorUser}
+      onLogout={handleLogout}
+      activePage={activePage}
+      onNavigate={(page) => {
+        if (page !== 'prediction') {
+          setSelectedRecordForPrediction(null)
+        }
+        setActivePage(page)
+      }}
+    >
+      {activePage === 'dashboard' && (
+        <DashboardHome doctorUser={doctorUser} onNavigate={setActivePage} />
+      )}
+
+      {activePage === 'prediction' && (
+        <DoctorDashboard
+          key={selectedRecordForPrediction ? selectedRecordForPrediction.id : 'default-pred'}
+          doctorUser={doctorUser}
+          onLogout={handleLogout}
+          embedded={true}
+          initialRecord={selectedRecordForPrediction}
+        />
+      )}
+
+      {activePage === 'assessments' && (
+        <PatientAssessmentsPage
+          doctorUser={doctorUser}
+          onNavigate={setActivePage}
+          onSelectForPrediction={handleSelectRecordForPrediction}
+        />
+      )}
+
+      {activePage === 'parameters' && (
+        <ClinicalGuidePage onNavigate={setActivePage} />
+      )}
+
+      {activePage === 'history' && (
+        <PredictionHistoryPage
+          doctorUser={doctorUser}
+          onNavigate={setActivePage}
+          onSelectAssessment={(asmCode) => {
+            setActivePage('assessments')
+          }}
+        />
+      )}
+
+      {activePage === 'performance' && (
+        <ModelPerformancePage onNavigate={setActivePage} />
+      )}
+    </AppLayout>
+  )
 }
