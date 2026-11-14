@@ -52,6 +52,16 @@ class Doctor(Base):
         default=lambda: datetime.now(timezone.utc),
     )
 
+    # Verification audit metadata (recorded upon administrative review)
+    verified_at: Mapped[datetime | None] = mapped_column(nullable=True)
+    verified_by: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    rejection_reason: Mapped[str | None] = mapped_column(String(512), nullable=True)
+
+    # Optional supporting medical document metadata
+    document_filename: Mapped[str | None] = mapped_column(String(256), nullable=True)
+    document_path: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    document_uploaded_at: Mapped[datetime | None] = mapped_column(nullable=True)
+
     # Relationship to EmailOTP
     otps: Mapped[List["EmailOTP"]] = relationship(
         "EmailOTP",

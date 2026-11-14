@@ -5,6 +5,7 @@ from pathlib import Path
 import joblib
 import pandas as pd
 import torch
+from typing import Optional
 from fastapi import FastAPI, HTTPException, Header, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -82,7 +83,7 @@ except Exception as _clin_err:
 
 
 def get_auth_doctor(
-    authorization: str = Header(..., description="Bearer <doctor_access_token>"),
+    authorization: Optional[str] = Header(None, description="Bearer <doctor_access_token>"),
 ):
     """Enforce that incoming prediction requests come from an approved, verified physician."""
     if not isinstance(authorization, str) or not authorization.startswith("Bearer "):
@@ -93,7 +94,11 @@ def get_auth_doctor(
         )
     try:
         from auth.dependencies import get_current_doctor
-        from database.config import SessionLocal
+        try:
+            from database.config import SessionLocal
+        except ImportError:
+            from database import SessionLocal
+
         db = SessionLocal()
         try:
             return get_current_doctor(authorization=authorization, db=db)
@@ -102,8 +107,12 @@ def get_auth_doctor(
     except HTTPException:
         raise
     except Exception as exc:
-        logger.warning(f"Doctor authorization validation deferred: {exc}")
-        return None
+        logger.warning(f"Doctor authorization validation error: {exc}")
+        raise HTTPException(
+            status_code=401,
+            detail="Physician authentication required. Invalid session or token.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
 
 class PatientData(BaseModel):

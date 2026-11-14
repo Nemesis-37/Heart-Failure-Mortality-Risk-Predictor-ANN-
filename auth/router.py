@@ -733,9 +733,12 @@ def refresh_session_endpoint(payload: RefreshRequest, db: Session = Depends(get_
     "/logout",
     summary="Revoke active refresh session",
 )
-def doctor_logout(payload: LogoutRequest, db: Session = Depends(get_db)):
-    """Revoke refresh session in SQL Server so it cannot be used again."""
-    if payload.refresh_token:
+def doctor_logout(
+    payload: Optional[LogoutRequest] = None,
+    db: Session = Depends(get_db),
+):
+    """Revoke refresh session in database so it cannot be used again."""
+    if payload and payload.refresh_token:
         revoke_doctor_session(db, payload.refresh_token)
     return {"status": "success", "message": "Successfully signed out. Session revoked."}
 

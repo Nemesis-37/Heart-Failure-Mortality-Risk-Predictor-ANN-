@@ -28,8 +28,18 @@ from admin.schemas import (
 )
 from admin.security import create_admin_token, get_current_admin
 from auth.security import verify_password
-from database.config import get_db
-from database.models import Administrator, Doctor
+
+try:
+    from database import get_db
+except ImportError:
+    from database.config import get_db
+
+try:
+    from db_models import Doctor
+except ImportError:
+    from database.models import Doctor
+
+from database.models import Administrator
 
 router = APIRouter(prefix="/admin", tags=["Administrator Doctor Verification"])
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -133,6 +143,19 @@ def list_doctors(
 
 
 @router.get(
+    "/doctors/pending",
+    response_model=List[DoctorAdminView],
+    summary="List doctors awaiting verification (Admin Only)",
+)
+def list_pending_doctors(
+    current_admin: Administrator = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+):
+    """Retrieve all doctor accounts awaiting administrative verification (status = 'PENDING')."""
+    return list_doctors(status_filter="PENDING", current_admin=current_admin, db=db)
+
+
+@router.get(
     "/doctors/{doctor_id}",
     response_model=DoctorAdminView,
     summary="Get single doctor credential details (Admin Only)",
@@ -206,6 +229,11 @@ def view_doctor_document(
     )
 
 
+@router.patch(
+    "/doctors/{doctor_id}/approve",
+    response_model=ActionResponse,
+    summary="Approve doctor credentials (Admin Only)",
+)
 @router.post(
     "/doctors/{doctor_id}/approve",
     response_model=ActionResponse,
@@ -220,12 +248,19 @@ def approve_doctor(
     Approve doctor medical credentials.
     Sets verification_status = 'APPROVED'.
     Records decision timestamp and verifying administrator identity.
+    Only email-verified doctors can be approved.
     """
     doctor = db.query(Doctor).filter(Doctor.doctor_id == doctor_id).first()
     if not doctor:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Doctor not found.",
+        )
+
+    if not doctor.email_verified:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot approve doctor: Email address has not been verified.",
         )
 
     if doctor.verification_status == "APPROVED":
@@ -253,6 +288,11 @@ def approve_doctor(
     )
 
 
+@router.patch(
+    "/doctors/{doctor_id}/reject",
+    response_model=ActionResponse,
+    summary="Reject doctor credentials with recorded reason (Admin Only)",
+)
 @router.post(
     "/doctors/{doctor_id}/reject",
     response_model=ActionResponse,

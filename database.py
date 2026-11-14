@@ -103,6 +103,17 @@ except ImportError:
 except Exception as exc:
     logger.error(f"Error configuring SQLAlchemy engine: {exc}")
 
+if engine is None:
+    # Graceful development fallback when pyodbc/ODBC Driver 18 is not present
+    try:
+        engine = create_engine(
+            "sqlite:///./clinical_local.db",
+            connect_args={"check_same_thread": False},
+            echo=False,
+        )
+    except Exception as _fb_err:
+        logger.error(f"Fallback database engine error: {_fb_err}")
+
 
 # ---------------------------------------------------------------------------
 # 5. SessionLocal Session Factory
