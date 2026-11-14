@@ -14,6 +14,7 @@ from typing import Optional
 
 from dotenv import load_dotenv
 from fastapi import Header, HTTPException, status
+from database.models import Administrator
 
 _ENV_PATH = Path(__file__).resolve().parent.parent / ".env"
 load_dotenv(dotenv_path=_ENV_PATH)
@@ -75,9 +76,9 @@ def get_current_admin(
     Ensures only authenticated, active hospital administrators can access credential verification tools.
     """
     raw_token = None
-    if authorization and authorization.startswith("Bearer "):
+    if isinstance(authorization, str) and authorization.startswith("Bearer "):
         raw_token = authorization.split("Bearer ", 1)[1].strip()
-    elif x_admin_token:
+    elif isinstance(x_admin_token, str) and x_admin_token.strip():
         raw_token = x_admin_token.strip()
 
     if not raw_token:

@@ -377,9 +377,8 @@ export default function PatientAssessmentsPage({ doctorUser, onNavigate, onSelec
                         {rec.predictedClass !== null && rec.predictedClass !== undefined ? (
                           <div className="prediction-cell-wrap">
                             <span
-                              className={`risk-badge ${
-                                rec.predictedClass === 1 ? 'risk-high' : 'risk-low'
-                              }`}
+                              className={`risk-badge ${rec.predictedClass === 1 ? 'risk-high' : 'risk-low'
+                                }`}
                             >
                               {rec.predictedClass === 1 ? 'Death Event' : 'No Death Event'}
                             </span>

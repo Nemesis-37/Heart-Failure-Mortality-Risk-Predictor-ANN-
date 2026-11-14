@@ -15,22 +15,21 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Import the Base metadata and existing engine from our database config
-from database.config import Base, DATABASE_URL, engine
-import database.models  # ensure models are registered with Base.metadata
+# Import the Base metadata and engine from our database config
+from database import Base, engine
+import db_models  # ensure database models are registered with Base.metadata
 
 target_metadata = Base.metadata
 
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode without an active DB connection."""
-    url = DATABASE_URL
+    url = str(engine.url) if engine is not None else config.get_main_option("sqlalchemy.url")
     context.configure(
         url=url,
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
-        include_schemas=True,
     )
 
     with context.begin_transaction():

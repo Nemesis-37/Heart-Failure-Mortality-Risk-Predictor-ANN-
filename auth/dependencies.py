@@ -16,8 +16,15 @@ from fastapi import Depends, Header, HTTPException, status
 from sqlalchemy.orm import Session
 
 from auth.session_service import verify_access_token
-from database.config import get_db
-from database.models import Doctor
+try:
+    from db_models import Doctor
+except ImportError:
+    from database.models import Doctor
+
+try:
+    from database import get_db
+except ImportError:
+    from database.config import get_db
 
 
 def get_current_doctor(
@@ -28,7 +35,7 @@ def get_current_doctor(
     FastAPI dependency to protect physician endpoints.
     Enforces authentication, email verification, administrative approval, and active status.
     """
-    if not authorization or not authorization.startswith("Bearer "):
+    if not isinstance(authorization, str) or not authorization.startswith("Bearer "):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Physician authorization required. Please log in to your clinical portal.",

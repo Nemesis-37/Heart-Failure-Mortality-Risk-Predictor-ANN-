@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Optional
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from auth.email_service import (
@@ -49,8 +50,15 @@ from auth.session_service import (
     rotate_refresh_token,
 )
 from auth.validation import validate_doctor_fields
-from database.config import get_db
-from database.models import Doctor, EmailOTP
+try:
+    from db_models import Doctor, EmailOTP
+except ImportError:
+    from database.models import Doctor, EmailOTP
+
+try:
+    from database import get_db
+except ImportError:
+    from database.config import get_db
 
 router = APIRouter(prefix="/auth", tags=["Doctor Authentication"])
 
@@ -143,7 +151,8 @@ def _validate_doctor_fields(
 
 def _check_duplicates(db: Session, email: str, registration_number: str):
     """Check for existing doctor accounts with duplicate email or registration number."""
-    existing_email = db.query(Doctor).filter(Doctor.email == email).first()
+    clean_email = email.strip().lower()
+    existing_email = db.query(Doctor).filter(func.lower(Doctor.email) == clean_email).first()
     if existing_email:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -151,7 +160,7 @@ def _check_duplicates(db: Session, email: str, registration_number: str):
         )
 
     clean_reg = registration_number.strip().upper()
-    existing_reg = db.query(Doctor).filter(Doctor.registration_number == clean_reg).first()
+    existing_reg = db.query(Doctor).filter(func.upper(Doctor.registration_number) == clean_reg).first()
     if existing_reg:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -303,13 +312,23 @@ def _issue_and_dispatch_otp(db: Session, doctor: Doctor, enforce_cooldown: bool 
 
     if latest_otp and enforce_cooldown:
         now = datetime.now(timezone.utc)
-        elapsed = (now - latest_otp.created_at).total_seconds()
+        otp_created = latest_otp.created_at
+        if otp_created.tzinfo is None:
+            otp_created = otp_created.replace(tzinfo=timezone.utc)
+        elapsed = (now - otp_created).total_seconds()
         if elapsed < OTP_COOLDOWN_SECONDS:
             remaining = int(OTP_COOLDOWN_SECONDS - elapsed)
             raise HTTPException(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
                 detail=f"Please wait {remaining} seconds before requesting a new verification code.",
             )
+
+    # Invalidate older unused OTPs for this doctor
+    db.query(EmailOTP).filter(
+        EmailOTP.doctor_id == doctor.doctor_id,
+        EmailOTP.is_used == False,
+    ).update({"is_used": True}, synchronize_session=False)
+    db.commit()
 
     # Generate 6-digit OTP
     raw_otp = generate_otp()
@@ -591,7 +610,7 @@ def doctor_login(
         )
 
     # 2. Account existence
-    doctor = db.query(Doctor).filter(Doctor.email == clean_email).first()
+    doctor = db.query(Doctor).filter(func.lower(Doctor.email) == clean_email).first()
     if not doctor:
         record_login_failure(clean_email)
         raise HTTPException(

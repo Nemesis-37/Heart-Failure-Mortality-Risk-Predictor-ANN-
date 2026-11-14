@@ -35,16 +35,17 @@ load_dotenv(dotenv_path=_ENV_PATH)
 # SMTP Settings
 SMTP_HOST = os.getenv("SMTP_HOST", "").strip()
 SMTP_PORT = int(os.getenv("SMTP_PORT", "587").strip() or "587")
-SMTP_USERNAME = os.getenv("SMTP_USERNAME", "").strip()
+SMTP_EMAIL = os.getenv("SMTP_EMAIL", os.getenv("SMTP_USERNAME", "")).strip()
+SMTP_USERNAME = SMTP_EMAIL
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "").strip()
-SMTP_FROM_EMAIL = os.getenv("SMTP_FROM_EMAIL", "no-reply@cardiopredict.org").strip()
+SMTP_FROM_EMAIL = os.getenv("SMTP_FROM_EMAIL", SMTP_EMAIL or "no-reply@cardiopredict.org").strip()
 SMTP_FROM_NAME = os.getenv("SMTP_FROM_NAME", "CardioPredict Portal").strip()
 SMTP_USE_TLS = os.getenv("SMTP_USE_TLS", "yes").strip().lower() in ("yes", "true", "1")
 APP_ENV = os.getenv("APP_ENV", "development").strip().lower()
 
 OTP_EXPIRY_MINUTES = 5
 OTP_MAX_ATTEMPTS = 5
-OTP_COOLDOWN_SECONDS = 45
+OTP_COOLDOWN_SECONDS = 60
 
 
 def generate_otp() -> str:

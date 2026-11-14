@@ -7,7 +7,7 @@ Pydantic schemas for Doctor registration and response handling.
 import re
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel, EmailStr, Field, field_validator
+from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
 
 
 class DoctorRegisterRequest(BaseModel):
@@ -77,12 +77,20 @@ class SendOTPRequest(BaseModel):
 
 class VerifyOTPRequest(BaseModel):
     email: EmailStr = Field(..., description="Registered doctor email address")
-    otp: str = Field(..., min_length=6, max_length=6, description="6-digit verification code")
+    otp: str = Field(..., description="6-digit verification code")
+
+    @model_validator(mode="before")
+    @classmethod
+    def map_otp_code_alias(cls, data):
+        if isinstance(data, dict):
+            if "otp_code" in data and "otp" not in data:
+                data["otp"] = data["otp_code"]
+        return data
 
     @field_validator("otp")
     @classmethod
     def validate_otp_digits(cls, v: str) -> str:
-        clean = v.strip()
+        clean = str(v).strip()
         if not re.match(r"^\d{6}$", clean):
             raise ValueError("OTP must consist of exactly 6 numeric digits.")
         return clean

@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from models.ann_model import HeartFailureANN
+from database import get_db, test_db_connection
 
 logger = logging.getLogger(__name__)
 
@@ -84,7 +85,7 @@ def get_auth_doctor(
     authorization: str = Header(..., description="Bearer <doctor_access_token>"),
 ):
     """Enforce that incoming prediction requests come from an approved, verified physician."""
-    if not authorization or not authorization.startswith("Bearer "):
+    if not isinstance(authorization, str) or not authorization.startswith("Bearer "):
         raise HTTPException(
             status_code=401,
             detail="Physician authentication required. Please log in with a valid Bearer token.",
@@ -147,6 +148,38 @@ def health():
         "ann_loaded": True,
         "feature_count": len(ann_feature_names),
     }
+
+
+@app.get("/db-health")
+def db_health():
+    """
+    Test SQL Server connectivity by executing SELECT DB_NAME().
+    Verifies that the FastAPI backend connects to Microsoft SQL Server Express.
+    """
+    try:
+        from database import test_db_connection
+        result = test_db_connection()
+        if result.get("status") == "connected":
+            return {
+                "status": "connected",
+                "database": result.get("database"),
+                "message": "Database connection successful",
+            }
+        else:
+            raise HTTPException(
+                status_code=500,
+                detail=result,
+            )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "status": "disconnected",
+                "message": f"Database connection error: {str(exc)}",
+            },
+        )
 
 
 @app.get("/health/db")

@@ -11,11 +11,13 @@ ENV/
 # Jupyter notebooks
 .ipynb_checkpoints/
 
-# Environment files
+# Environment files — NEVER commit .env (contains real passwords/secrets)
 .env
-.env.*
 
-# IDE/editor settings
+# Allow .env.example (no real credentials — safe to commit)
+!.env.example
+
+# IDE / editor settings
 .vscode/
 .idea/
 *.swp
@@ -25,17 +27,17 @@ ENV/
 .DS_Store
 Thumbs.db
 
-# Logs / temporary files
+# Logs and temporary files
 *.log
 *.tmp
 
-# Dataset
-# data/
+# SQLite development fallback databases (auto-created when SQL Server is unavailable)
+*.db
+*.db-shm
+*.db-wal
 
+# Uploaded medical credential documents (sensitive — never commit)
+storage/medical_documents/
 
-#.\venv\Scripts\python.exe -m uvicorn main:app --reload --host 127.0.0.1 --port 8000
-
-
-cd frontend
-npm run dev
-
+# Dataset (large CSV — optional exclude)
+# dataset/
