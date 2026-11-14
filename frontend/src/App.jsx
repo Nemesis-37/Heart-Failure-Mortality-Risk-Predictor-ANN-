@@ -1,5 +1,8 @@
 import React, { useState } from 'react'
 import DoctorLogin from './DoctorLogin.jsx'
+import DoctorRegister from './DoctorRegister.jsx'
+import DoctorOtpVerification from './DoctorOtpVerification.jsx'
+import AdminDoctorVerification from './AdminDoctorVerification.jsx'
 import DoctorDashboard from './DoctorDashboard.jsx'
 import AppLayout from './layouts/AppLayout.jsx'
 import DashboardHome from './pages/DashboardHome.jsx'
@@ -26,6 +29,8 @@ export default function App() {
 
   const [activePage, setActivePage] = useState('dashboard')
   const [selectedRecordForPrediction, setSelectedRecordForPrediction] = useState(null)
+  const [authMode, setAuthMode] = useState('login')
+  const [pendingDoctor, setPendingDoctor] = useState(null)
 
   const handleLogin = (profile, rememberMe) => {
     setDoctorUser(profile)
@@ -61,7 +66,46 @@ export default function App() {
   }
 
   if (!doctorUser) {
-    return <DoctorLogin onLogin={handleLogin} />
+    if (authMode === 'register') {
+      return (
+        <DoctorRegister
+          onNavigateToLogin={() => setAuthMode('login')}
+          onRegisterSuccess={(doctor) => {
+            setPendingDoctor(doctor)
+            setAuthMode('otp')
+          }}
+        />
+      )
+    }
+
+    if (authMode === 'otp') {
+      return (
+        <DoctorOtpVerification
+          email={pendingDoctor?.email || ''}
+          doctorData={pendingDoctor}
+          onVerifiedSuccess={(res) => {
+            // Keep on verification page to display success screen with instructions
+          }}
+          onNavigateToLogin={() => setAuthMode('login')}
+        />
+      )
+    }
+
+    if (authMode === 'admin') {
+      return (
+        <AdminDoctorVerification
+          onExitAdmin={() => setAuthMode('login')}
+        />
+      )
+    }
+
+    return (
+      <DoctorLogin
+        onLogin={handleLogin}
+        onNavigateToRegister={() => setAuthMode('register')}
+        onNavigateToAdmin={() => setAuthMode('admin')}
+      />
+    )
   }
 
   return (

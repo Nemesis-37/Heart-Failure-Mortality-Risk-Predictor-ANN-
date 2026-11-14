@@ -693,12 +693,13 @@ export default function DoctorDashboard({
                         </span>
                         <span className="field-unit">0 = Female, 1 = Male</span>
                       </label>
-                      <div className="segmented-toggle" role="radiogroup" aria-labelledby="lbl-sex">
+                      <div className={`segmented-toggle sliding-segmented-toggle ${formData.sex === 1 ? 'pos-right' : 'pos-left'}`} role="radiogroup" aria-labelledby="lbl-sex">
+                        <div className="segmented-sliding-glider" aria-hidden="true" />
                         <button
                           type="button"
                           role="radio"
                           aria-checked={formData.sex === 0}
-                          className={`toggle-btn ${formData.sex === 0 ? 'active' : ''}`}
+                          className={`toggle-btn segmented-opt-btn ${formData.sex === 0 ? 'active' : ''}`}
                           onClick={() => handleInputChange('sex', 0)}
                           disabled={loading}
                         >
@@ -708,7 +709,7 @@ export default function DoctorDashboard({
                           type="button"
                           role="radio"
                           aria-checked={formData.sex === 1}
-                          className={`toggle-btn ${formData.sex === 1 ? 'active' : ''}`}
+                          className={`toggle-btn segmented-opt-btn ${formData.sex === 1 ? 'active' : ''}`}
                           onClick={() => handleInputChange('sex', 1)}
                           disabled={loading}
                         >
@@ -726,12 +727,13 @@ export default function DoctorDashboard({
                         </span>
                         <span className="field-unit">Hb &lt; 12 g/dL</span>
                       </label>
-                      <div className="segmented-toggle" role="radiogroup" aria-labelledby="lbl-anaemia">
+                      <div className={`segmented-toggle sliding-segmented-toggle ${formData.anaemia === 1 ? 'pos-right' : 'pos-left'}`} role="radiogroup" aria-labelledby="lbl-anaemia">
+                        <div className="segmented-sliding-glider" aria-hidden="true" />
                         <button
                           type="button"
                           role="radio"
                           aria-checked={formData.anaemia === 0}
-                          className={`toggle-btn ${formData.anaemia === 0 ? 'active' : ''}`}
+                          className={`toggle-btn segmented-opt-btn ${formData.anaemia === 0 ? 'active' : ''}`}
                           onClick={() => handleInputChange('anaemia', 0)}
                           disabled={loading}
                         >
@@ -741,7 +743,7 @@ export default function DoctorDashboard({
                           type="button"
                           role="radio"
                           aria-checked={formData.anaemia === 1}
-                          className={`toggle-btn ${formData.anaemia === 1 ? 'active' : ''}`}
+                          className={`toggle-btn segmented-opt-btn ${formData.anaemia === 1 ? 'active' : ''}`}
                           onClick={() => handleInputChange('anaemia', 1)}
                           disabled={loading}
                         >
@@ -759,12 +761,13 @@ export default function DoctorDashboard({
                         </span>
                         <span className="field-unit">Diagnosed</span>
                       </label>
-                      <div className="segmented-toggle" role="radiogroup" aria-labelledby="lbl-diabetes">
+                      <div className={`segmented-toggle sliding-segmented-toggle ${formData.diabetes === 1 ? 'pos-right' : 'pos-left'}`} role="radiogroup" aria-labelledby="lbl-diabetes">
+                        <div className="segmented-sliding-glider" aria-hidden="true" />
                         <button
                           type="button"
                           role="radio"
                           aria-checked={formData.diabetes === 0}
-                          className={`toggle-btn ${formData.diabetes === 0 ? 'active' : ''}`}
+                          className={`toggle-btn segmented-opt-btn ${formData.diabetes === 0 ? 'active' : ''}`}
                           onClick={() => handleInputChange('diabetes', 0)}
                           disabled={loading}
                         >
@@ -774,7 +777,7 @@ export default function DoctorDashboard({
                           type="button"
                           role="radio"
                           aria-checked={formData.diabetes === 1}
-                          className={`toggle-btn ${formData.diabetes === 1 ? 'active' : ''}`}
+                          className={`toggle-btn segmented-opt-btn ${formData.diabetes === 1 ? 'active' : ''}`}
                           onClick={() => handleInputChange('diabetes', 1)}
                           disabled={loading}
                         >
@@ -792,12 +795,13 @@ export default function DoctorDashboard({
                         </span>
                         <span className="field-unit">Hypertension</span>
                       </label>
-                      <div className="segmented-toggle" role="radiogroup" aria-labelledby="lbl-hbp">
+                      <div className={`segmented-toggle sliding-segmented-toggle ${formData.high_blood_pressure === 1 ? 'pos-right' : 'pos-left'}`} role="radiogroup" aria-labelledby="lbl-hbp">
+                        <div className="segmented-sliding-glider" aria-hidden="true" />
                         <button
                           type="button"
                           role="radio"
                           aria-checked={formData.high_blood_pressure === 0}
-                          className={`toggle-btn ${formData.high_blood_pressure === 0 ? 'active' : ''}`}
+                          className={`toggle-btn segmented-opt-btn ${formData.high_blood_pressure === 0 ? 'active' : ''}`}
                           onClick={() => handleInputChange('high_blood_pressure', 0)}
                           disabled={loading}
                         >
@@ -807,7 +811,7 @@ export default function DoctorDashboard({
                           type="button"
                           role="radio"
                           aria-checked={formData.high_blood_pressure === 1}
-                          className={`toggle-btn ${formData.high_blood_pressure === 1 ? 'active' : ''}`}
+                          className={`toggle-btn segmented-opt-btn ${formData.high_blood_pressure === 1 ? 'active' : ''}`}
                           onClick={() => handleInputChange('high_blood_pressure', 1)}
                           disabled={loading}
                         >
@@ -825,12 +829,13 @@ export default function DoctorDashboard({
                         </span>
                         <span className="field-unit">Active tobacco</span>
                       </label>
-                      <div className="segmented-toggle" role="radiogroup" aria-labelledby="lbl-smoking">
+                      <div className={`segmented-toggle sliding-segmented-toggle ${formData.smoking === 1 ? 'pos-right' : 'pos-left'}`} role="radiogroup" aria-labelledby="lbl-smoking">
+                        <div className="segmented-sliding-glider" aria-hidden="true" />
                         <button
                           type="button"
                           role="radio"
                           aria-checked={formData.smoking === 0}
-                          className={`toggle-btn ${formData.smoking === 0 ? 'active' : ''}`}
+                          className={`toggle-btn segmented-opt-btn ${formData.smoking === 0 ? 'active' : ''}`}
                           onClick={() => handleInputChange('smoking', 0)}
                           disabled={loading}
                         >
@@ -840,7 +845,7 @@ export default function DoctorDashboard({
                           type="button"
                           role="radio"
                           aria-checked={formData.smoking === 1}
-                          className={`toggle-btn ${formData.smoking === 1 ? 'active' : ''}`}
+                          className={`toggle-btn segmented-opt-btn ${formData.smoking === 1 ? 'active' : ''}`}
                           onClick={() => handleInputChange('smoking', 1)}
                           disabled={loading}
                         >

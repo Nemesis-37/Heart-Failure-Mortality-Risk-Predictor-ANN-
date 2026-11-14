@@ -11,9 +11,9 @@ export const MODEL_DATA = {
     framework: 'Scikit-Learn Pipeline',
     evalMethod: '5-Fold Stratified Cross-Validation',
     architecture: 'Linear (11 Features → StandardScaler → Log-Odds Sigmoid)',
-    color: '#0284c7',
-    colorLight: '#e0f2fe',
-    colorBorder: '#bae6fd',
+    color: '#1565D8',
+    colorLight: '#DBEAFE',
+    colorBorder: '#93C5FD',
     status: 'Production Active',
     metrics: {
       accuracy: 75.60,
@@ -489,7 +489,7 @@ export default function ModelPerformancePage({ onNavigate }) {
                       cy="52"
                       r={radius}
                       fill="transparent"
-                      stroke="#0284c7"
+                      stroke="#1565D8"
                       strokeWidth="9"
                       strokeDasharray={circumference}
                       strokeDashoffset={strokeDashoffsetLR}
@@ -655,7 +655,7 @@ export default function ModelPerformancePage({ onNavigate }) {
                     width={barWidth}
                     height={lrHeight}
                     rx="4"
-                    fill="#0284c7"
+                    fill="#1565D8"
                     className="svg-bar lr-svg-bar"
                     onMouseEnter={() => setHoveredBar({ metric: item.key, model: 'LR', val: item.lr, std: item.lrStd, label: item.label })}
                     onMouseLeave={() => setHoveredBar(null)}
@@ -667,7 +667,7 @@ export default function ModelPerformancePage({ onNavigate }) {
                     textAnchor="middle"
                     fontSize="11"
                     fontWeight="700"
-                    fill="#0369a1"
+                    fill="#1565D8"
                     fontFamily="ui-monospace, monospace"
                   >
                     {item.lr}%
@@ -882,7 +882,7 @@ export default function ModelPerformancePage({ onNavigate }) {
               {/* LR AUROC Line */}
               <polyline
                 fill="none"
-                stroke="#0284c7"
+                stroke="#1565D8"
                 strokeWidth="3"
                 points="140,147 290,131 440,128 590,99 740,105"
               />
@@ -909,8 +909,8 @@ export default function ModelPerformancePage({ onNavigate }) {
                     </text>
 
                     {/* LR circle */}
-                    <circle cx={x} cy={lrY} r="5" fill="#0284c7" stroke="#ffffff" strokeWidth="2" />
-                    <text x={x} y={lrY - 10} textAnchor="middle" fontSize="11" fontWeight="700" fill="#0284c7">
+                    <circle cx={x} cy={lrY} r="5" fill="#1565D8" stroke="#ffffff" strokeWidth="2" />
+                    <text x={x} y={lrY - 10} textAnchor="middle" fontSize="11" fontWeight="700" fill="#1565D8">
                       {f.lr.auroc}%
                     </text>
 
@@ -963,7 +963,7 @@ export default function ModelPerformancePage({ onNavigate }) {
               <path
                 d="M 45 215 C 60 120, 100 65, 330 25"
                 fill="none"
-                stroke="#0284c7"
+                stroke="#1565D8"
                 strokeWidth="2.75"
               />
 

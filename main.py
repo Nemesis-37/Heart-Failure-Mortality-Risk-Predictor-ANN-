@@ -58,6 +58,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Mount Doctor Authentication Router
+try:
+    from auth.router import router as auth_router
+    app.include_router(auth_router)
+except Exception as _auth_err:
+    logger.warning(f"Auth router deferred: {_auth_err}")
+
+# Mount Administrator Verification Router
+try:
+    from admin.router import router as admin_router
+    app.include_router(admin_router)
+except Exception as _admin_err:
+    logger.warning(f"Admin router deferred: {_admin_err}")
+
 
 class PatientData(BaseModel):
     age: float
@@ -101,6 +115,30 @@ def health():
         "ann_loaded": True,
         "feature_count": len(ann_feature_names),
     }
+
+
+@app.get("/health/db")
+def health_db():
+    """Test SQL Server database connectivity."""
+    try:
+        from database.config import DB_NAME, DB_SERVER, test_connection
+
+        is_connected = test_connection()
+        return {
+            "status": "connected" if is_connected else "disconnected",
+            "database": DB_NAME,
+            "server": DB_SERVER,
+            "message": "SQL Server connection verified successfully.",
+        }
+    except Exception as exc:
+        return {
+            "status": "error",
+            "detail": str(exc),
+            "message": (
+                "Could not connect to SQL Server. Ensure the service is running "
+                "and dependencies are installed."
+            ),
+        }
 
 
 @app.post("/predict")

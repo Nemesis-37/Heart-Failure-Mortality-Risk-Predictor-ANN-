@@ -876,17 +876,18 @@ export default function PatientAssessmentsPage({ doctorUser, onNavigate, onSelec
                   {/* Sex */}
                   <div className="form-field">
                     <label className="form-label">Biological Sex *</label>
-                    <div className="segmented-toggle">
+                    <div className={`segmented-toggle sliding-segmented-toggle ${editFormData.sex === 1 ? 'pos-right' : 'pos-left'}`}>
+                      <div className="segmented-sliding-glider" aria-hidden="true" />
                       <button
                         type="button"
-                        className={`toggle-btn ${editFormData.sex === 0 ? 'active' : ''}`}
+                        className={`toggle-btn segmented-opt-btn ${editFormData.sex === 0 ? 'active' : ''}`}
                         onClick={() => setEditFormData({ ...editFormData, sex: 0 })}
                       >
                         Female (0)
                       </button>
                       <button
                         type="button"
-                        className={`toggle-btn ${editFormData.sex === 1 ? 'active' : ''}`}
+                        className={`toggle-btn segmented-opt-btn ${editFormData.sex === 1 ? 'active' : ''}`}
                         onClick={() => setEditFormData({ ...editFormData, sex: 1 })}
                       >
                         Male (1)
@@ -897,17 +898,18 @@ export default function PatientAssessmentsPage({ doctorUser, onNavigate, onSelec
                   {/* Anaemia */}
                   <div className="form-field">
                     <label className="form-label">Anaemia *</label>
-                    <div className="segmented-toggle">
+                    <div className={`segmented-toggle sliding-segmented-toggle ${editFormData.anaemia === 1 ? 'pos-right' : 'pos-left'}`}>
+                      <div className="segmented-sliding-glider" aria-hidden="true" />
                       <button
                         type="button"
-                        className={`toggle-btn ${editFormData.anaemia === 0 ? 'active' : ''}`}
+                        className={`toggle-btn segmented-opt-btn ${editFormData.anaemia === 0 ? 'active' : ''}`}
                         onClick={() => setEditFormData({ ...editFormData, anaemia: 0 })}
                       >
                         No (0)
                       </button>
                       <button
                         type="button"
-                        className={`toggle-btn ${editFormData.anaemia === 1 ? 'active' : ''}`}
+                        className={`toggle-btn segmented-opt-btn ${editFormData.anaemia === 1 ? 'active' : ''}`}
                         onClick={() => setEditFormData({ ...editFormData, anaemia: 1 })}
                       >
                         Yes (1)
@@ -918,17 +920,18 @@ export default function PatientAssessmentsPage({ doctorUser, onNavigate, onSelec
                   {/* Diabetes */}
                   <div className="form-field">
                     <label className="form-label">Diabetes *</label>
-                    <div className="segmented-toggle">
+                    <div className={`segmented-toggle sliding-segmented-toggle ${editFormData.diabetes === 1 ? 'pos-right' : 'pos-left'}`}>
+                      <div className="segmented-sliding-glider" aria-hidden="true" />
                       <button
                         type="button"
-                        className={`toggle-btn ${editFormData.diabetes === 0 ? 'active' : ''}`}
+                        className={`toggle-btn segmented-opt-btn ${editFormData.diabetes === 0 ? 'active' : ''}`}
                         onClick={() => setEditFormData({ ...editFormData, diabetes: 0 })}
                       >
                         No (0)
                       </button>
                       <button
                         type="button"
-                        className={`toggle-btn ${editFormData.diabetes === 1 ? 'active' : ''}`}
+                        className={`toggle-btn segmented-opt-btn ${editFormData.diabetes === 1 ? 'active' : ''}`}
                         onClick={() => setEditFormData({ ...editFormData, diabetes: 1 })}
                       >
                         Yes (1)
@@ -939,17 +942,18 @@ export default function PatientAssessmentsPage({ doctorUser, onNavigate, onSelec
                   {/* High Blood Pressure */}
                   <div className="form-field">
                     <label className="form-label">High Blood Pressure *</label>
-                    <div className="segmented-toggle">
+                    <div className={`segmented-toggle sliding-segmented-toggle ${editFormData.high_blood_pressure === 1 ? 'pos-right' : 'pos-left'}`}>
+                      <div className="segmented-sliding-glider" aria-hidden="true" />
                       <button
                         type="button"
-                        className={`toggle-btn ${editFormData.high_blood_pressure === 0 ? 'active' : ''}`}
+                        className={`toggle-btn segmented-opt-btn ${editFormData.high_blood_pressure === 0 ? 'active' : ''}`}
                         onClick={() => setEditFormData({ ...editFormData, high_blood_pressure: 0 })}
                       >
                         No (0)
                       </button>
                       <button
                         type="button"
-                        className={`toggle-btn ${editFormData.high_blood_pressure === 1 ? 'active' : ''}`}
+                        className={`toggle-btn segmented-opt-btn ${editFormData.high_blood_pressure === 1 ? 'active' : ''}`}
                         onClick={() => setEditFormData({ ...editFormData, high_blood_pressure: 1 })}
                       >
                         Yes (1)
@@ -960,17 +964,18 @@ export default function PatientAssessmentsPage({ doctorUser, onNavigate, onSelec
                   {/* Smoking */}
                   <div className="form-field">
                     <label className="form-label">Smoking History *</label>
-                    <div className="segmented-toggle">
+                    <div className={`segmented-toggle sliding-segmented-toggle ${editFormData.smoking === 1 ? 'pos-right' : 'pos-left'}`}>
+                      <div className="segmented-sliding-glider" aria-hidden="true" />
                       <button
                         type="button"
-                        className={`toggle-btn ${editFormData.smoking === 0 ? 'active' : ''}`}
+                        className={`toggle-btn segmented-opt-btn ${editFormData.smoking === 0 ? 'active' : ''}`}
                         onClick={() => setEditFormData({ ...editFormData, smoking: 0 })}
                       >
                         No (0)
                       </button>
                       <button
                         type="button"
-                        className={`toggle-btn ${editFormData.smoking === 1 ? 'active' : ''}`}
+                        className={`toggle-btn segmented-opt-btn ${editFormData.smoking === 1 ? 'active' : ''}`}
                         onClick={() => setEditFormData({ ...editFormData, smoking: 1 })}
                       >
                         Yes (1)

@@ -13,19 +13,79 @@ BEGIN
 END
 GO
 
--- 2. Create Doctors Reference Table (Optional parent entity)
+-- 2. Create Doctors Reference Table
 IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[clinical].[Doctors]') AND type in (N'U'))
 BEGIN
     CREATE TABLE [clinical].[Doctors] (
-        [doctor_id]           NVARCHAR(64)   NOT NULL,
-        [full_name]           NVARCHAR(128)  NOT NULL,
-        [email]               NVARCHAR(256)  NOT NULL,
-        [clinical_role]       NVARCHAR(64)   NOT NULL DEFAULT N'Attending Physician',
-        [is_active]           BIT            NOT NULL DEFAULT 1,
-        [created_at]          DATETIMEOFFSET NOT NULL DEFAULT SYSDATETIMEOFFSET(),
+        [doctor_id]             NVARCHAR(64)   NOT NULL,
+        [full_name]             NVARCHAR(128)  NOT NULL,
+        [email]                 NVARCHAR(256)  NOT NULL,
+        [password_hash]         NVARCHAR(256)  NOT NULL,
+        [mobile]                NVARCHAR(32)   NOT NULL,
+        [medical_degree]        NVARCHAR(128)  NOT NULL,
+        [registration_number]   NVARCHAR(64)   NOT NULL,
+        [registration_council]  NVARCHAR(128)  NOT NULL,
+        [email_verified]        BIT            NOT NULL DEFAULT 0,
+        [verification_status]   NVARCHAR(32)   NOT NULL DEFAULT N'PENDING',
+        [is_active]             BIT            NOT NULL DEFAULT 1,
+        [created_at]            DATETIMEOFFSET NOT NULL DEFAULT SYSDATETIMEOFFSET(),
+        [document_filename]     NVARCHAR(256)  NULL,
+        [document_path]         NVARCHAR(512)  NULL,
+        [document_uploaded_at]  DATETIMEOFFSET NULL,
+        [verified_at]           DATETIMEOFFSET NULL,
+        [verified_by]           NVARCHAR(64)   NULL,
+        [rejection_reason]      NVARCHAR(512)  NULL,
         CONSTRAINT [PK_Doctors] PRIMARY KEY CLUSTERED ([doctor_id]),
-        CONSTRAINT [UQ_Doctors_Email] UNIQUE NONCLUSTERED ([email])
+        CONSTRAINT [UQ_Doctors_Email] UNIQUE NONCLUSTERED ([email]),
+        CONSTRAINT [UQ_Doctors_RegNumber] UNIQUE NONCLUSTERED ([registration_number]),
+        CONSTRAINT [CK_Doctors_VerificationStatus] CHECK ([verification_status] IN (N'PENDING', N'APPROVED', N'REJECTED'))
     );
+
+    CREATE NONCLUSTERED INDEX [IX_Doctors_Email] ON [clinical].[Doctors] ([email]);
+    CREATE NONCLUSTERED INDEX [IX_Doctors_RegNumber] ON [clinical].[Doctors] ([registration_number]);
+    CREATE NONCLUSTERED INDEX [IX_Doctors_VerificationStatus] ON [clinical].[Doctors] ([verification_status]);
+END
+GO
+
+-- 2B. Create Email OTP Verification Table
+IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[clinical].[EmailOTP]') AND type in (N'U'))
+BEGIN
+    CREATE TABLE [clinical].[EmailOTP] (
+        [otp_id]      NVARCHAR(64)   NOT NULL,
+        [doctor_id]   NVARCHAR(64)   NOT NULL,
+        [otp_hash]    NVARCHAR(256)  NOT NULL,
+        [expires_at]  DATETIMEOFFSET NOT NULL,
+        [attempts]    INT            NOT NULL DEFAULT 0,
+        [is_used]     BIT            NOT NULL DEFAULT 0,
+        [created_at]  DATETIMEOFFSET NOT NULL DEFAULT SYSDATETIMEOFFSET(),
+        CONSTRAINT [PK_EmailOTP] PRIMARY KEY CLUSTERED ([otp_id]),
+        CONSTRAINT [FK_EmailOTP_Doctors] FOREIGN KEY ([doctor_id])
+            REFERENCES [clinical].[Doctors] ([doctor_id]) ON DELETE CASCADE
+    );
+
+    CREATE NONCLUSTERED INDEX [IX_EmailOTP_DoctorId] ON [clinical].[EmailOTP] ([doctor_id], [created_at] DESC);
+    CREATE NONCLUSTERED INDEX [IX_EmailOTP_ExpiresAt] ON [clinical].[EmailOTP] ([expires_at]);
+END
+GO
+
+-- 2C. Create Administrators Table
+IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[clinical].[Administrators]') AND type in (N'U'))
+BEGIN
+    CREATE TABLE [clinical].[Administrators] (
+        [admin_id]       NVARCHAR(64)   NOT NULL,
+        [username]       NVARCHAR(64)   NOT NULL,
+        [email]          NVARCHAR(256)  NOT NULL,
+        [password_hash]  NVARCHAR(256)  NOT NULL,
+        [full_name]      NVARCHAR(128)  NOT NULL,
+        [role]           NVARCHAR(64)   NOT NULL DEFAULT N'Medical Credentialing Officer',
+        [is_active]      BIT            NOT NULL DEFAULT 1,
+        [created_at]     DATETIMEOFFSET NOT NULL DEFAULT SYSDATETIMEOFFSET(),
+        CONSTRAINT [PK_Administrators] PRIMARY KEY CLUSTERED ([admin_id]),
+        CONSTRAINT [UQ_Admin_Username] UNIQUE NONCLUSTERED ([username]),
+        CONSTRAINT [UQ_Admin_Email] UNIQUE NONCLUSTERED ([email])
+    );
+
+    CREATE NONCLUSTERED INDEX [IX_Admin_Email] ON [clinical].[Administrators] ([email]);
 END
 GO
 

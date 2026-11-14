@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 
-export default function DoctorLogin({ onLogin }) {
+export default function DoctorLogin({ onLogin, onNavigateToRegister, onNavigateToAdmin }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -407,6 +407,54 @@ export default function DoctorLogin({ onLogin }) {
                 </svg>
                 <span>Quick Demo Access</span>
               </button>
+
+              {/* Register New Physician Link */}
+              {onNavigateToRegister && (
+                <div style={{ textAlign: 'center', marginTop: '1.25rem', fontSize: '0.88rem', color: '#64748b' }}>
+                  New physician or medical resident?{' '}
+                  <button
+                    type="button"
+                    onClick={onNavigateToRegister}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: '#1565D8',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      textDecoration: 'underline',
+                      textUnderlineOffset: '3px',
+                    }}
+                  >
+                    Register for Access
+                  </button>
+                </div>
+              )}
+
+              {/* Administrator Portal Access */}
+              {onNavigateToAdmin && (
+                <div style={{ textAlign: 'center', marginTop: '0.75rem' }}>
+                  <button
+                    type="button"
+                    onClick={onNavigateToAdmin}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: '#94a3b8',
+                      cursor: 'pointer',
+                      fontSize: '0.76rem',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                    }}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                    </svg>
+                    <span>Staff &bull; Administrator Verification Portal</span>
+                  </button>
+                </div>
+              )}
             </form>
 
             {/* Footer Disclaimer */}
