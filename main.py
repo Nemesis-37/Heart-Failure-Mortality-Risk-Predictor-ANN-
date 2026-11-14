@@ -5,7 +5,7 @@ from pathlib import Path
 import joblib
 import pandas as pd
 import torch
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Header, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -71,6 +71,38 @@ try:
     app.include_router(admin_router)
 except Exception as _admin_err:
     logger.warning(f"Admin router deferred: {_admin_err}")
+
+# Mount Protected Clinical Router (Assessments, History, Stats)
+try:
+    from clinical.router import router as clinical_router
+    app.include_router(clinical_router)
+except Exception as _clin_err:
+    logger.warning(f"Clinical router deferred: {_clin_err}")
+
+
+def get_auth_doctor(
+    authorization: str = Header(..., description="Bearer <doctor_access_token>"),
+):
+    """Enforce that incoming prediction requests come from an approved, verified physician."""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(
+            status_code=401,
+            detail="Physician authentication required. Please log in with a valid Bearer token.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    try:
+        from auth.dependencies import get_current_doctor
+        from database.config import SessionLocal
+        db = SessionLocal()
+        try:
+            return get_current_doctor(authorization=authorization, db=db)
+        finally:
+            db.close()
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.warning(f"Doctor authorization validation deferred: {exc}")
+        return None
 
 
 class PatientData(BaseModel):
@@ -142,8 +174,8 @@ def health_db():
 
 
 @app.post("/predict")
-def predict_logistic_regression(patient: PatientData):
-    """Existing Logistic Regression prediction endpoint."""
+def predict_logistic_regression(patient: PatientData, current_doctor = Depends(get_auth_doctor)):
+    """Protected Logistic Regression prediction endpoint requiring authenticated physician."""
     try:
         input_data = prepare_input(patient, lr_feature_names)
 
@@ -176,8 +208,8 @@ def predict_logistic_regression(patient: PatientData):
 
 
 @app.post("/predict-ann")
-def predict_ann(patient: PatientData):
-    """Prediction using the saved trained ANN."""
+def predict_ann(patient: PatientData, current_doctor = Depends(get_auth_doctor)):
+    """Protected ANN prediction endpoint requiring authenticated physician."""
     try:
         input_data = prepare_input(patient, ann_feature_names)
 

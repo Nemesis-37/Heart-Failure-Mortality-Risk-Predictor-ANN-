@@ -201,18 +201,24 @@ export default function DoctorDashboard({
     const model = MODELS.find((m) => m.id === selectedModelId) || MODELS[0]
 
     try {
+      const accessToken = localStorage.getItem('cardiopredict_access_token')
+      const requestHeaders = { 'Content-Type': 'application/json' }
+      if (accessToken) {
+        requestHeaders['Authorization'] = `Bearer ${accessToken}`
+      }
+
       let response
 
       try {
         response = await fetch(model.endpoint, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: requestHeaders,
           body: JSON.stringify(payload),
         })
       } catch {
         response = await fetch(model.fallbackEndpoint, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: requestHeaders,
           body: JSON.stringify(payload),
         })
       }

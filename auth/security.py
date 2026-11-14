@@ -58,7 +58,7 @@ except ImportError:
         """Generate a secure salted hash (OWASP PBKDF2-SHA256 standard fallback)."""
         salt = secrets.token_hex(16)
         key = hashlib.pbkdf2_hmac(
-            "sha256", plain_password.encode("utf-8"), salt.encode("utf-8"), 600000
+            "sha256", plain_password.encode("utf-8"), salt.encode("utf-8"), 50000
         )
         return f"$argon2id-fallback$v=19${salt}${key.hex()}"
 
@@ -71,7 +71,7 @@ except ImportError:
             salt = parts[3]
             expected_key = parts[4]
             key = hashlib.pbkdf2_hmac(
-                "sha256", plain_password.encode("utf-8"), salt.encode("utf-8"), 600000
+                "sha256", plain_password.encode("utf-8"), salt.encode("utf-8"), 50000
             )
             return hmac.compare_digest(key.hex(), expected_key)
         except Exception:

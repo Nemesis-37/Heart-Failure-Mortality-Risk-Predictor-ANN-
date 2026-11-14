@@ -198,4 +198,94 @@ export const deletePrediction = (id) => {
   return filtered
 }
 
+// ── Backend API Synchronization (Step 7: Protected APIs) ────────────────────
+
+export const fetchBackendAssessments = async () => {
+  const token = localStorage.getItem('cardiopredict_access_token')
+  if (!token) return getAssessments()
+
+  try {
+    const res = await fetch('http://127.0.0.1:8000/api/assessments', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (res.ok) {
+      const data = await res.json()
+      if (Array.isArray(data) && data.length > 0) {
+        const mapped = data.map((d) => ({
+          id: d.id,
+          assessmentCode: d.assessment_code,
+          patientReferenceId: d.patient_reference_id,
+          doctorId: d.doctor_id,
+          doctorName: 'Attending Physician',
+          age: d.age,
+          anaemia: d.anaemia,
+          creatinine_phosphokinase: d.creatinine_phosphokinase,
+          diabetes: d.diabetes,
+          ejection_fraction: d.ejection_fraction,
+          high_blood_pressure: d.high_blood_pressure,
+          platelets: d.platelets,
+          serum_creatinine: d.serum_creatinine,
+          serum_sodium: d.serum_sodium,
+          sex: d.sex,
+          smoking: d.smoking,
+          model: d.selected_model,
+          predictedClass: d.predicted_class,
+          predictedLabel:
+            d.predicted_class === 1
+              ? 'Death event predicted'
+              : d.predicted_class === 0
+              ? 'No death event predicted'
+              : null,
+          predictedProbability: d.predicted_probability,
+          createdAt: d.created_at,
+          updatedAt: d.updated_at,
+        }))
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(mapped))
+        return mapped
+      }
+    }
+  } catch (err) {
+    console.warn('Backend assessments sync warning:', err)
+  }
+  return getAssessments()
+}
+
+export const fetchBackendPredictions = async () => {
+  const token = localStorage.getItem('cardiopredict_access_token')
+  if (!token) return getPredictions()
+
+  try {
+    const res = await fetch('http://127.0.0.1:8000/api/history', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (res.ok) {
+      const data = await res.json()
+      if (Array.isArray(data) && data.length > 0) {
+        const mapped = data.map((p) => ({
+          id: p.id,
+          predictionCode: p.prediction_code,
+          assessmentId: p.assessment_id,
+          assessmentCode: p.assessment_code,
+          patientReferenceId: p.patient_reference_id,
+          modelName: p.model_name,
+          predictedClass: p.predicted_class,
+          predictedLabel:
+            p.predicted_class === 1
+              ? 'Death event predicted'
+              : 'No death event predicted',
+          predictedProbability: p.predicted_probability,
+          classificationThreshold: p.classification_threshold,
+          modelVersion: p.model_version,
+          createdAt: p.created_at,
+        }))
+        localStorage.setItem(PREDICTIONS_STORAGE_KEY, JSON.stringify(mapped))
+        return mapped
+      }
+    }
+  } catch (err) {
+    console.warn('Backend predictions sync warning:', err)
+  }
+  return getPredictions()
+}
+
 

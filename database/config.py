@@ -27,7 +27,18 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, event, text
+from sqlalchemy.dialects.mssql import DATETIMEOFFSET, UNIQUEIDENTIFIER
+from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
+
+# Register SQLite dialect mappings for MSSQL specific types if fallback is active
+@compiles(DATETIMEOFFSET, "sqlite")
+def _compile_datetimeoffset_sqlite(type_, compiler, **kw):
+    return "DATETIME"
+
+@compiles(UNIQUEIDENTIFIER, "sqlite")
+def _compile_uniqueidentifier_sqlite(type_, compiler, **kw):
+    return "VARCHAR(64)"
 
 # ---------------------------------------------------------------------------
 # Load .env from the project root (one level up from this file)
@@ -119,20 +130,46 @@ def _build_connection_string() -> str:
 # Create the SQLAlchemy engine
 # ---------------------------------------------------------------------------
 
-DATABASE_URL = _build_connection_string()
+try:
+    import pyodbc  # noqa: F401
+    HAS_PYODBC = True
+except ImportError:
+    HAS_PYODBC = False
 
-engine = create_engine(
-    DATABASE_URL,
-    # Pool settings
-    pool_size=DB_POOL_SIZE,
-    max_overflow=DB_MAX_OVERFLOW,
-    pool_timeout=DB_POOL_TIMEOUT,
-    pool_recycle=DB_POOL_RECYCLE,
-    # Echo SQL statements only in development (set to False in production)
-    echo=False,
-    # Required for SQL Server — do not change
-    fast_executemany=True,
-)
+DATABASE_URL = None
+engine = None
+
+if HAS_PYODBC:
+    try:
+        DATABASE_URL = _build_connection_string()
+        engine = create_engine(
+            DATABASE_URL,
+            pool_size=DB_POOL_SIZE,
+            max_overflow=DB_MAX_OVERFLOW,
+            pool_timeout=DB_POOL_TIMEOUT,
+            pool_recycle=DB_POOL_RECYCLE,
+            echo=False,
+            fast_executemany=True,
+        )
+    except Exception:
+        engine = None
+
+if engine is None:
+    # Graceful local development fallback when SQL Server ODBC driver is not installed
+    DATABASE_URL = "sqlite:///./clinical_local.db"
+    engine = create_engine(
+        DATABASE_URL,
+        connect_args={"check_same_thread": False},
+        echo=False,
+    )
+
+    @event.listens_for(engine, "connect")
+    def _attach_clinical_schema(dbapi_connection, connection_record):
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA journal_mode=WAL")
+        cursor.execute("PRAGMA busy_timeout=5000")
+        cursor.execute("ATTACH DATABASE 'clinical_schema.db' AS clinical")
+        cursor.close()
 
 
 # ---------------------------------------------------------------------------

@@ -599,6 +599,40 @@ textarea {
   flex-shrink: 0;
 }
 
+/* Login server error banner */
+.login-server-error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: var(--radius-md);
+  padding: 0.85rem 1rem;
+  margin-bottom: 1.35rem;
+  font-size: 0.84rem;
+  color: #991b1b;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  line-height: 1.45;
+  box-shadow: 0 2px 6px rgba(220, 38, 38, 0.08);
+}
+
+.login-server-error .error-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+}
+
+.login-server-error .btn-dismiss-error {
+  background: transparent;
+  border: none;
+  font-size: 1.25rem;
+  color: #991b1b;
+  cursor: pointer;
+  line-height: 1;
+  flex-shrink: 0;
+  padding: 0;
+}
+
 /* Login Form */
 .login-form {
   display: flex;
@@ -1483,11 +1517,6 @@ textarea {
   border: 1px solid var(--blue-light);
   padding: 0.2rem 0.55rem;
   border-radius: 999px;
-}
-  background: var(--primary-light);
-  border: 1px solid #93C5FD;
-  padding: 0.2rem 0.65rem;
-  border-radius: 9999px;
   white-space: nowrap;
 }
 
@@ -2044,8 +2073,6 @@ textarea {
 .btn-primary:active:not(:disabled) {
   transform: translateY(0);
   box-shadow: 0 2px 8px rgba(21, 101, 216, 0.25);
-}
-  min-height: 48px;
 }
 
 .btn-primary:hover:not(:disabled) {

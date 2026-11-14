@@ -31,7 +31,7 @@ from sqlalchemy import (
     String,
     UniqueConstraint,
 )
-from sqlalchemy.dialects.mssql import DATETIMEOFFSET, UNIQUEIDENTIFIER
+from sqlalchemy.dialects.mssql import DATETIMEOFFSET
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from database.config import Base
@@ -110,9 +110,59 @@ class Doctor(Base):
         back_populates="doctor",
         cascade="all, delete-orphan",
     )
+    sessions: Mapped[list["DoctorSession"]] = relationship(
+        "DoctorSession",
+        back_populates="doctor",
+        cascade="all, delete-orphan",
+    )
 
     def __repr__(self) -> str:
         return f"<Doctor id={self.doctor_id!r} name={self.full_name!r}>"
+
+
+# ---------------------------------------------------------------------------
+# DoctorSessions table  (clinical.DoctorSessions)
+# ---------------------------------------------------------------------------
+
+class DoctorSession(Base):
+    """
+    Stores revocable refresh sessions for authenticated doctors.
+
+    Maps to: clinical.DoctorSessions
+    """
+    __tablename__ = "DoctorSessions"
+    __table_args__ = (
+        Index("IX_DoctorSessions_DoctorId", "doctor_id", "created_at"),
+        Index("IX_DoctorSessions_ExpiresAt", "expires_at"),
+        {"schema": "clinical"},
+    )
+
+    session_id: Mapped[str] = mapped_column(
+        String(64),
+        primary_key=True,
+        default=lambda: str(uuid.uuid4()),
+    )
+    doctor_id: Mapped[str] = mapped_column(
+        String(64),
+        ForeignKey("clinical.Doctors.doctor_id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    refresh_token_hash: Mapped[str] = mapped_column(String(256), nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DATETIMEOFFSET, nullable=False)
+    is_revoked: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DATETIMEOFFSET,
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+    user_agent: Mapped[str | None] = mapped_column(String(256), nullable=True)
+    ip_address: Mapped[str | None] = mapped_column(String(64), nullable=True)
+
+    # Relationship back to doctor
+    doctor: Mapped["Doctor"] = relationship("Doctor", back_populates="sessions")
+
+    def __repr__(self) -> str:
+        return f"<DoctorSession id={self.session_id!r} doctor={self.doctor_id!r} revoked={self.is_revoked}>"
 
 
 # ---------------------------------------------------------------------------
@@ -256,8 +306,9 @@ class Assessment(Base):
     )
 
     # Internal UUID primary key (never shown directly in the UI)
+    # Using String(64) for cross-database compatibility (SQL Server + SQLite fallback)
     id: Mapped[str] = mapped_column(
-        UNIQUEIDENTIFIER,
+        String(64),
         primary_key=True,
         default=lambda: str(uuid.uuid4()),
     )
@@ -359,8 +410,9 @@ class Prediction(Base):
     )
 
     # Internal UUID primary key
+    # Using String(64) for cross-database compatibility (SQL Server + SQLite fallback)
     id: Mapped[str] = mapped_column(
-        UNIQUEIDENTIFIER,
+        String(64),
         primary_key=True,
         default=lambda: str(uuid.uuid4()),
     )
@@ -370,7 +422,7 @@ class Prediction(Base):
 
     # FK to parent Assessment
     assessment_id: Mapped[str] = mapped_column(
-        UNIQUEIDENTIFIER,
+        String(64),
         ForeignKey("clinical.Assessments.id", ondelete="CASCADE"),
         nullable=False,
     )

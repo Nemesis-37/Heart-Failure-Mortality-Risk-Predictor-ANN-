@@ -28,14 +28,26 @@ from auth.email_service import (
     verify_otp_hash,
 )
 from auth.schemas import (
+    DoctorLoginRequest,
     DoctorRegisterRequest,
     DoctorSafeResponse,
+    LogoutRequest,
     OTPResponse,
+    RefreshRequest,
     RegisterSuccessResponse,
     SendOTPRequest,
+    TokenResponse,
     VerifyOTPRequest,
 )
-from auth.security import hash_password
+from auth.security import hash_password, verify_password
+from auth.session_service import (
+    check_login_rate_limit,
+    create_doctor_session,
+    record_login_failure,
+    reset_login_failures,
+    revoke_doctor_session,
+    rotate_refresh_token,
+)
 from auth.validation import validate_doctor_fields
 from database.config import get_db
 from database.models import Doctor, EmailOTP
@@ -424,7 +436,11 @@ def verify_otp_endpoint(payload: VerifyOTPRequest, db: Session = Depends(get_db)
     now = datetime.now(timezone.utc)
 
     # Check expiration
-    if now > active_otp.expires_at:
+    otp_expires = active_otp.expires_at
+    if otp_expires and otp_expires.tzinfo is None:
+        otp_expires = otp_expires.replace(tzinfo=timezone.utc)
+
+    if otp_expires and now > otp_expires:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Verification code has expired. Please request a new code.",
@@ -537,4 +553,197 @@ def register_doctor_json(
             created_at=new_doctor.created_at,
             document_uploaded=False,
         ),
+    )
+
+
+# ---------------------------------------------------------------------------
+# Secure Physician Login & Session Management
+# ---------------------------------------------------------------------------
+
+@router.post(
+    "/login",
+    response_model=TokenResponse,
+    summary="Authenticate Doctor and issue secure access & refresh session",
+)
+def doctor_login(
+    payload: DoctorLoginRequest,
+    db: Session = Depends(get_db),
+):
+    """
+    Authenticate physician login.
+
+    Strict Clinical Verifications:
+    1. Rate limit check (prevents brute-force credential stuffing).
+    2. Account exists in SQL Server.
+    3. Password hash matches using Argon2id.
+    4. Email ownership verified via OTP (email_verified == True).
+    5. Medical credentials APPROVED by hospital administration.
+    6. Account active (is_active == True).
+    """
+    clean_email = payload.email.strip().lower()
+
+    # 1. Rate limiting check
+    is_allowed, wait_sec = check_login_rate_limit(clean_email)
+    if not is_allowed:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=f"Too many failed login attempts. Please wait {wait_sec} seconds before trying again.",
+        )
+
+    # 2. Account existence
+    doctor = db.query(Doctor).filter(Doctor.email == clean_email).first()
+    if not doctor:
+        record_login_failure(clean_email)
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email or password. Please check your credentials.",
+        )
+
+    # 3. Password verification
+    if not verify_password(payload.password, doctor.password_hash):
+        failures = record_login_failure(clean_email)
+        remaining = 5 - failures
+        detail = "Invalid email or password. Please check your credentials."
+        if remaining > 0 and remaining < 3:
+            detail += f" ({remaining} attempt(s) remaining before temporary lockout)"
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=detail,
+        )
+
+    # 4. Check active account status
+    if not doctor.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Your doctor account has been suspended or deactivated. Please contact hospital administration.",
+        )
+
+    # 5. Check email verification
+    if not doctor.email_verified:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Your professional email address has not been verified. Please enter your 6-digit verification code.",
+        )
+
+    # 6. Check administrator approval
+    if doctor.verification_status != "APPROVED":
+        if doctor.verification_status == "REJECTED":
+            reason = doctor.rejection_reason or "Medical council registration details could not be validated."
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Login denied. Your registration was rejected: {reason}",
+            )
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Login denied. Your medical council registration is pending administrative review and approval.",
+            )
+
+    # Successful login: reset rate limit failures
+    reset_login_failures(clean_email)
+
+    # Create short-lived access token and revocable refresh session
+    access_token, raw_refresh_token, expires_in = create_doctor_session(
+        db=db,
+        doctor=doctor,
+        remember_me=payload.remember_me,
+    )
+
+    return TokenResponse(
+        status="success",
+        access_token=access_token,
+        refresh_token=raw_refresh_token,
+        token_type="Bearer",
+        expires_in=expires_in,
+        doctor=DoctorSafeResponse(
+            doctor_id=doctor.doctor_id,
+            full_name=doctor.full_name,
+            email=doctor.email,
+            mobile=doctor.mobile,
+            medical_degree=doctor.medical_degree,
+            registration_number=doctor.registration_number,
+            registration_council=doctor.registration_council,
+            email_verified=doctor.email_verified,
+            verification_status=doctor.verification_status,
+            is_active=doctor.is_active,
+            created_at=doctor.created_at,
+            document_uploaded=bool(doctor.document_path),
+        ),
+    )
+
+
+@router.post(
+    "/refresh",
+    response_model=TokenResponse,
+    summary="Renew access token using valid refresh token (Token Rotation)",
+)
+def refresh_session_endpoint(payload: RefreshRequest, db: Session = Depends(get_db)):
+    """Exchange a valid refresh token for a fresh access token and rotated refresh token."""
+    result = rotate_refresh_token(db, payload.refresh_token)
+    if not result:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Session has expired or was revoked. Please sign in again.",
+        )
+
+    new_access_token, new_refresh_token, doctor = result
+    return TokenResponse(
+        status="success",
+        access_token=new_access_token,
+        refresh_token=new_refresh_token,
+        token_type="Bearer",
+        expires_in=1800,
+        doctor=DoctorSafeResponse(
+            doctor_id=doctor.doctor_id,
+            full_name=doctor.full_name,
+            email=doctor.email,
+            mobile=doctor.mobile,
+            medical_degree=doctor.medical_degree,
+            registration_number=doctor.registration_number,
+            registration_council=doctor.registration_council,
+            email_verified=doctor.email_verified,
+            verification_status=doctor.verification_status,
+            is_active=doctor.is_active,
+            created_at=doctor.created_at,
+            document_uploaded=bool(doctor.document_path),
+        ),
+    )
+
+
+@router.post(
+    "/logout",
+    summary="Revoke active refresh session",
+)
+def doctor_logout(payload: LogoutRequest, db: Session = Depends(get_db)):
+    """Revoke refresh session in SQL Server so it cannot be used again."""
+    if payload.refresh_token:
+        revoke_doctor_session(db, payload.refresh_token)
+    return {"status": "success", "message": "Successfully signed out. Session revoked."}
+
+
+@router.get(
+    "/me",
+    response_model=DoctorSafeResponse,
+    summary="Get current authenticated physician profile",
+)
+def get_current_physician_profile(
+    current_doctor: Doctor = Depends(
+        # Lazy import of dependency to maintain modularity
+        lambda: __import__("auth.dependencies", fromlist=["get_current_doctor"]).get_current_doctor
+    ),
+):
+    """Return verified profile of current authenticated physician."""
+    return DoctorSafeResponse(
+        doctor_id=current_doctor.doctor_id,
+        full_name=current_doctor.full_name,
+        email=current_doctor.email,
+        mobile=current_doctor.mobile,
+        medical_degree=current_doctor.medical_degree,
+        registration_number=current_doctor.registration_number,
+        registration_council=current_doctor.registration_council,
+        email_verified=current_doctor.email_verified,
+        verification_status=current_doctor.verification_status,
+        is_active=current_doctor.is_active,
+        created_at=current_doctor.created_at,
+        document_uploaded=bool(current_doctor.document_path),
     )

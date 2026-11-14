@@ -7,6 +7,7 @@ export default function DoctorLogin({ onLogin, onNavigateToRegister, onNavigateT
   const [rememberMe, setRememberMe] = useState(false)
   const [errors, setErrors] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [serverError, setServerError] = useState('')
   const [showForgotNotice, setShowForgotNotice] = useState(false)
 
   const validate = () => {
@@ -29,65 +30,81 @@ export default function DoctorLogin({ onLogin, onNavigateToRegister, onNavigateT
     return Object.keys(errs).length === 0
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
+    setServerError('')
     if (!validate()) return
 
     setIsSubmitting(true)
 
-    // NOTE: Simulated login for UI demonstration.
-    // Replace with real fetch() authentication endpoint when backend auth is provisioned.
-    setTimeout(() => {
-      setIsSubmitting(false)
-      const username = email.split('@')[0]
-      // Strip any leading "dr.", "dr", "doctor" to prevent duplicate titles like "Dr. Dr Carter"
-      const cleanUsername = username.replace(/^(dr[\._\s-]*|doctor[\._\s-]*)/i, '')
-      const nameParts = (cleanUsername || username)
-        .replace(/[^a-zA-Z]/g, ' ')
-        .trim()
-        .split(/\s+/)
-        .filter(Boolean)
+    try {
+      const response = await fetch('http://127.0.0.1:8000/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: email.trim(),
+          password: password,
+          remember_me: rememberMe,
+        }),
+      })
 
-      const formattedName = nameParts
-        .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
-        .join(' ')
+      const data = await response.json()
 
-      const doctorProfile = {
-        email: email.trim(),
-        name: formattedName ? `Dr. ${formattedName}` : 'Doctor',
-        role: 'Attending Physician',
-        department: 'Cardiovascular Medicine',
-        avatarInitials: formattedName
-          ? formattedName
-              .split(' ')
-              .map((w) => w[0])
-              .join('')
-              .slice(0, 2)
-              .toUpperCase()
-          : 'DR',
+      if (!response.ok) {
+        setServerError(data.detail || 'Authentication failed. Please verify your credentials.')
+        setIsSubmitting(false)
+        return
       }
 
+      // Store security tokens in browser storage
+      if (data.access_token) {
+        localStorage.setItem('cardiopredict_access_token', data.access_token)
+      }
+      if (data.refresh_token) {
+        localStorage.setItem('cardiopredict_refresh_token', data.refresh_token)
+      }
+
+      const doc = data.doctor || {}
+      const rawName = (doc.full_name || email.split('@')[0])
+        .replace(/^(dr[\._\s-]*|doctor[\._\s-]*)/i, '')
+        .trim()
+      const formattedName = rawName || 'Physician'
+
+      const doctorProfile = {
+        doctorId: doc.doctor_id,
+        email: doc.email || email.trim(),
+        name: doc.full_name?.startsWith('Dr.') ? doc.full_name : `Dr. ${formattedName}`,
+        degree: doc.medical_degree || 'MD',
+        registrationNumber: doc.registration_number || '',
+        registrationCouncil: doc.registration_council || '',
+        role: doc.medical_degree ? `${doc.medical_degree} • Attending Physician` : 'Attending Physician',
+        department: 'Cardiovascular Medicine',
+        avatarInitials:
+          formattedName
+            .split(' ')
+            .map((w) => w[0])
+            .join('')
+            .slice(0, 2)
+            .toUpperCase() || 'DR',
+        verificationStatus: doc.verification_status,
+      }
+
+      localStorage.setItem('cardiopredict_current_doctor', JSON.stringify(doctorProfile))
+
+      setIsSubmitting(false)
       onLogin(doctorProfile, rememberMe)
-    }, 600)
+    } catch (err) {
+      console.error('Login network error:', err)
+      setServerError('Unable to connect to clinical authentication server. Please check backend connection at http://127.0.0.1:8000.')
+      setIsSubmitting(false)
+    }
   }
 
   const handleQuickDemo = () => {
     setEmail('dr.carter@hospital.org')
-    setPassword('demo-password')
+    setPassword('CardioCare2026!')
     setErrors({})
-    setIsSubmitting(true)
-
-    setTimeout(() => {
-      setIsSubmitting(false)
-      const demoProfile = {
-        email: 'dr.carter@hospital.org',
-        name: 'Dr. Julian Carter, MD',
-        role: 'Attending Cardiologist',
-        department: 'Cardiovascular Medicine',
-        avatarInitials: 'JC',
-      }
-      onLogin(demoProfile, rememberMe)
-    }, 500)
+    setServerError('')
   }
 
   return (
@@ -239,6 +256,28 @@ export default function DoctorLogin({ onLogin, onNavigateToRegister, onNavigateT
                   className="btn-dismiss-notice"
                   onClick={() => setShowForgotNotice(false)}
                   aria-label="Dismiss notice"
+                >
+                  &times;
+                </button>
+              </div>
+            )}
+
+            {/* Server Authentication Error Alert */}
+            {serverError && (
+              <div className="login-server-error" role="alert">
+                <div className="error-content">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ flexShrink: 0, marginTop: '2px' }} aria-hidden="true">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="8" x2="12" y2="12" />
+                    <line x1="12" y1="16" x2="12.01" y2="16" />
+                  </svg>
+                  <span>{serverError}</span>
+                </div>
+                <button
+                  type="button"
+                  className="btn-dismiss-error"
+                  onClick={() => setServerError('')}
+                  aria-label="Dismiss error"
                 >
                   &times;
                 </button>

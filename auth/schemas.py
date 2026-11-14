@@ -93,3 +93,26 @@ class OTPResponse(BaseModel):
     message: str
     cooldown_seconds: Optional[int] = None
     email: Optional[str] = None
+
+
+class DoctorLoginRequest(BaseModel):
+    email: EmailStr = Field(..., description="Doctor professional email address")
+    password: str = Field(..., description="Account password")
+    remember_me: bool = Field(False, description="Persist session for 30 days")
+
+
+class TokenResponse(BaseModel):
+    status: str = "success"
+    access_token: str
+    refresh_token: str
+    token_type: str = "Bearer"
+    expires_in: int
+    doctor: DoctorSafeResponse
+
+
+class RefreshRequest(BaseModel):
+    refresh_token: str = Field(..., description="Valid revocable refresh token")
+
+
+class LogoutRequest(BaseModel):
+    refresh_token: Optional[str] = Field(None, description="Refresh token to revoke")

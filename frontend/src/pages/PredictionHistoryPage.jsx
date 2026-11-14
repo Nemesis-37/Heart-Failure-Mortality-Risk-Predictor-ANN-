@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { getPredictions, deletePrediction } from '../services/assessmentStore.js'
+import { getPredictions, deletePrediction, fetchBackendPredictions } from '../services/assessmentStore.js'
 
 export default function PredictionHistoryPage({ doctorUser, onNavigate, onSelectAssessment }) {
   const [predictions, setPredictions] = useState([])
@@ -19,9 +19,17 @@ export default function PredictionHistoryPage({ doctorUser, onNavigate, onSelect
     loadPredictions()
   }, [])
 
-  const loadPredictions = () => {
+  const loadPredictions = async () => {
     const list = getPredictions()
     setPredictions(list)
+    try {
+      const remote = await fetchBackendPredictions()
+      if (remote && remote.length > 0) {
+        setPredictions(remote)
+      }
+    } catch {
+      // Retain local predictions
+    }
   }
 
   // Summary Metrics calculated strictly from real records

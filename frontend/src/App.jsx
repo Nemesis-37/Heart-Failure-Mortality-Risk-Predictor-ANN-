@@ -48,13 +48,29 @@ export default function App() {
     }
   }
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    const refreshToken = localStorage.getItem('cardiopredict_refresh_token')
+    if (refreshToken) {
+      try {
+        await fetch('http://127.0.0.1:8000/auth/logout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refresh_token: refreshToken }),
+        })
+      } catch (err) {
+        console.warn('Backend logout revocation notice:', err)
+      }
+    }
+
     setDoctorUser(null)
     setActivePage('dashboard')
     setSelectedRecordForPrediction(null)
     try {
       localStorage.removeItem(DOCTOR_AUTH_KEY)
       sessionStorage.removeItem(DOCTOR_AUTH_KEY)
+      localStorage.removeItem('cardiopredict_access_token')
+      localStorage.removeItem('cardiopredict_refresh_token')
+      localStorage.removeItem('cardiopredict_current_doctor')
     } catch {
       // Storage unavailable fallback
     }

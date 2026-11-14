@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { getAssessments, saveAssessment, deleteAssessment } from '../services/assessmentStore.js'
+import { getAssessments, saveAssessment, deleteAssessment, fetchBackendAssessments } from '../services/assessmentStore.js'
 
 export default function PatientAssessmentsPage({ doctorUser, onNavigate, onSelectForPrediction }) {
   const [assessments, setAssessments] = useState([])
@@ -21,9 +21,17 @@ export default function PatientAssessmentsPage({ doctorUser, onNavigate, onSelec
     loadRecords()
   }, [])
 
-  const loadRecords = () => {
+  const loadRecords = async () => {
     const list = getAssessments()
     setAssessments(list)
+    try {
+      const remote = await fetchBackendAssessments()
+      if (remote && remote.length > 0) {
+        setAssessments(remote)
+      }
+    } catch {
+      // Retain local assessments
+    }
   }
 
   // Filtered records
