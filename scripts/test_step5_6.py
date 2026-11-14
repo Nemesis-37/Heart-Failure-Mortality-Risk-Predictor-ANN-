@@ -48,8 +48,7 @@ def run_tests():
 
     from fastapi import HTTPException
     from database.config import SessionLocal, engine
-    from database.models import Administrator
-    from db_models import Doctor, EmailOTP
+    from database.models import Administrator, Doctor, EmailOTP
     from auth.security import hash_password, verify_password
     from auth.schemas import DoctorLoginRequest, LogoutRequest
     from auth.router import doctor_login, doctor_logout, get_current_physician_profile

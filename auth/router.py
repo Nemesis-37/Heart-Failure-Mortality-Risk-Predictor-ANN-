@@ -51,9 +51,9 @@ from auth.session_service import (
 )
 from auth.validation import validate_doctor_fields
 try:
-    from db_models import Doctor, EmailOTP
-except ImportError:
     from database.models import Doctor, EmailOTP
+except ImportError:
+    from db_models import Doctor, EmailOTP
 
 try:
     from database import get_db

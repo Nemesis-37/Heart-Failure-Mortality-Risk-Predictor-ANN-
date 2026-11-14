@@ -74,10 +74,11 @@ try:
 except Exception as _admin_err:
     logger.warning(f"Admin router deferred: {_admin_err}")
 
-# Mount Protected Clinical Router (Assessments, History, Stats)
+# Mount Protected Clinical Router (Assessments, Dashboard, History, Stats)
 try:
     from clinical.router import router as clinical_router
     app.include_router(clinical_router)
+    app.include_router(clinical_router, prefix="/api")
 except Exception as _clin_err:
     logger.warning(f"Clinical router deferred: {_clin_err}")
 

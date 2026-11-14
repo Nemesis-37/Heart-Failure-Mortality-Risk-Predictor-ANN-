@@ -17,9 +17,9 @@ from sqlalchemy.orm import Session
 
 from auth.session_service import verify_access_token
 try:
-    from db_models import Doctor
-except ImportError:
     from database.models import Doctor
+except ImportError:
+    from db_models import Doctor
 
 try:
     from database import get_db

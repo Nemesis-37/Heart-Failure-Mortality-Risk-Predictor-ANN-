@@ -15,6 +15,7 @@ from database import Base
 
 if TYPE_CHECKING:
     from db_models.otp import EmailOTP
+    from db_models.assessment import Assessment
 
 
 class Doctor(Base):
@@ -65,6 +66,13 @@ class Doctor(Base):
     # Relationship to EmailOTP
     otps: Mapped[List["EmailOTP"]] = relationship(
         "EmailOTP",
+        back_populates="doctor",
+        cascade="all, delete-orphan",
+    )
+
+    # Relationship to Assessments
+    assessments: Mapped[List["Assessment"]] = relationship(
+        "Assessment",
         back_populates="doctor",
         cascade="all, delete-orphan",
     )

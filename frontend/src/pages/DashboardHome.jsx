@@ -1,4 +1,13 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
+
+const API_BASE = 'http://127.0.0.1:8000'
+
+function fetchWithAuth(path) {
+  const token = localStorage.getItem('cardiopredict_access_token')
+  return fetch(`${API_BASE}${path}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  })
+}
 
 export default function DashboardHome({ doctorUser, onNavigate }) {
   const cleanDoctorName = (doctorUser?.name || 'Doctor')
@@ -11,6 +20,42 @@ export default function DashboardHome({ doctorUser, onNavigate }) {
     month: 'long',
     day: 'numeric',
   })
+
+  const [stats, setStats] = useState(null)
+  const [recentAssessments, setRecentAssessments] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let cancelled = false
+    async function loadDashboard() {
+      try {
+        const [summaryRes, recentRes] = await Promise.all([
+          fetchWithAuth('/dashboard/summary'),
+          fetchWithAuth('/dashboard/recent-assessments'),
+        ])
+        if (cancelled) return
+        if (summaryRes.ok) {
+          const data = await summaryRes.json()
+          setStats(data)
+        }
+        if (recentRes.ok) {
+          const data = await recentRes.json()
+          setRecentAssessments(Array.isArray(data) ? data : [])
+        }
+      } catch (err) {
+        console.warn('Dashboard data fetch error:', err)
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+    loadDashboard()
+    return () => { cancelled = true }
+  }, [])
+
+  const totalAssessments = stats?.total_assessments ?? '—'
+  const totalPredictions = stats?.total_predictions ?? '—'
+  const lrPredictions = stats?.logistic_regression_predictions ?? '—'
+  const annPredictions = stats?.ann_predictions ?? '—'
 
   return (
     <div className="dash-home-container">
@@ -66,11 +111,13 @@ export default function DashboardHome({ doctorUser, onNavigate }) {
             </div>
           </div>
           <div className="dash-stat-main">
-            <span className="dash-stat-value">0</span>
+            <span className="dash-stat-value">{loading ? '…' : totalAssessments}</span>
             <span className="dash-stat-label">Total Assessments</span>
           </div>
           <div className="dash-stat-footer">
-            <span className="dash-stat-subtext">No historical records logged yet</span>
+            <span className="dash-stat-subtext">
+              {loading ? 'Loading…' : totalAssessments === 0 ? 'No historical records logged yet' : 'Patients evaluated in this session'}
+            </span>
           </div>
         </div>
 
@@ -100,111 +147,114 @@ export default function DashboardHome({ doctorUser, onNavigate }) {
             <span className="dash-stat-tag">Inference Engines</span>
             <div className="dash-stat-icon icon-purple" aria-hidden="true">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="4" y="4" width="16" height="16" rx="2" ry="2" />
-                <rect x="9" y="9" width="6" height="6" />
-                <line x1="9" y1="1" x2="9" y2="4" />
-                <line x1="15" y1="1" x2="15" y2="4" />
-                <line x1="9" y1="20" x2="9" y2="23" />
-                <line x1="15" y1="20" x2="15" y2="23" />
-                <line x1="20" y1="9" x2="23" y2="9" />
-                <line x1="20" y1="14" x2="23" y2="14" />
-                <line x1="1" y1="9" x2="4" y2="9" />
-                <line x1="1" y1="14" x2="4" y2="14" />
+                <circle cx="12" cy="12" r="10" />
+                <line x1="2" y1="12" x2="22" y2="12" />
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
               </svg>
             </div>
           </div>
           <div className="dash-stat-main">
-            <span className="dash-stat-value">2 Active</span>
-            <span className="dash-stat-label">ML Architectures</span>
+            <span className="dash-stat-value">2</span>
+            <span className="dash-stat-label">Active Models</span>
           </div>
           <div className="dash-stat-footer">
-            <span className="dash-stat-subtext">Logistic Regression &amp; Deep ANN</span>
+            <span className="dash-stat-subtext">LR + Deep Neural Network (ANN)</span>
           </div>
         </div>
 
-        {/* Stat 4: Clinical Biomarkers */}
+        {/* Stat 4: Total Predictions */}
         <div className="dash-stat-card">
           <div className="dash-stat-header">
-            <span className="dash-stat-tag">Feature Pipeline</span>
-            <div className="dash-stat-icon icon-emerald" aria-hidden="true">
+            <span className="dash-stat-tag">Predictions Run</span>
+            <div className="dash-stat-icon icon-blue" aria-hidden="true">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
               </svg>
             </div>
           </div>
           <div className="dash-stat-main">
-            <span className="dash-stat-value">11</span>
-            <span className="dash-stat-label">Clinical Features</span>
+            <span className="dash-stat-value">{loading ? '…' : totalPredictions}</span>
+            <span className="dash-stat-label">Total Predictions</span>
           </div>
           <div className="dash-stat-footer">
-            <span className="dash-stat-subtext">Serum assays &amp; hemodynamics</span>
+            <span className="dash-stat-subtext">
+              {loading ? 'Loading…' : `LR: ${lrPredictions} · ANN: ${annPredictions}`}
+            </span>
           </div>
         </div>
       </section>
 
-      {/* 3. Quick Action Banner */}
-      <section className="dash-quick-action-card" aria-label="Start Patient Assessment">
-        <div className="quick-action-text-area">
-          <div className="quick-action-badge">Ready for Inference</div>
-          <h3 className="quick-action-title">Start a New Patient Mortality Risk Assessment</h3>
-          <p className="quick-action-desc">
-            Input patient laboratory parameters including Ejection Fraction, Serum Creatinine, and CPK.
-            Generate real-time death-event risk probabilities and compare linear baseline with neural network inference.
-          </p>
-        </div>
-        <div className="quick-action-cta">
-          <button
-            type="button"
-            className="btn-quick-action"
-            onClick={() => onNavigate('prediction')}
-          >
-            <span>Open Assessment Form</span>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <line x1="5" y1="12" x2="19" y2="12" />
-              <polyline points="12 5 19 12 12 19" />
-            </svg>
-          </button>
-        </div>
-      </section>
-
-      {/* 4. Recent Patient Assessments Section */}
-      <section className="dash-recent-section" aria-label="Recent Assessments">
+      {/* 3. Recent Assessments */}
+      <section className="dash-recent-section" aria-label="Recent Clinical Assessments">
         <div className="dash-section-header">
-          <div>
-            <h3 className="dash-section-title">Recent Patient Assessments</h3>
-            <p className="dash-section-subtitle">Clinical audit log of patient evaluations completed in this workspace</p>
-          </div>
-          <span className="dash-audit-badge">Session Records</span>
-        </div>
-
-        {/* Clean Honest Empty State */}
-        <div className="dash-empty-state-card">
-          <div className="empty-state-icon-wrap" aria-hidden="true">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-              <polyline points="14 2 14 8 20 8" />
-              <line x1="12" y1="18" x2="12" y2="12" />
-              <line x1="9" y1="15" x2="15" y2="15" />
-            </svg>
-          </div>
-          <h4 className="empty-state-title">No Assessments Recorded Yet</h4>
-          <p className="empty-state-desc">
-            You haven&apos;t run any patient predictions during this clinical session. Once you evaluate a patient in the New Prediction workspace, the inference results, risk classifications, and probability metrics will appear here.
-          </p>
+          <h3 className="dash-section-title">Recent Assessments</h3>
           <button
             type="button"
-            className="btn-empty-action"
-            onClick={() => onNavigate('prediction')}
+            className="dash-view-all-btn"
+            onClick={() => onNavigate('assessments')}
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-            </svg>
-            <span>Run First Prediction</span>
+            View All →
           </button>
         </div>
+
+        {loading ? (
+          <div className="dash-loading-state">
+            <span className="dash-spinner" aria-hidden="true" />
+            <span>Loading recent assessments…</span>
+          </div>
+        ) : recentAssessments.length === 0 ? (
+          <div className="dash-empty-state">
+            <div className="empty-state-icon" aria-hidden="true">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <line x1="12" y1="18" x2="12" y2="12" />
+                <line x1="9" y1="15" x2="15" y2="15" />
+              </svg>
+            </div>
+            <h4 className="empty-state-title">No Assessments Recorded Yet</h4>
+            <p className="empty-state-desc">
+              You haven&apos;t run any patient predictions during this clinical session. Once you evaluate a patient in the New Prediction workspace, the inference results, risk classifications, and probability metrics will appear here.
+            </p>
+            <button
+              type="button"
+              className="btn-empty-action"
+              onClick={() => onNavigate('prediction')}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+              </svg>
+              <span>Run First Prediction</span>
+            </button>
+          </div>
+        ) : (
+          <div className="dash-recent-list">
+            {recentAssessments.map((asm) => {
+              const dateStr = asm.created_at
+                ? new Date(asm.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                : '—'
+              return (
+                <div key={asm.assessment_id} className="dash-recent-item">
+                  <div className="recent-item-left">
+                    <span className="recent-item-code">{asm.assessment_id?.slice(0, 8).toUpperCase() || '—'}</span>
+                    <span className="recent-item-ref">
+                      {asm.patient_reference ? `Ref: ${asm.patient_reference}` : 'Anonymous patient'}
+                    </span>
+                  </div>
+                  <div className="recent-item-right">
+                    <span className="recent-item-date">{dateStr}</span>
+                    {asm.prediction_count > 0 && (
+                      <span className="recent-item-badge">{asm.prediction_count} prediction{asm.prediction_count !== 1 ? 's' : ''}</span>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
       </section>
 
-      {/* 5. Quick Clinical Navigation Cards */}
+      {/* 4. Quick Clinical Navigation Cards */}
       <section className="dash-nav-cards-grid" aria-label="Clinical Quick Links">
         {/* Card 1: Biomarkers Guide */}
         <div
@@ -212,6 +262,7 @@ export default function DashboardHome({ doctorUser, onNavigate }) {
           onClick={() => onNavigate('parameters')}
           role="button"
           tabIndex={0}
+          onKeyDown={(e) => e.key === 'Enter' && onNavigate('parameters')}
         >
           <div className="nav-card-icon icon-teal" aria-hidden="true">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -237,6 +288,7 @@ export default function DashboardHome({ doctorUser, onNavigate }) {
           onClick={() => onNavigate('history')}
           role="button"
           tabIndex={0}
+          onKeyDown={(e) => e.key === 'Enter' && onNavigate('history')}
         >
           <div className="nav-card-icon icon-blue" aria-hidden="true">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -262,6 +314,7 @@ export default function DashboardHome({ doctorUser, onNavigate }) {
           onClick={() => onNavigate('performance')}
           role="button"
           tabIndex={0}
+          onKeyDown={(e) => e.key === 'Enter' && onNavigate('performance')}
         >
           <div className="nav-card-icon icon-purple" aria-hidden="true">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

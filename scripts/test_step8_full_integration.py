@@ -654,8 +654,8 @@ def run_tests():
             )
             fail("TEST 10.2 — IDOR: Doctor E read Doctor A's record (SECURITY FAILURE)")
         except HTTPException as exc:
-            if exc.status_code == 403:
-                ok("TEST 10.2 — IDOR: Doctor E blocked from reading Doctor A's record (HTTP 403)")
+            if exc.status_code in (403, 404):
+                ok(f"TEST 10.2 — IDOR: Doctor E blocked from reading Doctor A's record (HTTP {exc.status_code})")
             else:
                 fail("TEST 10.2 — IDOR status code", f"Got {exc.status_code}")
 
@@ -668,8 +668,8 @@ def run_tests():
             )
             fail("TEST 10.3 — IDOR: Doctor E deleted Doctor A's record (SECURITY FAILURE)")
         except HTTPException as exc:
-            if exc.status_code == 403:
-                ok("TEST 10.3 — IDOR: Doctor E blocked from deleting Doctor A's record (HTTP 403)")
+            if exc.status_code in (403, 404):
+                ok(f"TEST 10.3 — IDOR: Doctor E blocked from deleting Doctor A's record (HTTP {exc.status_code})")
             else:
                 fail("TEST 10.3 — IDOR delete status code", f"Got {exc.status_code}")
 

@@ -35,9 +35,9 @@ except ImportError:
     from database.config import get_db
 
 try:
-    from db_models import Doctor
-except ImportError:
     from database.models import Doctor
+except ImportError:
+    from db_models import Doctor
 
 from database.models import Administrator
 
