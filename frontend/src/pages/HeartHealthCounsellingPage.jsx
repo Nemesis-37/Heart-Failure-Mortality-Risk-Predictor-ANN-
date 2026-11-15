@@ -254,9 +254,9 @@ export default function HeartHealthCounsellingPage({ onNavigate }) {
   const activeData = categories.find((c) => c.id === activeCategory) || categories[0]
 
   return (
-    <div style={{ maxWidth: '1280px', margin: '0 auto', paddingBottom: '3rem' }}>
+    <div className="counselling-page" style={{ maxWidth: '1280px', margin: '0 auto', paddingBottom: '3rem' }}>
       {/* 1. Header Hero Card */}
-      <section style={{
+      <section className="counselling-hero-card" style={{
         background: 'linear-gradient(135deg, #0B1F3A 0%, #102F56 60%, #1565D8 100%)',
         borderRadius: '16px',
         padding: '2rem 2.25rem',
@@ -321,7 +321,7 @@ export default function HeartHealthCounsellingPage({ onNavigate }) {
       </section>
 
       {/* 2. Regulatory & Educational Notice Banner */}
-      <div style={{
+      <div className="counselling-notice-banner" style={{
         background: '#EFF6FF',
         border: '1.5px solid #BFDBFE',
         borderRadius: '12px',
@@ -353,6 +353,7 @@ export default function HeartHealthCounsellingPage({ onNavigate }) {
             <button
               key={cat.id}
               type="button"
+              className={`counselling-cat-btn ${isActive ? 'active' : ''}`}
               onClick={() => setActiveCategory(cat.id)}
               style={{
                 background: isActive ? '#0B1F3A' : '#FFFFFF',
@@ -397,7 +398,7 @@ export default function HeartHealthCounsellingPage({ onNavigate }) {
       </div>
 
       {/* 4. Active Domain Counselling Content Card */}
-      <div style={{
+      <div className="counselling-card" style={{
         background: '#FFFFFF',
         borderRadius: '16px',
         border: '1px solid #DBEAFE',
@@ -451,6 +452,7 @@ export default function HeartHealthCounsellingPage({ onNavigate }) {
             return (
               <div
                 key={point.id}
+                className={`counselling-point-card ${isChecked ? 'checked' : ''}`}
                 onClick={() => toggleCheck(point.id)}
                 style={{
                   border: isChecked ? '1.5px solid #93C5FD' : '1px solid #E2E8F0',
@@ -502,7 +504,7 @@ export default function HeartHealthCounsellingPage({ onNavigate }) {
                 </div>
 
                 {/* Practical Counselling Tip Box */}
-                <div style={{
+                <div className="counselling-tip-box" style={{
                   background: '#F8FAFC',
                   borderLeft: `4px solid ${activeData.accent}`,
                   borderRadius: '0 8px 8px 0',

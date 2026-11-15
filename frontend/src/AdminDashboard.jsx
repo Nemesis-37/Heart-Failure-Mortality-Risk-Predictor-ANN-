@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { MODEL_DATA } from './pages/ModelPerformancePage.jsx'
+import ThemeToggle from './components/ThemeToggle.jsx'
 
 const ADMIN_TOKEN_KEY = 'cardiopredict_admin_token'
 const ADMIN_PROFILE_KEY = 'cardiopredict_admin_profile'
@@ -314,7 +315,7 @@ export default function AdminDashboard({ onExitAdmin }) {
   }
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#F3F7FC', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+    <div className="admin-dashboard-root" style={{ display: 'flex', minHeight: '100vh', background: '#F3F7FC', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
       {/* ──────────────────────────────────────────────────────────────────────────
           1. LEFT SIDEBAR NAVIGATION
       ────────────────────────────────────────────────────────────────────────── */}
@@ -471,7 +472,7 @@ export default function AdminDashboard({ onExitAdmin }) {
       ────────────────────────────────────────────────────────────────────────── */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflowY: 'auto' }}>
         {/* Top Header */}
-        <header style={{
+        <header className="admin-header" style={{
           background: '#FFFFFF',
           borderBottom: '1px solid #DBEAFE',
           padding: '1.25rem 2.25rem',
@@ -496,6 +497,7 @@ export default function AdminDashboard({ onExitAdmin }) {
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <ThemeToggle />
             <div style={{
               background: '#EFF6FF',
               border: '1px solid #BFDBFE',
@@ -597,7 +599,7 @@ export default function AdminDashboard({ onExitAdmin }) {
                     marginBottom: '2rem',
                   }}>
                     {/* Card 1: Total Registered */}
-                    <div style={{
+                    <div className="admin-stat-card" style={{
                       background: '#FFFFFF',
                       borderRadius: '14px',
                       padding: '1.5rem',
@@ -619,7 +621,7 @@ export default function AdminDashboard({ onExitAdmin }) {
                     </div>
 
                     {/* Card 2: Approved Doctors */}
-                    <div style={{
+                    <div className="admin-stat-card" style={{
                       background: '#FFFFFF',
                       borderRadius: '14px',
                       padding: '1.5rem',
@@ -641,7 +643,7 @@ export default function AdminDashboard({ onExitAdmin }) {
                     </div>
 
                     {/* Card 3: Pending Review */}
-                    <div style={{
+                    <div className="admin-stat-card" style={{
                       background: '#FFFFFF',
                       borderRadius: '14px',
                       padding: '1.5rem',
@@ -663,7 +665,7 @@ export default function AdminDashboard({ onExitAdmin }) {
                     </div>
 
                     {/* Card 4: Rejected Doctors */}
-                    <div style={{
+                    <div className="admin-stat-card" style={{
                       background: '#FFFFFF',
                       borderRadius: '14px',
                       padding: '1.5rem',
@@ -685,7 +687,7 @@ export default function AdminDashboard({ onExitAdmin }) {
                     </div>
 
                     {/* Card 5: Total Assessments */}
-                    <div style={{
+                    <div className="admin-stat-card" style={{
                       background: '#FFFFFF',
                       borderRadius: '14px',
                       padding: '1.5rem',
@@ -707,7 +709,7 @@ export default function AdminDashboard({ onExitAdmin }) {
                     </div>
 
                     {/* Card 6: Total Predictions */}
-                    <div style={{
+                    <div className="admin-stat-card" style={{
                       background: '#FFFFFF',
                       borderRadius: '14px',
                       padding: '1.5rem',
@@ -732,7 +734,7 @@ export default function AdminDashboard({ onExitAdmin }) {
                   {/* Two-Column Activity Dashboard */}
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(440px, 1fr))', gap: '1.75rem', marginBottom: '2rem' }}>
                     {/* Left Panel: Recent Doctor Registrations */}
-                    <div style={{
+                    <div className="admin-panel-card" style={{
                       background: '#FFFFFF',
                       borderRadius: '16px',
                       border: '1px solid #DBEAFE',
@@ -831,7 +833,7 @@ export default function AdminDashboard({ onExitAdmin }) {
                     </div>
 
                     {/* Right Panel: Recent Activity Summary */}
-                    <div style={{
+                    <div className="admin-panel-card" style={{
                       background: '#FFFFFF',
                       borderRadius: '16px',
                       border: '1px solid #DBEAFE',
@@ -960,7 +962,7 @@ export default function AdminDashboard({ onExitAdmin }) {
               SECTION 2: DOCTOR MANAGEMENT
           ========================================================================= */}
           {activeTab === 'management' && (
-            <div style={{ background: '#FFFFFF', borderRadius: '16px', border: '1px solid #DBEAFE', padding: '1.75rem', boxShadow: '0 2px 10px rgba(11, 31, 58, 0.04)' }}>
+            <div className="admin-panel-card" style={{ background: '#FFFFFF', borderRadius: '16px', border: '1px solid #DBEAFE', padding: '1.75rem', boxShadow: '0 2px 10px rgba(11, 31, 58, 0.04)' }}>
               {/* Header and Controls */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
                 <div>
@@ -1143,7 +1145,7 @@ export default function AdminDashboard({ onExitAdmin }) {
               SECTION 3: DOCTOR VERIFICATION
           ========================================================================= */}
           {activeTab === 'verification' && (
-            <div style={{ background: '#FFFFFF', borderRadius: '16px', border: '1px solid #DBEAFE', padding: '1.75rem', boxShadow: '0 2px 10px rgba(11, 31, 58, 0.04)' }}>
+            <div className="admin-panel-card" style={{ background: '#FFFFFF', borderRadius: '16px', border: '1px solid #DBEAFE', padding: '1.75rem', boxShadow: '0 2px 10px rgba(11, 31, 58, 0.04)' }}>
               {/* Header and Filter */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
                 <div>
@@ -1358,7 +1360,7 @@ export default function AdminDashboard({ onExitAdmin }) {
               SECTION 4: DOCTOR ACTIVITY
           ========================================================================= */}
           {activeTab === 'activity' && (
-            <div style={{ background: '#FFFFFF', borderRadius: '16px', border: '1px solid #DBEAFE', padding: '1.75rem', boxShadow: '0 2px 10px rgba(11, 31, 58, 0.04)' }}>
+            <div className="admin-panel-card" style={{ background: '#FFFFFF', borderRadius: '16px', border: '1px solid #DBEAFE', padding: '1.75rem', boxShadow: '0 2px 10px rgba(11, 31, 58, 0.04)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
                 <div>
                   <h2 style={{ margin: 0, fontSize: '1.25rem', color: '#0B1F3A', fontWeight: 800 }}>
@@ -1457,7 +1459,7 @@ export default function AdminDashboard({ onExitAdmin }) {
               SECTION 5: MODEL PERFORMANCE
           ========================================================================= */}
           {activeTab === 'performance' && (
-            <div style={{ background: '#FFFFFF', borderRadius: '16px', border: '1px solid #DBEAFE', padding: '1.75rem', boxShadow: '0 2px 10px rgba(11, 31, 58, 0.04)' }}>
+            <div className="admin-panel-card" style={{ background: '#FFFFFF', borderRadius: '16px', border: '1px solid #DBEAFE', padding: '1.75rem', boxShadow: '0 2px 10px rgba(11, 31, 58, 0.04)' }}>
               <div style={{ marginBottom: '1.75rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                   <h2 style={{ margin: 0, fontSize: '1.35rem', color: '#0B1F3A', fontWeight: 800 }}>
@@ -1660,8 +1662,8 @@ export default function AdminDashboard({ onExitAdmin }) {
           MODAL 1: DOCTOR FULL PROFILE DETAIL MODAL
       ────────────────────────────────────────────────────────────────────────── */}
       {detailModalOpen && selectedDoctor && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(11, 31, 58, 0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', zIndex: 100 }}>
-          <div style={{ background: '#FFFFFF', borderRadius: '16px', maxWidth: '640px', width: '100%', maxHeight: '90vh', overflowY: 'auto', padding: '2rem', boxShadow: '0 20px 50px rgba(0,0,0,0.25)' }}>
+        <div className="admin-modal-overlay" style={{ position: 'fixed', inset: 0, background: 'rgba(11, 31, 58, 0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', zIndex: 100 }}>
+          <div className="admin-modal-card" style={{ background: '#FFFFFF', borderRadius: '16px', maxWidth: '640px', width: '100%', maxHeight: '90vh', overflowY: 'auto', padding: '2rem', boxShadow: '0 20px 50px rgba(0,0,0,0.25)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid #E2E8F0', paddingBottom: '1rem' }}>
               <div>
                 <h3 style={{ margin: 0, fontSize: '1.3rem', color: '#0B1F3A', fontWeight: 800 }}>
@@ -1802,8 +1804,8 @@ export default function AdminDashboard({ onExitAdmin }) {
           MODAL 2: APPROVE DOCTOR MODAL
       ────────────────────────────────────────────────────────────────────────── */}
       {approveModalOpen && selectedDoctor && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(11, 31, 58, 0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', zIndex: 100 }}>
-          <div style={{ background: '#FFFFFF', borderRadius: '16px', maxWidth: '480px', width: '100%', padding: '2rem', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
+        <div className="admin-modal-overlay" style={{ position: 'fixed', inset: 0, background: 'rgba(11, 31, 58, 0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', zIndex: 100 }}>
+          <div className="admin-modal-card" style={{ background: '#FFFFFF', borderRadius: '16px', maxWidth: '480px', width: '100%', padding: '2rem', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
             <h3 style={{ margin: '0 0 10px', color: '#0B1F3A', fontSize: '1.25rem', fontWeight: 800 }}>
               Approve Physician Credentials
             </h3>
@@ -1848,8 +1850,8 @@ export default function AdminDashboard({ onExitAdmin }) {
           MODAL 3: REJECT DOCTOR MODAL
       ────────────────────────────────────────────────────────────────────────── */}
       {rejectModalOpen && selectedDoctor && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(11, 31, 58, 0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', zIndex: 100 }}>
-          <div style={{ background: '#FFFFFF', borderRadius: '16px', maxWidth: '480px', width: '100%', padding: '2rem', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
+        <div className="admin-modal-overlay" style={{ position: 'fixed', inset: 0, background: 'rgba(11, 31, 58, 0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', zIndex: 100 }}>
+          <div className="admin-modal-card" style={{ background: '#FFFFFF', borderRadius: '16px', maxWidth: '480px', width: '100%', padding: '2rem', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
             <h3 style={{ margin: '0 0 10px', color: '#DC2626', fontSize: '1.25rem', fontWeight: 800 }}>
               Reject Registration Application
             </h3>
@@ -1907,8 +1909,8 @@ export default function AdminDashboard({ onExitAdmin }) {
           MODAL 4: DOCUMENT VIEWER MODAL
       ────────────────────────────────────────────────────────────────────────── */}
       {documentModalOpen && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(11, 31, 58, 0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', zIndex: 100 }}>
-          <div style={{ background: '#FFFFFF', borderRadius: '16px', maxWidth: '780px', width: '100%', maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <div className="admin-modal-overlay" style={{ position: 'fixed', inset: 0, background: 'rgba(11, 31, 58, 0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', zIndex: 100 }}>
+          <div className="admin-modal-card" style={{ background: '#FFFFFF', borderRadius: '16px', maxWidth: '780px', width: '100%', maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             <div style={{ padding: '1.25rem 1.75rem', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <h4 style={{ margin: 0, color: '#0B1F3A', fontSize: '1.1rem', fontWeight: 700 }}>

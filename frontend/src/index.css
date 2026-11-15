@@ -78,7 +78,238 @@
   --transition-fast: 180ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-slide: 280ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ── Semantic Theme Variables (Light Mode defaults) ── */
+  --bg-page: #F3F7FC;
+  --bg-sidebar: #0B1F3A;
+  --bg-sidebar-hover: rgba(255,255,255,0.08);
+  --bg-card: #FFFFFF;
+  --bg-card-secondary: #F8FAFD;
+  --bg-input: #FFFFFF;
+  --bg-input-focus: #F0F7FF;
+  --bg-header: #FFFFFF;
+  --color-border: #DBEAFE;
+  --color-border-hover: #93C5FD;
+  --color-border-focus: #1565D8;
+  --color-text: #0B1F3A;
+  --color-text-secondary: #334E68;
+  --color-text-muted: #627D98;
+  --color-text-light: #9FB3C8;
+  --color-accent: #1565D8;
+  --color-accent-hover: #102F56;
+  --color-accent-light: #EFF6FF;
+  --heading-page: #0B1F3A;
+  --heading-section: #0B1F3A;
+  --heading-card: #0B1F3A;
+  --heading-sub: #334E68;
+  --heading-glow-page: none;
+  --heading-glow-section: none;
+  --heading-glow-card: none;
+  --shadow-card-themed: 0 4px 20px -2px rgba(21, 101, 216, 0.07), 0 2px 6px -1px rgba(16, 47, 86, 0.03);
+  --shadow-hover-themed: 0 12px 32px -4px rgba(21, 101, 216, 0.14), 0 4px 12px -2px rgba(16, 47, 86, 0.06);
+  --model-card-bg: #FFFFFF;
+  --model-card-border: #DBEAFE;
+  --model-card-selected-border: #1565D8;
+  --model-card-selected-bg: #EFF6FF;
+  --model-card-selected-shadow: 0 0 0 3px rgba(21, 101, 216, 0.15);
+  --toggle-track-bg: #DBEAFE;
+  --toggle-btn-color: #1565D8;
+  --result-empty-bg: #F8FAFD;
+  --result-loading-bg: #EFF6FF;
 }
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   DARK MODE — Premium Navy-Blue Design System
+   Applied when <html> has class="dark" (set by ThemeContext.jsx)
+══════════════════════════════════════════════════════════════════════════════ */
+html.dark {
+  --bg-page: #071426;
+  --bg-sidebar: #081B33;
+  --bg-sidebar-hover: rgba(59, 130, 246, 0.12);
+  --bg-card: #0D203A;
+  --bg-card-secondary: #102B4C;
+  --bg-input: #0A1A30;
+  --bg-input-focus: #0D2241;
+  --bg-header: #0A1829;
+  --color-border: #1E3A5F;
+  --color-border-hover: #2D5A8E;
+  --color-border-focus: #3B82F6;
+  --color-text: #EAF2FF;
+  --color-text-secondary: #A9BED8;
+  --color-text-muted: #7F9AB9;
+  --color-text-light: #4A6888;
+  --color-accent: #3B82F6;
+  --color-accent-hover: #60A5FA;
+  --color-accent-light: rgba(59, 130, 246, 0.15);
+  --heading-page: #60A5FA;
+  --heading-section: #93C5FD;
+  --heading-card: #BFDBFE;
+  --heading-sub: #38BDF8;
+  --heading-glow-page: 0 0 14px rgba(59, 130, 246, 0.35);
+  --heading-glow-section: 0 0 10px rgba(96, 165, 250, 0.25);
+  --heading-glow-card: 0 0 8px rgba(59, 130, 246, 0.18);
+  --shadow-card-themed: 0 4px 20px rgba(0, 0, 0, 0.4), 0 1px 4px rgba(0, 0, 0, 0.3);
+  --shadow-hover-themed: 0 12px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(59, 130, 246, 0.15);
+  --model-card-bg: #0D203A;
+  --model-card-border: #1E3A5F;
+  --model-card-selected-border: #3B82F6;
+  --model-card-selected-bg: rgba(59, 130, 246, 0.1);
+  --model-card-selected-shadow: 0 0 0 2px rgba(59, 130, 246, 0.35), 0 0 20px rgba(59, 130, 246, 0.12);
+  --toggle-track-bg: rgba(59, 130, 246, 0.2);
+  --toggle-btn-color: #60A5FA;
+  --result-empty-bg: rgba(13, 32, 58, 0.6);
+  --result-loading-bg: rgba(59, 130, 246, 0.07);
+  color-scheme: dark;
+
+  /* Override base palette vars for dark */
+  --bg-app: #071426;
+  --bg-gradient: radial-gradient(at 10% 20%, rgba(59,130,246,0.07) 0px, transparent 50%),
+    radial-gradient(at 90% 80%, rgba(96,165,250,0.05) 0px, transparent 50%),
+    radial-gradient(at 50% 50%, rgba(14,32,58,0.8) 0px, transparent 100%);
+  --surface-card: #0D203A;
+  --surface-card-subtle: #102B4C;
+  --surface-card-muted: rgba(59,130,246,0.08);
+  --surface-border: #1E3A5F;
+  --surface-border-hover: #2D5A8E;
+  --surface-border-focus: #3B82F6;
+  --text-primary: #EAF2FF;
+  --text-secondary: #A9BED8;
+  --text-muted: #7F9AB9;
+  --text-light: #4A6888;
+  --primary: #3B82F6;
+  --primary-hover: #60A5FA;
+  --primary-light: rgba(59,130,246,0.15);
+  --primary-subtle: rgba(59,130,246,0.08);
+  --primary-glow: rgba(59,130,246,0.25);
+  --success: #34D399;
+  --success-light: rgba(52,211,153,0.12);
+  --success-dark: #10B981;
+  --danger: #F87171;
+  --danger-light: rgba(248,113,113,0.12);
+  --danger-dark: #EF4444;
+  --danger-glow: rgba(248,113,113,0.2);
+  --warning: #FCD34D;
+  --warning-light: rgba(252,211,77,0.12);
+  --warning-dark: #F59E0B;
+  --shadow-sm: 0 1px 4px rgba(0,0,0,0.4);
+  --shadow-md: 0 4px 14px rgba(0,0,0,0.35);
+  --shadow-lg: 0 12px 28px rgba(0,0,0,0.45);
+  --shadow-card: 0 4px 20px rgba(0,0,0,0.4);
+  --shadow-hover: 0 12px 32px rgba(0,0,0,0.5);
+}
+
+/* ── Dark Mode global body ── */
+html.dark body {
+  background: var(--bg-page);
+  background-image:
+    radial-gradient(at 0% 0%, rgba(59,130,246,0.07) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(96,165,250,0.05) 0px, transparent 50%);
+  color: var(--color-text);
+}
+
+/* ── Smooth transitions on theme switch ── */
+body,
+.card,
+input,
+select,
+textarea,
+button,
+.sidebar,
+header,
+aside,
+footer,
+.form-group,
+.form-field,
+.app-layout-sidebar,
+.app-top-header,
+.app-content-body,
+.dashboard-grid,
+.form-card,
+.results-card,
+.model-selection-card,
+.dashboard-right-column {
+  transition:
+    background-color 220ms ease,
+    border-color 220ms ease,
+    color 180ms ease,
+    box-shadow 220ms ease;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   DARK MODE — Heading Hierarchy with Blue Glow
+══════════════════════════════════════════════════════════════════════════════ */
+html.dark h1,
+html.dark .page-title,
+html.dark .header-page-title,
+html.dark .topbar-title {
+  color: var(--heading-page) !important;
+  text-shadow: var(--heading-glow-page);
+}
+
+html.dark h2,
+html.dark .card-title,
+html.dark .section-heading,
+html.dark .welcome-text h2 {
+  color: var(--heading-card) !important;
+  text-shadow: var(--heading-glow-card);
+}
+
+html.dark h3,
+html.dark .outcome-label,
+html.dark .metric-heading,
+html.dark .section-heading {
+  color: var(--heading-sub) !important;
+  text-shadow: 0 0 7px rgba(56, 189, 248, 0.2);
+}
+
+html.dark .section-num {
+  background: rgba(59, 130, 246, 0.2) !important;
+  color: #60A5FA !important;
+  border-color: rgba(59, 130, 246, 0.3) !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   THEME TOGGLE BUTTON
+══════════════════════════════════════════════════════════════════════════════ */
+.theme-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1.5px solid var(--color-border);
+  background: var(--bg-card);
+  color: var(--toggle-btn-color);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition:
+    background 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease,
+    box-shadow 180ms ease,
+    transform 120ms ease;
+}
+.theme-toggle-btn:hover {
+  background: var(--color-accent-light);
+  border-color: var(--color-accent);
+  transform: scale(1.07);
+  box-shadow: 0 0 0 3px var(--primary-glow);
+}
+.theme-toggle-btn:active { transform: scale(0.95); }
+.theme-toggle-icon-wrap { display: flex; align-items: center; justify-content: center; }
+.sun-icon { color: #FCD34D; }
+html.dark .sun-icon { color: #FCD34D; filter: drop-shadow(0 0 5px rgba(252,211,77,0.5)); }
+.moon-icon { color: #1565D8; }
+html.dark .moon-icon { color: #60A5FA; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
+/* Header & sidebar theme toggle placement */
+.header-theme-toggle,
+.topbar-theme-toggle {
+  margin-right: 4px;
+}
+
 
 /* ── 2. Base Resets ───────────────────────────────────────────────────────── */
 *,
@@ -6863,4 +7094,1189 @@ textarea {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   DARK MODE — Comprehensive Component Overrides
+   All selectors prefixed with html.dark for specificity
+══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── App Shell & Layout ── */
+html.dark .app-layout-wrapper,
+html.dark .dashboard-page,
+html.dark .app-content-body,
+html.dark .app-main-wrapper {
+  background: var(--bg-page);
+}
+
+/* ── Sidebar ── */
+html.dark .app-layout-sidebar {
+  background: var(--bg-sidebar) !important;
+  border-right-color: #1E3A5F !important;
+}
+html.dark .sidebar-nav-item {
+  color: #A9BED8 !important;
+}
+html.dark .sidebar-nav-item:hover {
+  background: var(--bg-sidebar-hover) !important;
+  color: #EAF2FF !important;
+}
+html.dark .sidebar-nav-item.active {
+  background: rgba(59, 130, 246, 0.2) !important;
+  color: #60A5FA !important;
+  border-color: rgba(59, 130, 246, 0.4) !important;
+}
+html.dark .sidebar-nav-item.active .active-indicator {
+  background: #3B82F6 !important;
+}
+html.dark .nav-item-badge {
+  background: rgba(59, 130, 246, 0.2) !important;
+  color: #60A5FA !important;
+}
+html.dark .sidebar-section-title {
+  color: #4A6888 !important;
+}
+html.dark .sidebar-footer {
+  border-top-color: #1E3A5F !important;
+  background: rgba(7, 20, 38, 0.6) !important;
+}
+html.dark .sidebar-logout-btn {
+  color: #7F9AB9 !important;
+  border-color: #1E3A5F !important;
+}
+html.dark .sidebar-logout-btn:hover {
+  background: rgba(248, 113, 113, 0.1) !important;
+  color: #F87171 !important;
+  border-color: rgba(248, 113, 113, 0.3) !important;
+}
+html.dark .sidebar-collapse-btn {
+  background: rgba(59, 130, 246, 0.1) !important;
+  border-color: #1E3A5F !important;
+  color: #60A5FA !important;
+}
+html.dark .brand-name {
+  color: #EAF2FF !important;
+}
+html.dark .brand-tag {
+  color: #38BDF8 !important;
+}
+html.dark .sidebar-doctor-card {
+  background: rgba(59, 130, 246, 0.07) !important;
+  border-color: #1E3A5F !important;
+}
+html.dark .doctor-display-name {
+  color: #EAF2FF !important;
+}
+html.dark .doctor-display-role {
+  color: #7F9AB9 !important;
+}
+html.dark .doctor-avatar-small,
+html.dark .doctor-avatar-collapsed {
+  background: rgba(59, 130, 246, 0.2) !important;
+  color: #60A5FA !important;
+  border-color: rgba(59, 130, 246, 0.35) !important;
+}
+
+/* ── Top Header Bar ── */
+html.dark .app-top-header {
+  background: var(--bg-header) !important;
+  border-bottom-color: #1E3A5F !important;
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.5) !important;
+}
+html.dark .header-page-title {
+  color: #60A5FA !important;
+  text-shadow: 0 0 14px rgba(59, 130, 246, 0.35);
+}
+html.dark .header-page-subtitle {
+  color: #7F9AB9 !important;
+}
+html.dark .header-env-badge {
+  background: rgba(59, 130, 246, 0.15) !important;
+  color: #60A5FA !important;
+  border-color: rgba(59, 130, 246, 0.25) !important;
+}
+html.dark .header-status-pill {
+  background: rgba(13, 32, 58, 0.8) !important;
+  border-color: #1E3A5F !important;
+  color: #A9BED8 !important;
+}
+html.dark .header-status-pill.online { border-color: rgba(52, 211, 153, 0.3) !important; color: #34D399 !important; }
+html.dark .header-status-pill.offline { border-color: rgba(248, 113, 113, 0.3) !important; color: #F87171 !important; }
+html.dark .header-quick-action-btn {
+  background: rgba(59, 130, 246, 0.12) !important;
+  color: #60A5FA !important;
+  border-color: rgba(59, 130, 246, 0.25) !important;
+}
+html.dark .header-quick-action-btn:hover {
+  background: rgba(59, 130, 246, 0.2) !important;
+}
+html.dark .header-doctor-pill {
+  background: rgba(13, 32, 58, 0.8) !important;
+  border-color: #1E3A5F !important;
+}
+html.dark .header-doctor-name {
+  color: #EAF2FF !important;
+}
+html.dark .header-doctor-role {
+  color: #7F9AB9 !important;
+}
+html.dark .header-doctor-avatar {
+  background: rgba(59, 130, 246, 0.2) !important;
+  color: #60A5FA !important;
+}
+
+/* ── Cards ── */
+html.dark .card,
+html.dark .form-card,
+html.dark .results-card,
+html.dark .model-selection-card {
+  background: var(--bg-card) !important;
+  border-color: #1E3A5F !important;
+  box-shadow: var(--shadow-card-themed) !important;
+}
+html.dark .card:hover {
+  border-color: #2D5A8E !important;
+  box-shadow: var(--shadow-hover-themed) !important;
+}
+html.dark .card-header {
+  border-bottom-color: #1E3A5F !important;
+  background: rgba(7, 20, 38, 0.3) !important;
+}
+html.dark .card-title {
+  color: #BFDBFE !important;
+  text-shadow: 0 0 8px rgba(59, 130, 246, 0.18);
+}
+html.dark .card-subtitle {
+  color: #7F9AB9 !important;
+}
+html.dark .card-counter-tag {
+  background: rgba(59, 130, 246, 0.15) !important;
+  color: #60A5FA !important;
+  border-color: rgba(59, 130, 246, 0.25) !important;
+}
+
+/* ── Doctor Welcome Card ── */
+html.dark .doctor-welcome-card {
+  background: linear-gradient(135deg, #0D203A 0%, #102B4C 100%) !important;
+  border-color: #1E3A5F !important;
+}
+html.dark .welcome-text h2 {
+  color: #60A5FA !important;
+  text-shadow: 0 0 14px rgba(59, 130, 246, 0.35);
+}
+html.dark .welcome-text p {
+  color: #A9BED8 !important;
+}
+html.dark .presets-label {
+  color: #7F9AB9 !important;
+}
+html.dark .btn-preset-pill {
+  background: rgba(13, 32, 58, 0.8) !important;
+  border-color: #1E3A5F !important;
+  color: #A9BED8 !important;
+}
+html.dark .btn-preset-pill:hover {
+  border-color: #3B82F6 !important;
+  color: #EAF2FF !important;
+}
+html.dark .btn-preset-pill.preset-low:hover {
+  background: rgba(52, 211, 153, 0.1) !important;
+  border-color: rgba(52, 211, 153, 0.4) !important;
+  color: #34D399 !important;
+}
+html.dark .btn-preset-pill.preset-high:hover {
+  background: rgba(248, 113, 113, 0.1) !important;
+  border-color: rgba(248, 113, 113, 0.4) !important;
+  color: #F87171 !important;
+}
+
+/* ── Form Sections ── */
+html.dark .form-group-section {
+  background: rgba(10, 26, 48, 0.4) !important;
+  border-color: #1E3A5F !important;
+}
+html.dark .section-title-row {
+  border-bottom-color: #1E3A5F !important;
+}
+html.dark .section-heading {
+  color: #93C5FD !important;
+  text-shadow: 0 0 10px rgba(96, 165, 250, 0.2);
+}
+html.dark .section-desc {
+  color: #7F9AB9 !important;
+}
+
+/* ── Form Inputs ── */
+html.dark .form-label {
+  color: #A9BED8 !important;
+}
+html.dark .label-with-tip {
+  color: #A9BED8 !important;
+}
+html.dark .optional-tag {
+  color: #4A6888 !important;
+}
+html.dark .field-unit {
+  color: #4A6888 !important;
+}
+html.dark .form-input,
+html.dark .patient-ref-input,
+html.dark input[type="text"],
+html.dark input[type="number"],
+html.dark input[type="email"],
+html.dark input[type="password"],
+html.dark textarea,
+html.dark select {
+  background: var(--bg-input) !important;
+  border-color: #1E3A5F !important;
+  color: #EAF2FF !important;
+}
+html.dark .form-input:focus,
+html.dark .patient-ref-input:focus,
+html.dark input:focus,
+html.dark textarea:focus,
+html.dark select:focus {
+  background: var(--bg-input-focus) !important;
+  border-color: #3B82F6 !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2) !important;
+  color: #EAF2FF !important;
+}
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: #4A6888 !important;
+}
+html.dark .form-input.has-error {
+  border-color: #F87171 !important;
+  box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.15) !important;
+}
+html.dark .input-icon {
+  color: #4A6888 !important;
+}
+html.dark .patient-ref-input-wrap {
+  background: var(--bg-input) !important;
+  border-color: #1E3A5F !important;
+}
+html.dark .patient-ref-input-wrap:focus-within {
+  border-color: #3B82F6 !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2) !important;
+}
+html.dark .patient-ref-box {
+  background: rgba(10, 26, 48, 0.5) !important;
+  border-color: #1E3A5F !important;
+}
+html.dark .anon-hint {
+  color: #4A6888 !important;
+}
+
+/* ── Segmented Toggles ── */
+html.dark .segmented-toggle {
+  background: #0A1A30 !important;
+  border-color: #1E3A5F !important;
+}
+html.dark .toggle-btn {
+  color: #7F9AB9 !important;
+}
+html.dark .toggle-btn:hover {
+  color: #EAF2FF !important;
+}
+html.dark .toggle-btn.active {
+  background: rgba(59, 130, 246, 0.25) !important;
+  color: #60A5FA !important;
+  box-shadow: none !important;
+}
+html.dark .segmented-sliding-glider {
+  background: rgba(59, 130, 246, 0.2) !important;
+  box-shadow: none !important;
+}
+
+/* ── Tooltip Trigger ── */
+html.dark .tooltip-trigger {
+  color: #4A6888 !important;
+  border-color: #1E3A5F !important;
+  background: rgba(10, 26, 48, 0.6) !important;
+}
+html.dark .tooltip-trigger:hover {
+  background: rgba(59, 130, 246, 0.15) !important;
+  color: #60A5FA !important;
+}
+
+/* ── Buttons ── */
+html.dark .btn-primary,
+html.dark .btn-predict {
+  background: linear-gradient(135deg, #2563EB, #3B82F6) !important;
+  border-color: #3B82F6 !important;
+  color: #fff !important;
+  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.3) !important;
+}
+html.dark .btn-primary:hover,
+html.dark .btn-predict:hover {
+  background: linear-gradient(135deg, #3B82F6, #60A5FA) !important;
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.45) !important;
+}
+html.dark .btn-secondary,
+html.dark .btn-reset-form {
+  background: rgba(10, 26, 48, 0.6) !important;
+  border-color: #1E3A5F !important;
+  color: #A9BED8 !important;
+}
+html.dark .btn-secondary:hover,
+html.dark .btn-reset-form:hover {
+  background: rgba(59, 130, 246, 0.1) !important;
+  border-color: #3B82F6 !important;
+  color: #EAF2FF !important;
+}
+
+/* ── Model Selection Cards ── */
+html.dark .model-card {
+  background: var(--model-card-bg) !important;
+  border-color: var(--model-card-border) !important;
+  color: #A9BED8 !important;
+}
+html.dark .model-card:hover {
+  border-color: #2D5A8E !important;
+  background: rgba(16, 43, 76, 0.8) !important;
+}
+html.dark .model-card.selected {
+  background: var(--model-card-selected-bg) !important;
+  border-color: var(--model-card-selected-border) !important;
+  box-shadow: var(--model-card-selected-shadow) !important;
+}
+html.dark .model-title {
+  color: #EAF2FF !important;
+}
+html.dark .model-badge-sub {
+  color: #7F9AB9 !important;
+}
+html.dark .model-desc {
+  color: #7F9AB9 !important;
+}
+html.dark .model-endpoint-pill {
+  background: rgba(59, 130, 246, 0.12) !important;
+  color: #60A5FA !important;
+  border-color: rgba(59, 130, 246, 0.2) !important;
+}
+html.dark .model-card.selected .model-endpoint-pill {
+  background: rgba(59, 130, 246, 0.2) !important;
+  color: #93C5FD !important;
+}
+html.dark .model-icon-badge {
+  background: rgba(59, 130, 246, 0.15) !important;
+  color: #60A5FA !important;
+  border-color: rgba(59, 130, 246, 0.25) !important;
+}
+html.dark .model-card.selected .model-icon-badge {
+  background: rgba(59, 130, 246, 0.25) !important;
+  color: #93C5FD !important;
+}
+html.dark .model-indicator-check {
+  color: #4A6888 !important;
+}
+html.dark .model-card.selected .model-indicator-check {
+  color: #60A5FA !important;
+}
+html.dark .model-card-footer {
+  border-top-color: #1E3A5F !important;
+}
+
+/* ── Prediction Results ── */
+html.dark .result-state-box.empty-state {
+  background: var(--result-empty-bg) !important;
+  border-color: #1E3A5F !important;
+}
+html.dark .empty-icon-circle {
+  background: rgba(59, 130, 246, 0.1) !important;
+  border-color: rgba(59, 130, 246, 0.2) !important;
+  color: #60A5FA !important;
+}
+html.dark .result-state-box.empty-state h3 {
+  color: #BFDBFE !important;
+  text-shadow: 0 0 8px rgba(59, 130, 246, 0.18);
+}
+html.dark .result-state-box.empty-state p {
+  color: #7F9AB9 !important;
+}
+html.dark .guide-chip {
+  background: rgba(59, 130, 246, 0.1) !important;
+  border-color: rgba(59, 130, 246, 0.2) !important;
+  color: #60A5FA !important;
+}
+html.dark .result-state-box.loading-state {
+  background: var(--result-loading-bg) !important;
+}
+html.dark .result-state-box.loading-state h3 {
+  color: #BFDBFE !important;
+}
+html.dark .result-state-box.loading-state p {
+  color: #7F9AB9 !important;
+}
+html.dark .clean-spinner-lg {
+  border-color: rgba(59, 130, 246, 0.2) !important;
+  border-top-color: #3B82F6 !important;
+}
+html.dark .result-header-tags .result-model-tag {
+  background: rgba(59, 130, 246, 0.15) !important;
+  color: #60A5FA !important;
+  border-color: rgba(59, 130, 246, 0.25) !important;
+}
+html.dark .result-header-tags .result-ref-tag {
+  background: rgba(56, 189, 248, 0.1) !important;
+  color: #38BDF8 !important;
+  border-color: rgba(56, 189, 248, 0.2) !important;
+}
+
+/* Outcome banners in dark mode */
+html.dark .clean-outcome-banner.negative-event {
+  background: linear-gradient(135deg, rgba(52, 211, 153, 0.1), rgba(16, 185, 129, 0.08)) !important;
+  border-color: rgba(52, 211, 153, 0.25) !important;
+}
+html.dark .clean-outcome-banner.negative-event .outcome-label {
+  color: #34D399 !important;
+}
+html.dark .clean-outcome-banner.positive-event {
+  background: linear-gradient(135deg, rgba(248, 113, 113, 0.1), rgba(239, 68, 68, 0.08)) !important;
+  border-color: rgba(248, 113, 113, 0.25) !important;
+}
+html.dark .clean-outcome-banner.positive-event .outcome-label {
+  color: #F87171 !important;
+}
+html.dark .outcome-kicker { color: #7F9AB9 !important; }
+html.dark .outcome-class-code { color: #A9BED8 !important; }
+
+/* Probability card */
+html.dark .probability-metric-card {
+  background: rgba(10, 26, 48, 0.6) !important;
+  border-color: #1E3A5F !important;
+}
+html.dark .metric-heading { color: #A9BED8 !important; }
+html.dark .metric-subheading { color: #7F9AB9 !important; }
+html.dark .metric-percentage.baseline { color: #34D399 !important; }
+html.dark .metric-percentage.elevated { color: #F87171 !important; }
+html.dark .clean-progress-track {
+  background: rgba(30, 58, 95, 0.6) !important;
+}
+html.dark .metric-scale-labels { color: #4A6888 !important; }
+html.dark .threshold-indicator { color: #38BDF8 !important; }
+
+/* Meta table */
+html.dark .result-meta-table {
+  background: transparent !important;
+  border-color: #1E3A5F !important;
+}
+html.dark .meta-row {
+  border-bottom-color: #1E3A5F !important;
+}
+html.dark .meta-label { color: #7F9AB9 !important; }
+html.dark .meta-value { color: #EAF2FF !important; }
+html.dark .notice-row .meta-value { color: #A9BED8 !important; }
+
+/* Disclaimer box */
+html.dark .clean-disclaimer-box {
+  background: rgba(10, 26, 48, 0.5) !important;
+  border-color: rgba(59, 130, 246, 0.2) !important;
+  color: #7F9AB9 !important;
+}
+html.dark .clean-disclaimer-box strong { color: #60A5FA !important; }
+
+/* ── Alert Banners ── */
+html.dark .alert-banner.error {
+  background: rgba(248, 113, 113, 0.08) !important;
+  border-color: rgba(248, 113, 113, 0.25) !important;
+  color: #FCA5A5 !important;
+}
+html.dark .alert-banner.warning {
+  background: rgba(252, 211, 77, 0.07) !important;
+  border-color: rgba(252, 211, 77, 0.2) !important;
+  color: #FDE68A !important;
+}
+html.dark .btn-alert-retry {
+  background: rgba(248, 113, 113, 0.15) !important;
+  color: #F87171 !important;
+  border-color: rgba(248, 113, 113, 0.3) !important;
+}
+
+/* ── Footer ── */
+html.dark .app-global-footer,
+html.dark .dashboard-footer {
+  border-top-color: #1E3A5F !important;
+  background: var(--bg-sidebar) !important;
+  color: #4A6888 !important;
+}
+
+/* ── Validation Errors ── */
+html.dark .field-error-msg {
+  color: #F87171 !important;
+}
+html.dark .req-star { color: #F87171 !important; }
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   PREDICTION PAGE — New Two-Column Layout
+   LEFT: Patient Clinical Parameters form
+   RIGHT: Model Selection (top) + Prediction Results (bottom)
+══════════════════════════════════════════════════════════════════════════════ */
+.prediction-two-col-grid {
+  display: grid;
+  grid-template-columns: 1fr 400px;
+  align-items: start;
+  gap: 24px;
+}
+
+@media (max-width: 1100px) {
+  .prediction-two-col-grid {
+    grid-template-columns: 1fr 360px;
+    gap: 18px;
+  }
+}
+
+@media (max-width: 860px) {
+  .prediction-two-col-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+
+/* Right column wrapper - stacks model selection above results */
+.dashboard-right-column {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  position: sticky;
+  top: 20px;
+}
+
+@media (max-width: 860px) {
+  .dashboard-right-column {
+    position: static;
+  }
+}
+
+/* Model Selection Card (now in right column) */
+.model-selection-card {
+  flex-shrink: 0;
+}
+.model-selection-card .card-body {
+  padding: 16px;
+}
+.model-selection-card .model-selection-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.model-selection-card .model-card {
+  padding: 12px 14px;
+  gap: 8px;
+}
+.model-selection-card .model-desc {
+  font-size: 0.78rem;
+  margin-top: 4px;
+}
+
+/* Results card fills remaining height */
+.results-card {
+  flex: 1;
+  min-height: 320px;
+}
+
+/* Model badge sub-label (new) */
+.model-badge-sub {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  margin-top: 1px;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   DARK MODE — DoctorLogin, DoctorRegister, OTP Verification pages
+══════════════════════════════════════════════════════════════════════════════ */
+html.dark .login-page,
+html.dark .register-page,
+html.dark .otp-page {
+  background: var(--bg-page) !important;
+}
+html.dark .login-card,
+html.dark .register-card,
+html.dark .auth-card,
+html.dark .login-form-card,
+html.dark .register-form-card,
+html.dark .otp-card {
+  background: var(--bg-card) !important;
+  border-color: #1E3A5F !important;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5) !important;
+}
+html.dark .login-title,
+html.dark .register-title,
+html.dark .auth-title {
+  color: #60A5FA !important;
+  text-shadow: 0 0 14px rgba(59,130,246,0.35);
+}
+html.dark .login-subtitle,
+html.dark .register-subtitle,
+html.dark .auth-subtitle {
+  color: #7F9AB9 !important;
+}
+html.dark .login-logo-bg,
+html.dark .auth-logo-bg {
+  background: rgba(59,130,246,0.15) !important;
+  color: #60A5FA !important;
+}
+html.dark .input-group-label,
+html.dark .form-field-label,
+html.dark label.auth-label {
+  color: #A9BED8 !important;
+}
+html.dark .auth-input,
+html.dark .login-input,
+html.dark .register-input {
+  background: var(--bg-input) !important;
+  border-color: #1E3A5F !important;
+  color: #EAF2FF !important;
+}
+html.dark .auth-input:focus,
+html.dark .login-input:focus,
+html.dark .register-input:focus {
+  border-color: #3B82F6 !important;
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.2) !important;
+}
+html.dark .auth-link {
+  color: #60A5FA !important;
+}
+html.dark .auth-link:hover { color: #93C5FD !important; }
+html.dark .admin-login-sep { border-color: #1E3A5F !important; color: #4A6888 !important; }
+html.dark .admin-login-btn {
+  background: rgba(10,26,48,0.6) !important;
+  border-color: #1E3A5F !important;
+  color: #A9BED8 !important;
+}
+html.dark .admin-login-btn:hover {
+  background: rgba(59,130,246,0.1) !important;
+  border-color: #3B82F6 !important;
+  color: #EAF2FF !important;
+}
+html.dark .otp-input-box {
+  background: var(--bg-input) !important;
+  border-color: #1E3A5F !important;
+  color: #EAF2FF !important;
+}
+html.dark .otp-input-box:focus {
+  border-color: #3B82F6 !important;
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.2) !important;
+}
+html.dark .otp-instructions { color: #7F9AB9 !important; }
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   DARK MODE — Dashboard Overview (DashboardHome.jsx)
+══════════════════════════════════════════════════════════════════════════════ */
+html.dark .stat-card,
+html.dark .dashboard-stat-card,
+html.dark .overview-card {
+  background: var(--bg-card) !important;
+  border-color: #1E3A5F !important;
+}
+html.dark .stat-card-label,
+html.dark .stat-label { color: #7F9AB9 !important; }
+html.dark .stat-card-value,
+html.dark .stat-value { color: #EAF2FF !important; }
+html.dark .stat-card-icon {
+  background: rgba(59,130,246,0.12) !important;
+  color: #60A5FA !important;
+}
+html.dark .recent-table,
+html.dark .table-wrapper {
+  background: var(--bg-card) !important;
+  border-color: #1E3A5F !important;
+}
+html.dark .table-heading,
+html.dark .section-label { color: #93C5FD !important; text-shadow: 0 0 8px rgba(96,165,250,0.18); }
+html.dark table th {
+  background: rgba(10, 26, 48, 0.6) !important;
+  color: #7F9AB9 !important;
+  border-bottom-color: #1E3A5F !important;
+}
+html.dark table td {
+  color: #A9BED8 !important;
+  border-bottom-color: #1E3A5F !important;
+}
+html.dark table tr:hover td {
+  background: rgba(59,130,246,0.04) !important;
+}
+html.dark .badge-approved,
+html.dark .status-approved { background: rgba(52,211,153,0.12) !important; color: #34D399 !important; }
+html.dark .badge-pending,
+html.dark .status-pending { background: rgba(252,211,77,0.12) !important; color: #FCD34D !important; }
+html.dark .badge-rejected,
+html.dark .status-rejected { background: rgba(248,113,113,0.12) !important; color: #F87171 !important; }
+html.dark .quick-action-card {
+  background: rgba(10,26,48,0.6) !important;
+  border-color: #1E3A5F !important;
+  color: #A9BED8 !important;
+}
+html.dark .quick-action-card:hover {
+  background: rgba(59,130,246,0.1) !important;
+  border-color: #3B82F6 !important;
+  color: #EAF2FF !important;
+}
+html.dark .quick-action-icon { color: #60A5FA !important; }
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   DARK MODE — Patient Assessments Page
+══════════════════════════════════════════════════════════════════════════════ */
+html.dark .assessments-page,
+html.dark .history-page {
+  background: var(--bg-page) !important;
+}
+html.dark .search-input,
+html.dark .filter-select,
+html.dark .sort-select {
+  background: var(--bg-input) !important;
+  border-color: #1E3A5F !important;
+  color: #EAF2FF !important;
+}
+html.dark .search-input:focus,
+html.dark .filter-select:focus {
+  border-color: #3B82F6 !important;
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.2) !important;
+}
+html.dark .assessment-row,
+html.dark .prediction-row {
+  background: var(--bg-card) !important;
+  border-color: #1E3A5F !important;
+}
+html.dark .assessment-row:hover,
+html.dark .prediction-row:hover {
+  background: var(--bg-card-secondary) !important;
+  border-color: #2D5A8E !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   DARK MODE — Modals & Overlays
+══════════════════════════════════════════════════════════════════════════════ */
+html.dark .modal-overlay {
+  background: rgba(0,0,0,0.75) !important;
+}
+html.dark .modal-box,
+html.dark .modal-content,
+html.dark .dialog-box {
+  background: var(--bg-card) !important;
+  border-color: #1E3A5F !important;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6) !important;
+}
+html.dark .modal-title { color: #BFDBFE !important; text-shadow: 0 0 8px rgba(59,130,246,0.18); }
+html.dark .modal-body { color: #A9BED8 !important; }
+html.dark .modal-header { border-bottom-color: #1E3A5F !important; }
+html.dark .modal-footer { border-top-color: #1E3A5F !important; }
+html.dark .btn-close-modal {
+  color: #7F9AB9 !important;
+  background: rgba(10,26,48,0.5) !important;
+  border-color: #1E3A5F !important;
+}
+html.dark .btn-close-modal:hover {
+  background: rgba(248,113,113,0.1) !important;
+  color: #F87171 !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   DARK MODE — Clinical Parameters Guide
+══════════════════════════════════════════════════════════════════════════════ */
+html.dark .clinical-guide-page { background: var(--bg-page) !important; }
+html.dark .param-card {
+  background: var(--bg-card) !important;
+  border-color: #1E3A5F !important;
+}
+html.dark .param-card:hover { border-color: #2D5A8E !important; }
+html.dark .param-name { color: #BFDBFE !important; text-shadow: 0 0 7px rgba(59,130,246,0.15); }
+html.dark .param-unit { color: #38BDF8 !important; }
+html.dark .param-desc { color: #A9BED8 !important; }
+html.dark .param-range-label { color: #7F9AB9 !important; }
+html.dark .param-range-value { color: #60A5FA !important; }
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   DARK MODE — Heart Health Counselling
+══════════════════════════════════════════════════════════════════════════════ */
+html.dark .counselling-page { background: var(--bg-page) !important; }
+html.dark .counselling-card,
+html.dark .category-card {
+  background: var(--bg-card) !important;
+  border-color: #1E3A5F !important;
+}
+html.dark .counselling-card:hover { border-color: #2D5A8E !important; }
+html.dark .category-title { color: #BFDBFE !important; text-shadow: 0 0 8px rgba(59,130,246,0.18); }
+html.dark .category-desc { color: #A9BED8 !important; }
+html.dark .checklist-item { color: #A9BED8 !important; }
+html.dark .checklist-item input[type="checkbox"]:checked + span { color: #34D399 !important; }
+html.dark .disclaimer-box {
+  background: rgba(252,211,77,0.07) !important;
+  border-color: rgba(252,211,77,0.2) !important;
+  color: #FDE68A !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   DARK MODE — Admin Dashboard (inline styles overrides via CSS vars)
+   The AdminDashboard uses inline styles, so we override at body level
+══════════════════════════════════════════════════════════════════════════════ */
+html.dark .admin-topbar-header {
+  background: #0A1829 !important;
+  border-bottom-color: #1E3A5F !important;
+}
+html.dark .admin-content-header {
+  background: #0A1829 !important;
+  border-bottom-color: #1E3A5F !important;
+}
+html.dark .admin-content-header h1 {
+  color: #60A5FA !important;
+  text-shadow: 0 0 14px rgba(59,130,246,0.35);
+}
+html.dark .admin-content-header p {
+  color: #7F9AB9 !important;
+}
+html.dark .admin-stat-card {
+  background: #0D203A !important;
+  border-color: #1E3A5F !important;
+}
+html.dark .admin-data-table {
+  background: #0D203A !important;
+  border-color: #1E3A5F !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   DARK MODE — Prediction History Page
+══════════════════════════════════════════════════════════════════════════════ */
+html.dark .prediction-history-page { background: var(--bg-page) !important; }
+html.dark .history-filter-btn {
+  background: rgba(10,26,48,0.6) !important;
+  border-color: #1E3A5F !important;
+  color: #A9BED8 !important;
+}
+html.dark .history-filter-btn.active {
+  background: rgba(59,130,246,0.15) !important;
+  border-color: #3B82F6 !important;
+  color: #60A5FA !important;
+}
+html.dark .prediction-class-1 { color: #F87171 !important; }
+html.dark .prediction-class-0 { color: #34D399 !important; }
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   DARK MODE — Mobile Overlay & Hamburger
+══════════════════════════════════════════════════════════════════════════════ */
+html.dark .mobile-overlay {
+  background: rgba(0,0,0,0.75) !important;
+}
+html.dark .mobile-hamburger-btn {
+  color: #A9BED8 !important;
+}
+html.dark .mobile-hamburger-btn:hover {
+  background: rgba(59,130,246,0.1) !important;
+  color: #60A5FA !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   DARK MODE — Scrollbars (WebKit)
+══════════════════════════════════════════════════════════════════════════════ */
+html.dark ::-webkit-scrollbar { width: 7px; height: 7px; }
+html.dark ::-webkit-scrollbar-track { background: #071426; }
+html.dark ::-webkit-scrollbar-thumb {
+  background: #1E3A5F;
+  border-radius: 4px;
+}
+html.dark ::-webkit-scrollbar-thumb:hover { background: #2D5A8E; }
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   DARK MODE — Misc Utilities
+══════════════════════════════════════════════════════════════════════════════ */
+html.dark code,
+html.dark pre {
+  background: rgba(10,26,48,0.8) !important;
+  color: #38BDF8 !important;
+  border-color: #1E3A5F !important;
+}
+html.dark hr { border-color: #1E3A5F !important; }
+html.dark .divider { background: #1E3A5F !important; }
+html.dark .topbar-badge {
+  background: rgba(59,130,246,0.15) !important;
+  color: #60A5FA !important;
+}
+html.dark .topbar-subtitle { color: #7F9AB9 !important; }
+html.dark .topbar-status-pill {
+  background: rgba(10,26,48,0.8) !important;
+  border-color: #1E3A5F !important;
+  color: #A9BED8 !important;
+}
+html.dark .status-dot.online { background: #34D399 !important; box-shadow: 0 0 6px #34D399 !important; }
+html.dark .status-dot.offline { background: #F87171 !important; }
+html.dark .status-pulse-dot.online { background: #34D399 !important; box-shadow: 0 0 6px #34D399 !important; }
+html.dark .doctor-profile-pill {
+  background: rgba(10,26,48,0.8) !important;
+  border-color: #1E3A5F !important;
+}
+html.dark .doctor-name { color: #EAF2FF !important; }
+html.dark .doctor-role { color: #7F9AB9 !important; }
+html.dark .doctor-avatar {
+  background: rgba(59,130,246,0.2) !important;
+  color: #60A5FA !important;
+}
+html.dark .btn-logout {
+  background: rgba(10,26,48,0.6) !important;
+  border-color: #1E3A5F !important;
+  color: #A9BED8 !important;
+}
+html.dark .btn-logout:hover {
+  background: rgba(248,113,113,0.1) !important;
+  border-color: rgba(248,113,113,0.3) !important;
+  color: #F87171 !important;
+}
+html.dark .embedded-content {
+  background: var(--bg-page) !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   DARK MODE — Enhanced Component Overrides
+══════════════════════════════════════════════════════════════════════════════ */
+
+/* DoctorLogin tab switcher & admin button */
+html.dark .login-tab-bar {
+  background: #0A1A30 !important;
+  border: 1px solid #1E3A5F !important;
+}
+html.dark .login-tab-btn {
+  color: #A9BED8 !important;
+}
+html.dark .login-tab-btn.active-doctor {
+  background: #1565D8 !important;
+  color: #FFFFFF !important;
+}
+html.dark .login-tab-btn.active-admin {
+  background: #102B4C !important;
+  color: #60A5FA !important;
+  border: 1px solid #1E3A5F !important;
+}
+html.dark .login-success-banner {
+  background: rgba(16, 185, 129, 0.15) !important;
+  border-color: rgba(16, 185, 129, 0.3) !important;
+  color: #34D399 !important;
+}
+html.dark .btn-login-admin {
+  background: #1565D8 !important;
+}
+
+/* DoctorRegister enhancements */
+html.dark .register-pw-strength {
+  background: #0A1A30 !important;
+  border-color: #1E3A5F !important;
+}
+html.dark .register-doc-upload {
+  background: #0A1A30 !important;
+  border-color: #1E3A5F !important;
+}
+html.dark .reg-next-step-box {
+  background: #0A1A30 !important;
+  border-color: #1E3A5F !important;
+  color: #EAF2FF !important;
+}
+
+/* DoctorOtpVerification digit boxes & alerts */
+html.dark .otp-pending-notice {
+  background: rgba(245, 158, 11, 0.12) !important;
+  border-color: rgba(245, 158, 11, 0.3) !important;
+  color: #FCD34D !important;
+}
+html.dark .otp-digit-box {
+  background: var(--bg-input) !important;
+  color: #EAF2FF !important;
+  border-color: #1E3A5F !important;
+}
+html.dark .otp-digit-box:focus,
+html.dark .otp-digit-box.has-val {
+  background: rgba(59, 130, 246, 0.15) !important;
+  border-color: #3B82F6 !important;
+  color: #60A5FA !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25) !important;
+}
+
+/* DashboardHome stats, quick actions, and recent tables */
+html.dark .stat-card {
+  background: var(--bg-card) !important;
+  border-color: #1E3A5F !important;
+  color: #EAF2FF !important;
+}
+html.dark .stat-card > div:nth-child(2) {
+  color: #60A5FA !important;
+}
+html.dark .quick-action-card {
+  background: var(--bg-card) !important;
+  border-color: #1E3A5F !important;
+  color: #EAF2FF !important;
+}
+html.dark .quick-action-card:hover {
+  background: var(--bg-card-secondary) !important;
+  border-color: #3B82F6 !important;
+  transform: translateY(-2px);
+}
+html.dark .quick-action-card span {
+  color: #EAF2FF !important;
+}
+html.dark .quick-action-card span:last-child {
+  color: #7F9AB9 !important;
+}
+html.dark .dashboard-panel-card {
+  background: var(--bg-card) !important;
+  border-color: #1E3A5F !important;
+}
+html.dark .dashboard-panel-card h3 {
+  color: #93C5FD !important;
+  text-shadow: 0 0 9px rgba(96, 165, 250, 0.25) !important;
+}
+html.dark .recent-table {
+  background: var(--bg-card) !important;
+}
+html.dark .recent-table th {
+  background: rgba(10, 26, 48, 0.8) !important;
+  color: #7F9AB9 !important;
+  border-bottom-color: #1E3A5F !important;
+}
+html.dark .recent-table td {
+  color: #A9BED8 !important;
+  border-bottom-color: #1E3A5F !important;
+}
+html.dark .recent-table tr:hover td {
+  background: rgba(59, 130, 246, 0.05) !important;
+}
+
+/* HeartHealthCounsellingPage elements */
+html.dark .counselling-page {
+  background: var(--bg-page) !important;
+}
+html.dark .counselling-hero-card {
+  background: linear-gradient(135deg, #081B33 0%, #0D203A 60%, #1565D8 100%) !important;
+}
+html.dark .counselling-notice-banner {
+  background: rgba(59, 130, 246, 0.1) !important;
+  border-color: #1E3A5F !important;
+  color: #93C5FD !important;
+}
+html.dark .counselling-cat-btn {
+  background: var(--bg-card) !important;
+  border-color: #1E3A5F !important;
+  color: #A9BED8 !important;
+}
+html.dark .counselling-cat-btn.active {
+  background: var(--bg-card-secondary) !important;
+  border-color: #38BDF8 !important;
+  color: #EAF2FF !important;
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.25) !important;
+}
+html.dark .counselling-cat-btn div div:last-child {
+  color: #EAF2FF !important;
+}
+html.dark .counselling-card {
+  background: var(--bg-card) !important;
+  border-color: #1E3A5F !important;
+}
+html.dark .counselling-card h2 {
+  color: #60A5FA !important;
+  text-shadow: 0 0 12px rgba(59, 130, 246, 0.35) !important;
+}
+html.dark .counselling-point-card {
+  background: var(--bg-card) !important;
+  border-color: #1E3A5F !important;
+}
+html.dark .counselling-point-card.checked {
+  background: rgba(10, 26, 48, 0.6) !important;
+  border-color: #1E3A5F !important;
+}
+html.dark .counselling-point-card h3 {
+  color: #BFDBFE !important;
+  text-shadow: 0 0 7px rgba(147, 197, 253, 0.2) !important;
+}
+html.dark .counselling-point-card p {
+  color: #A9BED8 !important;
+}
+html.dark .counselling-tip-box {
+  background: rgba(10, 26, 48, 0.8) !important;
+  color: #A9BED8 !important;
+}
+
+/* AdminDashboard root, header, cards, tables & modals */
+html.dark .admin-dashboard-root {
+  background: var(--bg-page) !important;
+  color: var(--color-text) !important;
+}
+html.dark .admin-dashboard-root header.admin-header {
+  background: var(--bg-card) !important;
+  border-bottom-color: #1E3A5F !important;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.3) !important;
+}
+html.dark .admin-dashboard-root header.admin-header h1 {
+  color: #60A5FA !important;
+  text-shadow: 0 0 12px rgba(59, 130, 246, 0.35) !important;
+}
+html.dark .admin-dashboard-root header.admin-header p {
+  color: #7F9AB9 !important;
+}
+html.dark .admin-dashboard-root main {
+  background: var(--bg-page) !important;
+}
+html.dark .admin-dashboard-root .admin-stat-card {
+  background: var(--bg-card) !important;
+  border-color: #1E3A5F !important;
+}
+html.dark .admin-dashboard-root .admin-stat-card div {
+  color: #EAF2FF !important;
+}
+html.dark .admin-dashboard-root .admin-panel-card {
+  background: var(--bg-card) !important;
+  border-color: #1E3A5F !important;
+  color: #EAF2FF !important;
+}
+html.dark .admin-dashboard-root .admin-panel-card h2,
+html.dark .admin-dashboard-root .admin-panel-card h3 {
+  color: #93C5FD !important;
+  text-shadow: 0 0 9px rgba(96, 165, 250, 0.25) !important;
+}
+html.dark .admin-dashboard-root .admin-panel-card p {
+  color: #7F9AB9 !important;
+}
+html.dark .admin-dashboard-root table {
+  background: var(--bg-card) !important;
+}
+html.dark .admin-dashboard-root table th {
+  background: rgba(10, 26, 48, 0.8) !important;
+  color: #7F9AB9 !important;
+  border-bottom-color: #1E3A5F !important;
+}
+html.dark .admin-dashboard-root table td {
+  color: #A9BED8 !important;
+  border-bottom-color: #1E3A5F !important;
+}
+html.dark .admin-dashboard-root table tr:hover td {
+  background: rgba(59, 130, 246, 0.05) !important;
+}
+html.dark .admin-dashboard-root input[type="text"],
+html.dark .admin-dashboard-root select {
+  background: var(--bg-input) !important;
+  border-color: #1E3A5F !important;
+  color: #EAF2FF !important;
+}
+html.dark .admin-dashboard-root .admin-modal-overlay {
+  background: rgba(0, 0, 0, 0.75) !important;
+}
+html.dark .admin-dashboard-root .admin-modal-card {
+  background: var(--bg-card) !important;
+  border-color: #1E3A5F !important;
+  color: #EAF2FF !important;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6) !important;
+}
+html.dark .admin-dashboard-root .admin-modal-card h3,
+html.dark .admin-dashboard-root .admin-modal-card h4 {
+  color: #60A5FA !important;
+  text-shadow: 0 0 10px rgba(59, 130, 246, 0.3) !important;
+}
+html.dark .admin-dashboard-root .admin-modal-card span {
+  color: #A9BED8 !important;
+}
+html.dark .admin-dashboard-root .admin-modal-card strong {
+  color: #EAF2FF !important;
+}
+html.dark .admin-dashboard-root .admin-modal-card code {
+  background: rgba(10, 26, 48, 0.8) !important;
+  color: #38BDF8 !important;
 }

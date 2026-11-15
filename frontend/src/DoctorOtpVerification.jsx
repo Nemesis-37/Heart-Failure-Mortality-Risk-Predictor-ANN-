@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
+import ThemeToggle from './components/ThemeToggle.jsx'
 
 export default function DoctorOtpVerification({
   email,
@@ -233,6 +234,9 @@ export default function DoctorOtpVerification({
       {/* ───── RIGHT PANEL: OTP Verification Form ───── */}
       <div className="login-right-panel" style={{ padding: '2.5rem 1.5rem' }}>
         <div className="login-form-wrapper" style={{ maxWidth: '520px' }}>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '8px' }}>
+            <ThemeToggle />
+          </div>
           <div className="login-form-card" style={{ padding: '2.5rem' }}>
 
             {isVerified ? (
@@ -283,7 +287,7 @@ export default function DoctorOtpVerification({
                 </p>
 
                 {/* Important Notice: Status is still PENDING */}
-                <div style={{
+                <div className="otp-pending-notice" style={{
                   background: '#fffbeb',
                   border: '1.5px solid #fde68a',
                   borderRadius: '12px',
@@ -374,6 +378,7 @@ export default function DoctorOtpVerification({
                         inputMode="numeric"
                         maxLength={1}
                         value={digit}
+                        className={`otp-digit-box ${digit ? 'has-val' : ''}`}
                         onChange={(e) => handleDigitChange(idx, e.target.value)}
                         onKeyDown={(e) => handleKeyDown(idx, e)}
                         disabled={isVerifying}

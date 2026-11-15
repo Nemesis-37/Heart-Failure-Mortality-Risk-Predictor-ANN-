@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import ThemeToggle from './components/ThemeToggle.jsx'
 
 export default function DoctorLogin({ onLogin, onNavigateToRegister, onNavigateToAdmin }) {
   // Tab switcher: 'doctor' | 'admin'
@@ -392,9 +393,13 @@ export default function DoctorLogin({ onLogin, onNavigateToRegister, onNavigateT
         <div className="right-panel-radial-2" aria-hidden="true" />
 
         <div className="login-form-wrapper">
+          {/* Theme toggle on the form card */}
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '8px' }}>
+            <ThemeToggle />
+          </div>
           <div className="login-form-card">
             {/* Separate Login Options: Doctor Login vs Admin Login */}
-            <div style={{
+            <div className="login-tab-bar" style={{
               display: 'flex',
               background: '#F1F5F9',
               borderRadius: '10px',
@@ -404,6 +409,7 @@ export default function DoctorLogin({ onLogin, onNavigateToRegister, onNavigateT
             }}>
               <button
                 type="button"
+                className={`login-tab-btn ${loginMode === 'doctor' ? 'active-doctor' : ''}`}
                 onClick={() => {
                   setLoginMode('doctor')
                   setServerError('')
@@ -432,6 +438,7 @@ export default function DoctorLogin({ onLogin, onNavigateToRegister, onNavigateT
               </button>
               <button
                 type="button"
+                className={`login-tab-btn ${loginMode === 'admin' ? 'active-admin' : ''}`}
                 onClick={() => {
                   setLoginMode('admin')
                   setServerError('')
@@ -462,7 +469,7 @@ export default function DoctorLogin({ onLogin, onNavigateToRegister, onNavigateT
 
             {/* Success message banner */}
             {forgotSuccessMsg && (
-              <div style={{
+              <div className="login-success-banner" style={{
                 background: '#DCFCE7',
                 border: '1px solid #86EFAC',
                 color: '#166534',
@@ -769,7 +776,7 @@ export default function DoctorLogin({ onLogin, onNavigateToRegister, onNavigateT
 
                       <button
                         type="submit"
-                        className="btn-login-primary"
+                        className="btn-login-primary btn-login-admin"
                         disabled={isAdminSubmitting}
                         style={{ background: '#0B1F3A' }}
                       >

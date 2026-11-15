@@ -456,8 +456,8 @@ export default function DoctorDashboard({
         )}
 
         {/* Two-Column Clinical Dashboard Grid */}
-        <main className="dashboard-grid">
-          {/* Left Column: Patient Information & Model Selection Form */}
+        <main className="dashboard-grid prediction-two-col-grid">
+          {/* Left Column: Patient Information Form */}
           <section className="card form-card">
             <div className="card-header">
               <div className="card-header-title-row">

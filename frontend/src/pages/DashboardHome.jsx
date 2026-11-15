@@ -181,7 +181,7 @@ export default function DashboardHome({ doctorUser, onNavigate }) {
           gap: '1.25rem',
         }}>
           {/* Stat 1: Total Assessments */}
-          <div style={{
+          <div className="stat-card" style={{
             background: '#FFFFFF',
             borderRadius: '14px',
             border: '1px solid #DBEAFE',
@@ -203,7 +203,7 @@ export default function DashboardHome({ doctorUser, onNavigate }) {
           </div>
 
           {/* Stat 2: Total Predictions */}
-          <div style={{
+          <div className="stat-card" style={{
             background: '#FFFFFF',
             borderRadius: '14px',
             border: '1px solid #DBEAFE',
@@ -225,7 +225,7 @@ export default function DashboardHome({ doctorUser, onNavigate }) {
           </div>
 
           {/* Stat 3: Logistic Regression Predictions */}
-          <div style={{
+          <div className="stat-card" style={{
             background: '#FFFFFF',
             borderRadius: '14px',
             border: '1px solid #DBEAFE',
@@ -247,7 +247,7 @@ export default function DashboardHome({ doctorUser, onNavigate }) {
           </div>
 
           {/* Stat 4: ANN Predictions */}
-          <div style={{
+          <div className="stat-card" style={{
             background: '#FFFFFF',
             borderRadius: '14px',
             border: '1px solid #DDD6FE',
@@ -283,6 +283,7 @@ export default function DashboardHome({ doctorUser, onNavigate }) {
           {/* Action 1: Create New Assessment */}
           <button
             type="button"
+            className="quick-action-card"
             onClick={() => onNavigate('assessments')}
             style={{
               background: '#FFFFFF',
@@ -309,6 +310,7 @@ export default function DashboardHome({ doctorUser, onNavigate }) {
           {/* Action 2: Make Prediction */}
           <button
             type="button"
+            className="quick-action-card"
             onClick={() => onNavigate('prediction')}
             style={{
               background: '#FFFFFF',
@@ -334,6 +336,7 @@ export default function DashboardHome({ doctorUser, onNavigate }) {
           {/* Action 3: View Assessment History */}
           <button
             type="button"
+            className="quick-action-card"
             onClick={() => onNavigate('assessments')}
             style={{
               background: '#FFFFFF',
@@ -359,6 +362,7 @@ export default function DashboardHome({ doctorUser, onNavigate }) {
           {/* Action 4: View Prediction History */}
           <button
             type="button"
+            className="quick-action-card"
             onClick={() => onNavigate('history')}
             style={{
               background: '#FFFFFF',
@@ -384,6 +388,7 @@ export default function DashboardHome({ doctorUser, onNavigate }) {
           {/* Action 5: Open Heart Health Counselling */}
           <button
             type="button"
+            className="quick-action-card"
             onClick={() => onNavigate('counselling')}
             style={{
               background: '#FFFFFF',
@@ -415,7 +420,7 @@ export default function DashboardHome({ doctorUser, onNavigate }) {
         gap: '1.75rem',
       }}>
         {/* Panel A: Recent Assessments (Latest 5) */}
-        <section style={{
+        <section className="dashboard-panel-card" style={{
           background: '#FFFFFF',
           borderRadius: '16px',
           border: '1px solid #DBEAFE',
@@ -475,7 +480,7 @@ export default function DashboardHome({ doctorUser, onNavigate }) {
             </div>
           ) : (
             <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.84rem' }}>
+              <table className="recent-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.84rem' }}>
                 <thead>
                   <tr style={{ background: '#F8FAFC', borderBottom: '2px solid #E2E8F0', color: '#64748B' }}>
                     <th style={{ padding: '10px 12px' }}>Assessment ID</th>
@@ -540,7 +545,7 @@ export default function DashboardHome({ doctorUser, onNavigate }) {
         </section>
 
         {/* Panel B: Recent Predictions (Latest 5) */}
-        <section style={{
+        <section className="dashboard-panel-card" style={{
           background: '#FFFFFF',
           borderRadius: '16px',
           border: '1px solid #DBEAFE',
@@ -600,7 +605,7 @@ export default function DashboardHome({ doctorUser, onNavigate }) {
             </div>
           ) : (
             <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.84rem' }}>
+              <table className="recent-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.84rem' }}>
                 <thead>
                   <tr style={{ background: '#F8FAFC', borderBottom: '2px solid #E2E8F0', color: '#64748B' }}>
                     <th style={{ padding: '10px 10px' }}>Pred ID</th>

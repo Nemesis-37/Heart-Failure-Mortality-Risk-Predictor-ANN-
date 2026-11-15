@@ -1,4 +1,5 @@
 import React, { useState, useId } from 'react'
+import ThemeToggle from './components/ThemeToggle.jsx'
 
 export default function DoctorRegister({ onNavigateToLogin, onRegisterSuccess }) {
   const [formData, setFormData] = useState({
@@ -277,6 +278,9 @@ export default function DoctorRegister({ onNavigateToLogin, onRegisterSuccess })
       {/* ───── RIGHT PANEL: Registration Form ───── */}
       <div className="login-right-panel" style={{ overflowY: 'auto', maxHeight: '100vh', padding: '2.5rem 1.5rem' }}>
         <div className="login-form-wrapper" style={{ maxWidth: '640px' }}>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '8px' }}>
+            <ThemeToggle />
+          </div>
           <div className="login-form-card" style={{ padding: '2.25rem' }}>
 
             {/* Registration Success Confirmation */}
@@ -329,7 +333,7 @@ export default function DoctorRegister({ onNavigateToLogin, onRegisterSuccess })
                   </span>.
                 </p>
 
-                <div style={{
+                <div className="reg-next-step-box" style={{
                   background: '#F3F7FC',
                   border: '1px solid #DBEAFE',
                   borderRadius: '12px',
@@ -640,7 +644,7 @@ export default function DoctorRegister({ onNavigateToLogin, onRegisterSuccess })
 
                   {/* Password Strength Meter */}
                   {formData.password && (
-                    <div style={{
+                    <div className="register-pw-strength" style={{
                       background: '#F8FAFC',
                       padding: '0.75rem 1rem',
                       borderRadius: '8px',
@@ -682,7 +686,7 @@ export default function DoctorRegister({ onNavigateToLogin, onRegisterSuccess })
                     <label className="login-field-label" htmlFor={fileUploadId}>
                       Medical Registration Proof / Certificate <span style={{ color: '#64748b', fontWeight: 400 }}>(PDF, JPG, PNG - Max 10MB)</span>
                     </label>
-                    <div style={{
+                    <div className="register-doc-upload" style={{
                       border: '1.5px dashed #93C5FD',
                       background: '#EFF6FF',
                       borderRadius: '12px',
