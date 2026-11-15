@@ -208,26 +208,47 @@ export default function DoctorDashboard({
         requestHeaders['Authorization'] = `Bearer ${accessToken}`
       }
 
-      let response
+      // Collect candidate endpoints for this model
+      const endpointsToTry = [
+        model.endpoint,
+        model.fallbackEndpoint,
+        model.id === 'ann' ? 'http://127.0.0.1:8000/api/predict-ann' : 'http://127.0.0.1:8000/api/predict',
+        model.id === 'ann' ? '/predict-ann' : '/predict',
+      ].filter(Boolean)
 
-      try {
-        response = await fetch(model.endpoint, {
-          method: 'POST',
-          headers: requestHeaders,
-          body: JSON.stringify(payload),
-        })
-      } catch {
-        response = await fetch(model.fallbackEndpoint, {
-          method: 'POST',
-          headers: requestHeaders,
-          body: JSON.stringify(payload),
-        })
+      let response = null
+      let data = null
+      let lastErrorMessage = ''
+
+      for (const endpoint of endpointsToTry) {
+        try {
+          const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: requestHeaders,
+            body: JSON.stringify(payload),
+          })
+
+          if (res.ok) {
+            response = res
+            data = await res.json()
+            break
+          } else {
+            try {
+              const errBody = await res.json()
+              lastErrorMessage = errBody.detail || `Server returned status ${res.status}`
+            } catch {
+              lastErrorMessage = `Server returned status ${res.status}`
+            }
+          }
+        } catch (fetchErr) {
+          lastErrorMessage = fetchErr.message || 'Connection refused'
+        }
       }
 
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.detail || `Server error (${response.status})`)
+      if (!response || !response.ok || !data) {
+        throw new Error(
+          lastErrorMessage || `Could not connect to FastAPI inference server at http://127.0.0.1:8000 for ${model.label}.`
+        )
       }
 
       const timestamp = new Date().toLocaleTimeString([], {
@@ -242,6 +263,7 @@ export default function DoctorDashboard({
         timestamp,
         threshold: 0.5,
       })
+      setApiError(null)
       setBackendStatus('online')
 
       // Record this clinical assessment into the assessment directory and prediction history
@@ -279,6 +301,7 @@ export default function DoctorDashboard({
       setApiError(
         error.message || 'Could not connect to FastAPI backend at http://127.0.0.1:8000.'
       )
+      setResult(null)
       setBackendStatus('offline')
     } finally {
       setLoading(false)
@@ -885,6 +908,7 @@ export default function DoctorDashboard({
                   <button
                     type="submit"
                     className="btn-primary btn-predict"
+                    onClick={handleSubmit}
                     disabled={loading}
                     aria-busy={loading}
                   >
@@ -1032,8 +1056,30 @@ export default function DoctorDashboard({
                     Transmitting clinical parameters to <strong>{selectedModel.label}</strong> endpoint.
                   </p>
                 </div>
+              ) : apiError ? (
+                /* State B: Error State */
+                <div className="result-state-box error-state">
+                  <div className="empty-icon-circle error-circle" aria-hidden="true">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10" />
+                      <line x1="12" y1="8" x2="12" y2="12" />
+                      <line x1="12" y1="16" x2="12.01" y2="16" />
+                    </svg>
+                  </div>
+                  <h3>Prediction Request Failed</h3>
+                  <p className="error-state-message">
+                    {apiError}
+                  </p>
+                  <button
+                    type="button"
+                    className="btn-primary btn-retry-prediction"
+                    onClick={handleSubmit}
+                  >
+                    Retry Prediction
+                  </button>
+                </div>
               ) : !result ? (
-                /* State B: Empty Initial State (Ready for Analysis) */
+                /* State C: Empty Initial State (Ready for Analysis) */
                 <div className="result-state-box empty-state">
                   <div className="empty-icon-circle" aria-hidden="true">
                     <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -1042,7 +1088,7 @@ export default function DoctorDashboard({
                   </div>
                   <h3>Ready for Analysis</h3>
                   <p>
-                    Enter patient clinical parameters on the left, select a model architecture, and click <strong>Run Prediction</strong> to generate results.
+                    Enter patient clinical parameters on the left, select a model architecture, and click <strong>Generate Prediction</strong> to compute results.
                   </p>
                   <div className="empty-state-guide">
                     <span className="guide-chip">Dual Model Comparison</span>
@@ -1050,7 +1096,7 @@ export default function DoctorDashboard({
                   </div>
                 </div>
               ) : (
-                /* State C: Active Clinical Prediction Result */
+                /* State D: Active Clinical Prediction Result */
                 <div className="clean-result-container">
                   {/* Predicted Outcome Banner */}
                   <div className={`clean-outcome-banner ${result.predicted_class === 1 ? 'positive-event' : 'negative-event'}`}>

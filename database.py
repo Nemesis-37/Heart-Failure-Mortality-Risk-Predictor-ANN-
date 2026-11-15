@@ -63,6 +63,7 @@ odbc_connection_string = (
     f"Trusted_Connection={DB_TRUSTED_CONNECTION};"
     f"Encrypt={DB_ENCRYPT};"
     f"TrustServerCertificate={DB_TRUST_SERVER_CERTIFICATE};"
+    f"Connection Timeout=1;"
 )
 
 # ---------------------------------------------------------------------------
@@ -86,6 +87,11 @@ engine = None
 
 try:
     import pyodbc  # Check if pyodbc is installed
+    _probe_engine = create_engine(DATABASE_URL, connect_args={"timeout": 2})
+    with _probe_engine.connect() as _probe_conn:
+        _probe_conn.execute(text("SELECT 1"))
+    _probe_engine.dispose()
+
     engine = create_engine(
         DATABASE_URL,
         pool_size=DB_POOL_SIZE,
@@ -178,7 +184,11 @@ def test_db_connection() -> dict:
 
     try:
         with engine.connect() as conn:
-            result = conn.execute(text("SELECT DB_NAME()")).scalar()
+            if engine.dialect.name == "sqlite":
+                result = "clinical_local.db"
+                conn.execute(text("SELECT 1"))
+            else:
+                result = conn.execute(text("SELECT DB_NAME()")).scalar()
             return {
                 "status": "connected",
                 "database": result or DB_DATABASE,

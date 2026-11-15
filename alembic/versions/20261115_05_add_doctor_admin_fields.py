@@ -19,10 +19,10 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     # Add username, last_login, approved_at to Doctors
-    op.add_column('Doctors', sa.Column('username', sa.String(length=64), nullable=True))
-    op.create_unique_constraint('UQ_Doctors_Username', 'Doctors', ['username'])
-    op.add_column('Doctors', sa.Column('last_login', sa.DateTime(), nullable=True))
-    op.add_column('Doctors', sa.Column('approved_at', sa.DateTime(), nullable=True))
+    op.add_column('Doctors', sa.Column('username', sa.String(length=64), nullable=True), schema='clinical')
+    op.create_unique_constraint('UQ_Doctors_Username', 'Doctors', ['username'], schema='clinical')
+    op.add_column('Doctors', sa.Column('last_login', sa.DateTime(), nullable=True), schema='clinical')
+    op.add_column('Doctors', sa.Column('approved_at', sa.DateTime(), nullable=True), schema='clinical')
 
 
 def downgrade() -> None:

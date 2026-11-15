@@ -99,7 +99,7 @@ def _build_connection_string() -> str:
         "Database": DB_NAME,
         "TrustServerCertificate": DB_TRUST_CERT,
         "Encrypt": "yes",        # Always request an encrypted channel
-        "Connection Timeout": "30",
+        "Connection Timeout": "1",
     }
 
     # Authentication
@@ -142,6 +142,12 @@ engine = None
 if HAS_PYODBC:
     try:
         DATABASE_URL = _build_connection_string()
+        # Verify SQL Server connection liveliness quickly before binding
+        _probe_engine = create_engine(DATABASE_URL, connect_args={"timeout": 2})
+        with _probe_engine.connect() as _probe_conn:
+            _probe_conn.execute(text("SELECT 1"))
+        _probe_engine.dispose()
+
         engine = create_engine(
             DATABASE_URL,
             pool_size=DB_POOL_SIZE,

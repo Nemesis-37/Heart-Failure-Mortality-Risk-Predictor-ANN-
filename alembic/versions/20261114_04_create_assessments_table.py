@@ -45,11 +45,12 @@ def upgrade() -> None:
         sa.CheckConstraint('high_blood_pressure IN (0, 1)', name='CK_Assessments_HBP_Binary'),
         sa.CheckConstraint('sex IN (0, 1)', name='CK_Assessments_Sex_Binary'),
         sa.CheckConstraint('smoking IN (0, 1)', name='CK_Assessments_Smoking_Binary'),
-        sa.ForeignKeyConstraint(['doctor_id'], ['Doctors.doctor_id'], ondelete='CASCADE'),
+        sa.ForeignKeyConstraint(['doctor_id'], ['clinical.Doctors.doctor_id'], ondelete='CASCADE'),
         sa.PrimaryKeyConstraint('assessment_id', name='PK_Assessments'),
+        schema='clinical'
     )
-    op.create_index('IX_Assessments_DoctorId_CreatedAt', 'Assessments', ['doctor_id', 'created_at'])
-    op.create_index('IX_Assessments_PatientReference', 'Assessments', ['patient_reference'])
+    op.create_index('IX_Assessments_DoctorId_CreatedAt', 'Assessments', ['doctor_id', 'created_at'], schema='clinical')
+    op.create_index('IX_Assessments_PatientReference', 'Assessments', ['patient_reference'], schema='clinical')
 
 
 def downgrade() -> None:

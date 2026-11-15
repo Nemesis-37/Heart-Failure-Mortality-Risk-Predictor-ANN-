@@ -2402,12 +2402,42 @@ textarea {
 }
 
 .empty-state h3,
-.loading-state h3 {
+.loading-state h3,
+.error-state h3 {
   font-family: var(--font-heading);
   font-size: 1.15rem;
   font-weight: 700;
   color: var(--text-primary);
   letter-spacing: -0.015em;
+}
+
+.error-state h3 {
+  color: #E11D48;
+}
+
+.result-state-box.error-state {
+  background: #FFF1F2;
+  border: 1px dashed #FDA4AF;
+  border-radius: var(--radius-md);
+}
+
+.empty-icon-circle.error-circle {
+  background: #FFE4E6;
+  border-color: #F43F5E;
+  color: #E11D48;
+}
+
+.error-state-message {
+  font-size: 0.85rem;
+  color: #64748B;
+  max-width: 360px;
+  line-height: 1.5;
+}
+
+.btn-retry-prediction {
+  padding: 0.55rem 1.25rem;
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
 }
 
 .empty-state p,
@@ -7509,6 +7539,21 @@ html.dark .result-state-box.loading-state h3 {
 }
 html.dark .result-state-box.loading-state p {
   color: #7F9AB9 !important;
+}
+html.dark .result-state-box.error-state {
+  background: rgba(225, 29, 72, 0.08) !important;
+  border-color: rgba(225, 29, 72, 0.3) !important;
+}
+html.dark .empty-icon-circle.error-circle {
+  background: rgba(225, 29, 72, 0.15) !important;
+  border-color: rgba(225, 29, 72, 0.4) !important;
+  color: #FB7185 !important;
+}
+html.dark .error-state h3 {
+  color: #FB7185 !important;
+}
+html.dark .error-state-message {
+  color: #A9BED8 !important;
 }
 html.dark .clean-spinner-lg {
   border-color: rgba(59, 130, 246, 0.2) !important;

@@ -662,7 +662,7 @@ def doctor_login(
     reset_login_failures(clean_email)
 
     # Record login timestamp directly on Doctor record
-    login_now = datetime.now(timezone.utc)
+    login_now = datetime.now(timezone.utc).replace(tzinfo=None)
     doctor.last_login = login_now
     db.commit()
 

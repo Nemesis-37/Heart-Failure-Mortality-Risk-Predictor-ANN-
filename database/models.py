@@ -24,6 +24,7 @@ from sqlalchemy import (
     BigInteger,
     Boolean,
     CheckConstraint,
+    DateTime,
     ForeignKey,
     Index,
     Integer,
@@ -89,7 +90,7 @@ class Doctor(Base):
         nullable=False,
         default=lambda: datetime.now(timezone.utc),
     )
-    last_login: Mapped[datetime | None] = mapped_column(DATETIMEOFFSET, nullable=True)
+    last_login: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     # Administrator Verification Audit Metadata
     verified_at: Mapped[datetime | None] = mapped_column(DATETIMEOFFSET, nullable=True)

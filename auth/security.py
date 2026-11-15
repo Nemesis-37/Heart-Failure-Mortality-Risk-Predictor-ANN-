@@ -29,6 +29,7 @@ try:
         hash_len=32,
     )
     _USING_NATIVE_ARGON2 = True
+    logger.info("Native Argon2id password hashing is enabled.")
 
     def hash_password(plain_password: str) -> str:
         """Hash a plain text password using native Argon2id."""

@@ -630,6 +630,9 @@ The backend architecture uses:
 - JWT-based authentication
 - Stateless authentication/session handling
 - Protected API endpoints
+- Native Argon2id password hashing via `argon2-cffi` (install with `pip install -r requirements-auth.txt`)
+
+For local development only, create the demo doctor with `APP_ENV=development` and `DEMO_DOCTOR_PASSWORD` set, then run `scripts/create_demo_doctor.py`. The script refuses non-local SQL Server targets and does not change an existing account.
 
 The system also includes role/access considerations as defined by the application requirements.
 
