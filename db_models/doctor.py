@@ -43,6 +43,7 @@ class Doctor(Base):
     medical_degree: Mapped[str] = mapped_column(String(128), nullable=False)
     registration_number: Mapped[str] = mapped_column(String(64), nullable=False)
     registration_council: Mapped[str] = mapped_column(String(128), nullable=False)
+    username: Mapped[str | None] = mapped_column(String(64), unique=True, nullable=True)
     email_verified: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     verification_status: Mapped[str] = mapped_column(
         String(32), nullable=False, default="PENDING"
@@ -52,10 +53,12 @@ class Doctor(Base):
         nullable=False,
         default=lambda: datetime.now(timezone.utc),
     )
+    last_login: Mapped[datetime | None] = mapped_column(nullable=True)
 
     # Verification audit metadata (recorded upon administrative review)
     verified_at: Mapped[datetime | None] = mapped_column(nullable=True)
     verified_by: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    approved_at: Mapped[datetime | None] = mapped_column(nullable=True)
     rejection_reason: Mapped[str | None] = mapped_column(String(512), nullable=True)
 
     # Optional supporting medical document metadata

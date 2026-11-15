@@ -75,6 +75,9 @@ class Doctor(Base):
     registration_number: Mapped[str] = mapped_column(String(64), nullable=False)
     registration_council: Mapped[str] = mapped_column(String(128), nullable=False)
     
+    # Optional unique system-generated username (assigned upon approval)
+    username: Mapped[str | None] = mapped_column(String(64), unique=True, nullable=True)
+
     # Verification & Active Flags
     email_verified: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     verification_status: Mapped[str] = mapped_column(
@@ -86,10 +89,12 @@ class Doctor(Base):
         nullable=False,
         default=lambda: datetime.now(timezone.utc),
     )
+    last_login: Mapped[datetime | None] = mapped_column(DATETIMEOFFSET, nullable=True)
 
     # Administrator Verification Audit Metadata
     verified_at: Mapped[datetime | None] = mapped_column(DATETIMEOFFSET, nullable=True)
     verified_by: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    approved_at: Mapped[datetime | None] = mapped_column(DATETIMEOFFSET, nullable=True)
     rejection_reason: Mapped[str | None] = mapped_column(String(512), nullable=True)
 
     # Medical registration evidence document metadata (stored securely on disk)

@@ -60,6 +60,8 @@ class DoctorSafeResponse(BaseModel):
     is_active: bool
     created_at: datetime
     document_uploaded: bool
+    username: Optional[str] = None
+    last_login: Optional[datetime] = None
 
     class Config:
         from_attributes = True

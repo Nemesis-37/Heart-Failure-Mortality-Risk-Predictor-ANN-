@@ -172,3 +172,179 @@ def send_email_otp(recipient_email: str, recipient_name: str, otp_code: str) -> 
     logger.info(f"[LOCAL DEV SMTP SIMULATION] Verification email dispatched to: {recipient_email}")
     logger.info(f"[LOCAL DEV SMTP SIMULATION] Code: {otp_code} (Valid for 5 mins)")
     return True, "Verification code sent (Local development simulation active)."
+
+
+def send_doctor_approval_email(
+    recipient_email: str,
+    recipient_name: str,
+    username: str,
+    portal_url: str = "http://localhost:5173",
+) -> Tuple[bool, str]:
+    """
+    Deliver formal credential approval notification to the verified physician.
+    Includes system-assigned username and portal login link.
+    Never transmits permanent password over plain email.
+    """
+    subject = "Account Approved — CardioPredict Clinical Portal"
+
+    html_content = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>Credentials Approved</title>
+      <style>
+        body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #F3F7FC; margin: 0; padding: 24px; }}
+        .email-container {{ max-width: 560px; margin: 0 auto; background: #ffffff; border-radius: 12px; border: 1px solid #DBEAFE; overflow: hidden; }}
+        .email-header {{ background: linear-gradient(135deg, #0B1F3A 0%, #102F56 50%, #1565D8 100%); color: #ffffff; padding: 28px 24px; text-align: center; }}
+        .email-body {{ padding: 28px 24px; color: #1e293b; line-height: 1.6; }}
+        .info-card {{ background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 8px; padding: 18px; margin: 20px 0; }}
+        .cta-btn {{ display: inline-block; background: #1565D8; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 6px; font-weight: 600; margin-top: 14px; }}
+        .email-footer {{ background: #F8FAFC; padding: 16px 24px; font-size: 12px; color: #64748b; text-align: center; border-top: 1px solid #E2E8F0; }}
+      </style>
+    </head>
+    <body>
+      <div class="email-container">
+        <div class="email-header">
+          <h2 style="margin: 0; font-size: 20px;">CardioPredict Clinical Portal</h2>
+          <p style="margin: 6px 0 0; opacity: 0.85; font-size: 13px;">Medical Credential Verification Approved</p>
+        </div>
+        <div class="email-body">
+          <p>Dear <strong>{recipient_name}</strong>,</p>
+          <p>We are pleased to inform you that your medical registration and credentials have been <strong>verified and approved</strong> by hospital administration.</p>
+          <div class="info-card">
+            <p style="margin: 0 0 8px; font-weight: 600; color: #0B1F3A;">Physician Profile Summary:</p>
+            <p style="margin: 4px 0;"><strong>Assigned Portal Username:</strong> <code style="background: #DBEAFE; padding: 2px 6px; border-radius: 4px; color: #1565D8;">{username}</code></p>
+            <p style="margin: 4px 0;"><strong>Registered Email:</strong> {recipient_email}</p>
+            <p style="margin: 4px 0;"><strong>Status:</strong> <span style="color: #0D9488; font-weight: 700;">APPROVED</span></p>
+          </div>
+          <p>You can now sign in to access Heart Failure Mortality Risk Predictor clinical decision tools using your registered email and password:</p>
+          <div style="text-align: center; margin: 20px 0;">
+            <a href="{portal_url}" class="cta-btn" style="color: #ffffff;">Access Clinical Portal &rarr;</a>
+          </div>
+          <p style="font-size: 12px; color: #64748b;">
+            * Security Note: For your protection, CardioPredict never sends permanent account passwords via email. Use the password configured during registration.
+          </p>
+        </div>
+        <div class="email-footer">
+          Heart Failure Mortality Risk Predictor &bull; Clinical Decision Support
+        </div>
+      </div>
+    </body>
+    </html>
+    """
+
+    plain_content = (
+        f"Dear {recipient_name},\n\n"
+        f"Your medical registration and credentials have been verified and approved by hospital administration.\n\n"
+        f"Assigned Portal Username: {username}\n"
+        f"Registered Email: {recipient_email}\n"
+        f"Status: APPROVED\n\n"
+        f"You can sign in to the clinical portal at:\n{portal_url}\n\n"
+        f"CardioPredict Clinical Decision Support"
+    )
+
+    if SMTP_HOST and SMTP_USERNAME and SMTP_PASSWORD:
+        try:
+            msg = MIMEMultipart("alternative")
+            msg["Subject"] = subject
+            msg["From"] = f"{SMTP_FROM_NAME} <{SMTP_FROM_EMAIL}>"
+            msg["To"] = recipient_email
+            msg.attach(MIMEText(plain_content, "plain"))
+            msg.attach(MIMEText(html_content, "html"))
+
+            server = smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=10)
+            if SMTP_USE_TLS:
+                server.starttls()
+            server.login(SMTP_USERNAME, SMTP_PASSWORD)
+            server.send_message(msg)
+            server.quit()
+            logger.info(f"Doctor approval email dispatched to {recipient_email}")
+            return True, "Approval email sent successfully."
+        except Exception as exc:
+            logger.error(f"Approval email SMTP dispatch failed: {exc}")
+            return True, f"Approval recorded; SMTP dispatch logged: {str(exc)}"
+
+    logger.info(f"[LOCAL DEV SMTP SIMULATION] Doctor approval dispatched to: {recipient_email} | Username: {username}")
+    return True, "Approval email recorded (Local development simulation active)."
+
+
+def send_doctor_rejection_email(
+    recipient_email: str,
+    recipient_name: str,
+    rejection_reason: str,
+) -> Tuple[bool, str]:
+    """
+    Deliver formal rejection notification with clinical reason to the physician.
+    """
+    subject = "Registration Status Update — CardioPredict Clinical Portal"
+
+    html_content = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>Registration Update</title>
+      <style>
+        body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #F3F7FC; margin: 0; padding: 24px; }}
+        .email-container {{ max-width: 560px; margin: 0 auto; background: #ffffff; border-radius: 12px; border: 1px solid #DBEAFE; overflow: hidden; }}
+        .email-header {{ background: linear-gradient(135deg, #0B1F3A 0%, #102F56 50%, #EF4444 100%); color: #ffffff; padding: 28px 24px; text-align: center; }}
+        .email-body {{ padding: 28px 24px; color: #1e293b; line-height: 1.6; }}
+        .reason-card {{ background: #FEF2F2; border: 1px solid #FECACA; border-radius: 8px; padding: 18px; margin: 20px 0; color: #991B1B; }}
+        .email-footer {{ background: #F8FAFC; padding: 16px 24px; font-size: 12px; color: #64748b; text-align: center; border-top: 1px solid #E2E8F0; }}
+      </style>
+    </head>
+    <body>
+      <div class="email-container">
+        <div class="email-header">
+          <h2 style="margin: 0; font-size: 20px;">CardioPredict Clinical Portal</h2>
+          <p style="margin: 6px 0 0; opacity: 0.85; font-size: 13px;">Credential Verification Review</p>
+        </div>
+        <div class="email-body">
+          <p>Dear <strong>{recipient_name}</strong>,</p>
+          <p>Thank you for submitting your credentials to the CardioPredict Clinical Portal. Following review against authoritative medical records, your application could not be approved at this time.</p>
+          <div class="reason-card">
+            <p style="margin: 0 0 6px; font-weight: 600;">Verification Review Decision:</p>
+            <p style="margin: 0;">{rejection_reason}</p>
+          </div>
+          <p>If you believe this decision was made in error or if your state medical council registration was recently updated, please contact hospital administration.</p>
+        </div>
+        <div class="email-footer">
+          Heart Failure Mortality Risk Predictor &bull; Clinical Decision Support
+        </div>
+      </div>
+    </body>
+    </html>
+    """
+
+    plain_content = (
+        f"Dear {recipient_name},\n\n"
+        f"Your registration application to CardioPredict could not be approved at this time.\n\n"
+        f"Reason recorded:\n{rejection_reason}\n\n"
+        f"If you have questions, please contact hospital administration.\n"
+        f"CardioPredict Clinical Decision Support"
+    )
+
+    if SMTP_HOST and SMTP_USERNAME and SMTP_PASSWORD:
+        try:
+            msg = MIMEMultipart("alternative")
+            msg["Subject"] = subject
+            msg["From"] = f"{SMTP_FROM_NAME} <{SMTP_FROM_EMAIL}>"
+            msg["To"] = recipient_email
+            msg.attach(MIMEText(plain_content, "plain"))
+            msg.attach(MIMEText(html_content, "html"))
+
+            server = smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=10)
+            if SMTP_USE_TLS:
+                server.starttls()
+            server.login(SMTP_USERNAME, SMTP_PASSWORD)
+            server.send_message(msg)
+            server.quit()
+            logger.info(f"Doctor rejection email dispatched to {recipient_email}")
+            return True, "Rejection email sent successfully."
+        except Exception as exc:
+            logger.error(f"Rejection email SMTP dispatch failed: {exc}")
+            return True, f"Rejection recorded; SMTP dispatch logged: {str(exc)}"
+
+    logger.info(f"[LOCAL DEV SMTP SIMULATION] Doctor rejection dispatched to: {recipient_email} | Reason: {rejection_reason}")
+    return True, "Rejection email recorded (Local development simulation active)."

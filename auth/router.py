@@ -661,6 +661,11 @@ def doctor_login(
     # Successful login: reset rate limit failures
     reset_login_failures(clean_email)
 
+    # Record login timestamp directly on Doctor record
+    login_now = datetime.now(timezone.utc)
+    doctor.last_login = login_now
+    db.commit()
+
     # Create short-lived access token and revocable refresh session
     access_token, raw_refresh_token, expires_in = create_doctor_session(
         db=db,
@@ -687,6 +692,8 @@ def doctor_login(
             is_active=doctor.is_active,
             created_at=doctor.created_at,
             document_uploaded=bool(doctor.document_path),
+            username=getattr(doctor, "username", None),
+            last_login=doctor.last_login,
         ),
     )
 

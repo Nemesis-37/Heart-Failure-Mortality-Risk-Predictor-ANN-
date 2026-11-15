@@ -130,6 +130,9 @@ class PatientData(BaseModel):
     smoking: int
 
 
+HeartFailureInput = PatientData
+
+
 def prepare_input(patient: PatientData, feature_names):
     patient_data = patient.model_dump()
 
@@ -248,6 +251,9 @@ def predict_logistic_regression(patient: PatientData, current_doctor = Depends(g
             status_code=500,
             detail="Prediction failed. Please try again.",
         ) from exc
+
+
+predict = predict_logistic_regression
 
 
 @app.post("/predict-ann")

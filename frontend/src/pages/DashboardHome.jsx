@@ -23,24 +23,30 @@ export default function DashboardHome({ doctorUser, onNavigate }) {
 
   const [stats, setStats] = useState(null)
   const [recentAssessments, setRecentAssessments] = useState([])
+  const [recentPredictions, setRecentPredictions] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     let cancelled = false
     async function loadDashboard() {
       try {
-        const [summaryRes, recentRes] = await Promise.all([
+        const [summaryRes, recentAsmRes, recentPredRes] = await Promise.all([
           fetchWithAuth('/dashboard/summary'),
           fetchWithAuth('/dashboard/recent-assessments'),
+          fetchWithAuth('/dashboard/recent-predictions'),
         ])
         if (cancelled) return
         if (summaryRes.ok) {
           const data = await summaryRes.json()
           setStats(data)
         }
-        if (recentRes.ok) {
-          const data = await recentRes.json()
-          setRecentAssessments(Array.isArray(data) ? data : [])
+        if (recentAsmRes.ok) {
+          const data = await recentAsmRes.json()
+          setRecentAssessments(Array.isArray(data) ? data.slice(0, 5) : [])
+        }
+        if (recentPredRes.ok) {
+          const data = await recentPredRes.json()
+          setRecentPredictions(Array.isArray(data) ? data.slice(0, 5) : [])
         }
       } catch (err) {
         console.warn('Dashboard data fetch error:', err)
@@ -52,289 +58,600 @@ export default function DashboardHome({ doctorUser, onNavigate }) {
     return () => { cancelled = true }
   }, [])
 
-  const totalAssessments = stats?.total_assessments ?? '—'
-  const totalPredictions = stats?.total_predictions ?? '—'
-  const lrPredictions = stats?.logistic_regression_predictions ?? '—'
-  const annPredictions = stats?.ann_predictions ?? '—'
+  const totalAssessments = stats?.total_assessments ?? 0
+  const totalPredictions = stats?.total_predictions ?? 0
+  const lrPredictions = stats?.logistic_regression_predictions ?? 0
+  const annPredictions = stats?.ann_predictions ?? 0
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '—'
+    try {
+      return new Date(dateStr).toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    } catch {
+      return dateStr
+    }
+  }
 
   return (
-    <div className="dash-home-container">
+    <div className="dash-home-container" style={{ maxWidth: '1280px', margin: '0 auto', paddingBottom: '3rem' }}>
       {/* 1. Doctor Welcome Hero Card */}
-      <section className="dash-home-welcome-card" aria-label="Welcome Overview">
-        <div className="dash-welcome-content">
-          <div className="dash-welcome-meta-pill">
-            <span className="welcome-pulse-dot" />
-            <span>Cardiology Service · Shift Active · {todayFormatted}</span>
+      <section className="dash-home-welcome-card" aria-label="Welcome Overview" style={{
+        background: 'linear-gradient(135deg, #0B1F3A 0%, #102F56 60%, #1565D8 100%)',
+        borderRadius: '16px',
+        padding: '2rem 2.25rem',
+        color: '#FFFFFF',
+        marginBottom: '2rem',
+        boxShadow: '0 8px 24px rgba(11, 31, 58, 0.12)',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: '1.5rem',
+      }}>
+        <div style={{ maxWidth: '680px' }}>
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            background: 'rgba(255,255,255,0.12)',
+            padding: '5px 12px',
+            borderRadius: '20px',
+            fontSize: '0.78rem',
+            fontWeight: 600,
+            marginBottom: '10px',
+            backdropFilter: 'blur(8px)',
+          }}>
+            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#38BDF8', boxShadow: '0 0 8px #38BDF8' }} />
+            <span>Cardiology Service &bull; Shift Active &bull; {todayFormatted}</span>
           </div>
-          <h2 className="dash-welcome-title">Welcome back, {cleanDoctorName}</h2>
-          <p className="dash-welcome-subtitle">
-            Clinical Decision Support Workspace for 30-day heart failure mortality risk estimation.
-            Evaluate patient serum biomarkers and hemodynamic measurements using our dual-model machine learning architecture.
+          <h2 style={{ margin: '0 0 8px', fontSize: '1.75rem', fontWeight: 800, color: '#FFFFFF' }}>
+            Welcome back, {cleanDoctorName}
+          </h2>
+          <p style={{ margin: 0, fontSize: '0.92rem', color: '#DBEAFE', lineHeight: '1.6', opacity: 0.95 }}>
+            Clinical Decision Support Workspace for 30-day heart failure mortality risk evaluation.
+            Review patient biomarkers, execute dual-model predictions, and access evidence-based lifestyle counselling guidelines.
           </p>
         </div>
-        <div className="dash-welcome-actions">
+
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
           <button
             type="button"
-            className="btn-dash-primary"
             onClick={() => onNavigate('prediction')}
+            style={{
+              background: '#38BDF8',
+              color: '#0B1F3A',
+              border: 'none',
+              padding: '12px 22px',
+              borderRadius: '10px',
+              fontWeight: 700,
+              fontSize: '0.9rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              boxShadow: '0 4px 14px rgba(56, 189, 248, 0.3)',
+            }}
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-            </svg>
-            <span>Start New Assessment</span>
+            <span>⚡</span>
+            <span>Make Prediction</span>
           </button>
           <button
             type="button"
-            className="btn-dash-secondary"
-            onClick={() => onNavigate('parameters')}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-            </svg>
-            <span>Biomarker Guide</span>
-          </button>
-        </div>
-      </section>
-
-      {/* 2. Four Clinical Overview / Statistics Cards */}
-      <section className="dash-stats-grid" aria-label="Clinical Metrics Overview">
-        {/* Stat 1: Total Assessments */}
-        <div className="dash-stat-card">
-          <div className="dash-stat-header">
-            <span className="dash-stat-tag">Patient Cohort</span>
-            <div className="dash-stat-icon icon-blue" aria-hidden="true">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
-                <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
-              </svg>
-            </div>
-          </div>
-          <div className="dash-stat-main">
-            <span className="dash-stat-value">{loading ? '…' : totalAssessments}</span>
-            <span className="dash-stat-label">Total Assessments</span>
-          </div>
-          <div className="dash-stat-footer">
-            <span className="dash-stat-subtext">
-              {loading ? 'Loading…' : totalAssessments === 0 ? 'No historical records logged yet' : 'Patients evaluated in this session'}
-            </span>
-          </div>
-        </div>
-
-        {/* Stat 2: High-Risk Threshold */}
-        <div className="dash-stat-card">
-          <div className="dash-stat-header">
-            <span className="dash-stat-tag">Classification Cutoff</span>
-            <div className="dash-stat-icon icon-teal" aria-hidden="true">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10" />
-                <polyline points="12 6 12 12 16 14" />
-              </svg>
-            </div>
-          </div>
-          <div className="dash-stat-main">
-            <span className="dash-stat-value">50%</span>
-            <span className="dash-stat-label">Decision Boundary</span>
-          </div>
-          <div className="dash-stat-footer">
-            <span className="dash-stat-subtext">Binary probability threshold</span>
-          </div>
-        </div>
-
-        {/* Stat 3: Active Models */}
-        <div className="dash-stat-card">
-          <div className="dash-stat-header">
-            <span className="dash-stat-tag">Inference Engines</span>
-            <div className="dash-stat-icon icon-purple" aria-hidden="true">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10" />
-                <line x1="2" y1="12" x2="22" y2="12" />
-                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-              </svg>
-            </div>
-          </div>
-          <div className="dash-stat-main">
-            <span className="dash-stat-value">2</span>
-            <span className="dash-stat-label">Active Models</span>
-          </div>
-          <div className="dash-stat-footer">
-            <span className="dash-stat-subtext">LR + Deep Neural Network (ANN)</span>
-          </div>
-        </div>
-
-        {/* Stat 4: Total Predictions */}
-        <div className="dash-stat-card">
-          <div className="dash-stat-header">
-            <span className="dash-stat-tag">Predictions Run</span>
-            <div className="dash-stat-icon icon-blue" aria-hidden="true">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-              </svg>
-            </div>
-          </div>
-          <div className="dash-stat-main">
-            <span className="dash-stat-value">{loading ? '…' : totalPredictions}</span>
-            <span className="dash-stat-label">Total Predictions</span>
-          </div>
-          <div className="dash-stat-footer">
-            <span className="dash-stat-subtext">
-              {loading ? 'Loading…' : `LR: ${lrPredictions} · ANN: ${annPredictions}`}
-            </span>
-          </div>
-        </div>
-      </section>
-
-      {/* 3. Recent Assessments */}
-      <section className="dash-recent-section" aria-label="Recent Clinical Assessments">
-        <div className="dash-section-header">
-          <h3 className="dash-section-title">Recent Assessments</h3>
-          <button
-            type="button"
-            className="dash-view-all-btn"
             onClick={() => onNavigate('assessments')}
+            style={{
+              background: 'rgba(255,255,255,0.15)',
+              color: '#FFFFFF',
+              border: '1px solid rgba(255,255,255,0.3)',
+              padding: '12px 20px',
+              borderRadius: '10px',
+              fontWeight: 600,
+              fontSize: '0.9rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+            }}
           >
-            View All →
+            <span>📋</span>
+            <span>Patient Assessments</span>
           </button>
         </div>
+      </section>
 
-        {loading ? (
-          <div className="dash-loading-state">
-            <span className="dash-spinner" aria-hidden="true" />
-            <span>Loading recent assessments…</span>
-          </div>
-        ) : recentAssessments.length === 0 ? (
-          <div className="dash-empty-state">
-            <div className="empty-state-icon" aria-hidden="true">
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                <polyline points="14 2 14 8 20 8" />
-                <line x1="12" y1="18" x2="12" y2="12" />
-                <line x1="9" y1="15" x2="15" y2="15" />
-              </svg>
+      {/* 2. Doctor Dashboard Statistics (Actual Records Belonging Strictly to Logged-in Doctor) */}
+      <section aria-label="Clinical Metrics Overview" style={{ marginBottom: '2rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+          <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: '#0B1F3A' }}>
+            Clinical Activity Statistics
+          </h3>
+          <span style={{ fontSize: '0.8rem', color: '#64748B' }}>
+            Confined to Dr. {cleanDoctorName.replace(/^Dr\.\s*/i, '')} &bull; Real-time Database Records
+          </span>
+        </div>
+
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+          gap: '1.25rem',
+        }}>
+          {/* Stat 1: Total Assessments */}
+          <div style={{
+            background: '#FFFFFF',
+            borderRadius: '14px',
+            border: '1px solid #DBEAFE',
+            padding: '1.5rem',
+            boxShadow: '0 2px 8px rgba(11, 31, 58, 0.04)',
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#1565D8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Total Assessments
+              </span>
+              <span style={{ background: '#EFF6FF', color: '#1565D8', padding: '6px 10px', borderRadius: '8px', fontSize: '1rem' }}>📋</span>
             </div>
-            <h4 className="empty-state-title">No Assessments Recorded Yet</h4>
-            <p className="empty-state-desc">
-              You haven&apos;t run any patient predictions during this clinical session. Once you evaluate a patient in the New Prediction workspace, the inference results, risk classifications, and probability metrics will appear here.
-            </p>
+            <div style={{ fontSize: '2.2rem', fontWeight: 800, color: '#0B1F3A', marginTop: '10px' }}>
+              {loading ? '…' : totalAssessments}
+            </div>
+            <div style={{ fontSize: '0.78rem', color: '#64748B', marginTop: '4px' }}>
+              Patient profiles recorded by you
+            </div>
+          </div>
+
+          {/* Stat 2: Total Predictions */}
+          <div style={{
+            background: '#FFFFFF',
+            borderRadius: '14px',
+            border: '1px solid #DBEAFE',
+            padding: '1.5rem',
+            boxShadow: '0 2px 8px rgba(11, 31, 58, 0.04)',
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#0D9488', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Total Predictions
+              </span>
+              <span style={{ background: '#F0FDFA', color: '#0D9488', padding: '6px 10px', borderRadius: '8px', fontSize: '1rem' }}>⚡</span>
+            </div>
+            <div style={{ fontSize: '2.2rem', fontWeight: 800, color: '#0D9488', marginTop: '10px' }}>
+              {loading ? '…' : totalPredictions}
+            </div>
+            <div style={{ fontSize: '0.78rem', color: '#64748B', marginTop: '4px' }}>
+              Dual-model risk evaluations run
+            </div>
+          </div>
+
+          {/* Stat 3: Logistic Regression Predictions */}
+          <div style={{
+            background: '#FFFFFF',
+            borderRadius: '14px',
+            border: '1px solid #DBEAFE',
+            padding: '1.5rem',
+            boxShadow: '0 2px 8px rgba(11, 31, 58, 0.04)',
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#2563EB', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Logistic Regression
+              </span>
+              <span style={{ background: '#EFF6FF', color: '#2563EB', padding: '6px 10px', borderRadius: '8px', fontSize: '1rem' }}>📊</span>
+            </div>
+            <div style={{ fontSize: '2.2rem', fontWeight: 800, color: '#1565D8', marginTop: '10px' }}>
+              {loading ? '…' : lrPredictions}
+            </div>
+            <div style={{ fontSize: '0.78rem', color: '#64748B', marginTop: '4px' }}>
+              Linear log-odds baseline inferences
+            </div>
+          </div>
+
+          {/* Stat 4: ANN Predictions */}
+          <div style={{
+            background: '#FFFFFF',
+            borderRadius: '14px',
+            border: '1px solid #DDD6FE',
+            padding: '1.5rem',
+            boxShadow: '0 2px 8px rgba(124, 58, 237, 0.04)',
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#7C3AED', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                ANN Predictions
+              </span>
+              <span style={{ background: '#F5F3FF', color: '#7C3AED', padding: '6px 10px', borderRadius: '8px', fontSize: '1rem' }}>🧠</span>
+            </div>
+            <div style={{ fontSize: '2.2rem', fontWeight: 800, color: '#7C3AED', marginTop: '10px' }}>
+              {loading ? '…' : annPredictions}
+            </div>
+            <div style={{ fontSize: '0.78rem', color: '#64748B', marginTop: '4px' }}>
+              Deep Neural Network (32-16) runs
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 3. Quick Actions Shortcuts */}
+      <section aria-label="Quick Actions" style={{ marginBottom: '2.25rem' }}>
+        <h3 style={{ margin: '0 0 1rem', fontSize: '1.15rem', fontWeight: 800, color: '#0B1F3A' }}>
+          Quick Actions
+        </h3>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: '1rem',
+        }}>
+          {/* Action 1: Create New Assessment */}
+          <button
+            type="button"
+            onClick={() => onNavigate('assessments')}
+            style={{
+              background: '#FFFFFF',
+              border: '1px solid #BFDBFE',
+              borderRadius: '12px',
+              padding: '1.25rem 1rem',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              cursor: 'pointer',
+              boxShadow: '0 2px 6px rgba(11, 31, 58, 0.03)',
+              transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+            }}
+          >
+            <div style={{ width: '42px', height: '42px', borderRadius: '10px', background: '#EFF6FF', color: '#1565D8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem' }}>
+              ➕
+            </div>
+            <span style={{ fontWeight: 700, color: '#0B1F3A', fontSize: '0.9rem' }}>Create New Assessment</span>
+            <span style={{ fontSize: '0.74rem', color: '#64748B', textAlign: 'center' }}>Record 11 patient biomarkers</span>
+          </button>
+
+          {/* Action 2: Make Prediction */}
+          <button
+            type="button"
+            onClick={() => onNavigate('prediction')}
+            style={{
+              background: '#FFFFFF',
+              border: '1px solid #99F6E4',
+              borderRadius: '12px',
+              padding: '1.25rem 1rem',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              cursor: 'pointer',
+              boxShadow: '0 2px 6px rgba(11, 31, 58, 0.03)',
+            }}
+          >
+            <div style={{ width: '42px', height: '42px', borderRadius: '10px', background: '#F0FDFA', color: '#0D9488', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem' }}>
+              ⚡
+            </div>
+            <span style={{ fontWeight: 700, color: '#0B1F3A', fontSize: '0.9rem' }}>Make Prediction</span>
+            <span style={{ fontSize: '0.74rem', color: '#64748B', textAlign: 'center' }}>Execute LR or Deep ANN</span>
+          </button>
+
+          {/* Action 3: View Assessment History */}
+          <button
+            type="button"
+            onClick={() => onNavigate('assessments')}
+            style={{
+              background: '#FFFFFF',
+              border: '1px solid #E2E8F0',
+              borderRadius: '12px',
+              padding: '1.25rem 1rem',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              cursor: 'pointer',
+              boxShadow: '0 2px 6px rgba(11, 31, 58, 0.03)',
+            }}
+          >
+            <div style={{ width: '42px', height: '42px', borderRadius: '10px', background: '#F8FAFC', color: '#475569', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem' }}>
+              📁
+            </div>
+            <span style={{ fontWeight: 700, color: '#0B1F3A', fontSize: '0.9rem' }}>View Assessment History</span>
+            <span style={{ fontSize: '0.74rem', color: '#64748B', textAlign: 'center' }}>Manage clinical profiles</span>
+          </button>
+
+          {/* Action 4: View Prediction History */}
+          <button
+            type="button"
+            onClick={() => onNavigate('history')}
+            style={{
+              background: '#FFFFFF',
+              border: '1px solid #DDD6FE',
+              borderRadius: '12px',
+              padding: '1.25rem 1rem',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              cursor: 'pointer',
+              boxShadow: '0 2px 6px rgba(11, 31, 58, 0.03)',
+            }}
+          >
+            <div style={{ width: '42px', height: '42px', borderRadius: '10px', background: '#F5F3FF', color: '#7C3AED', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem' }}>
+              📜
+            </div>
+            <span style={{ fontWeight: 700, color: '#0B1F3A', fontSize: '0.9rem' }}>View Prediction History</span>
+            <span style={{ fontSize: '0.74rem', color: '#64748B', textAlign: 'center' }}>Audit historical inference runs</span>
+          </button>
+
+          {/* Action 5: Open Heart Health Counselling */}
+          <button
+            type="button"
+            onClick={() => onNavigate('counselling')}
+            style={{
+              background: '#FFFFFF',
+              border: '1px solid #FED7AA',
+              borderRadius: '12px',
+              padding: '1.25rem 1rem',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              cursor: 'pointer',
+              boxShadow: '0 2px 6px rgba(11, 31, 58, 0.03)',
+            }}
+          >
+            <div style={{ width: '42px', height: '42px', borderRadius: '10px', background: '#FFF7ED', color: '#EA580C', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem' }}>
+              ❤️
+            </div>
+            <span style={{ fontWeight: 700, color: '#0B1F3A', fontSize: '0.9rem' }}>Heart Health Counselling</span>
+            <span style={{ fontSize: '0.74rem', color: '#64748B', textAlign: 'center' }}>6-part patient care guides</span>
+          </button>
+        </div>
+      </section>
+
+      {/* 4. Two-Column Live Records Grid: Recent Assessments & Recent Predictions */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(480px, 1fr))',
+        gap: '1.75rem',
+      }}>
+        {/* Panel A: Recent Assessments (Latest 5) */}
+        <section style={{
+          background: '#FFFFFF',
+          borderRadius: '16px',
+          border: '1px solid #DBEAFE',
+          padding: '1.75rem',
+          boxShadow: '0 2px 10px rgba(11, 31, 58, 0.04)',
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+            <div>
+              <h3 style={{ margin: 0, fontSize: '1.15rem', color: '#0B1F3A', fontWeight: 800 }}>
+                Recent Assessments
+              </h3>
+              <span style={{ fontSize: '0.78rem', color: '#64748B' }}>Latest 5 patient evaluations logged by you</span>
+            </div>
             <button
               type="button"
-              className="btn-empty-action"
-              onClick={() => onNavigate('prediction')}
+              onClick={() => onNavigate('assessments')}
+              style={{
+                background: '#EFF6FF',
+                color: '#1565D8',
+                border: '1px solid #BFDBFE',
+                padding: '6px 12px',
+                borderRadius: '8px',
+                fontSize: '0.78rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-              </svg>
-              <span>Run First Prediction</span>
+              View All &rarr;
             </button>
           </div>
-        ) : (
-          <div className="dash-recent-list">
-            {recentAssessments.map((asm) => {
-              const dateStr = asm.created_at
-                ? new Date(asm.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-                : '—'
-              return (
-                <div key={asm.assessment_id} className="dash-recent-item">
-                  <div className="recent-item-left">
-                    <span className="recent-item-code">{asm.assessment_id?.slice(0, 8).toUpperCase() || '—'}</span>
-                    <span className="recent-item-ref">
-                      {asm.patient_reference ? `Ref: ${asm.patient_reference}` : 'Anonymous patient'}
-                    </span>
-                  </div>
-                  <div className="recent-item-right">
-                    <span className="recent-item-date">{dateStr}</span>
-                    {asm.prediction_count > 0 && (
-                      <span className="recent-item-badge">{asm.prediction_count} prediction{asm.prediction_count !== 1 ? 's' : ''}</span>
-                    )}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        )}
-      </section>
 
-      {/* 4. Quick Clinical Navigation Cards */}
-      <section className="dash-nav-cards-grid" aria-label="Clinical Quick Links">
-        {/* Card 1: Biomarkers Guide */}
-        <div
-          className="dash-nav-card"
-          onClick={() => onNavigate('parameters')}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => e.key === 'Enter' && onNavigate('parameters')}
-        >
-          <div className="nav-card-icon icon-teal" aria-hidden="true">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-            </svg>
-          </div>
-          <h4 className="nav-card-title">Clinical Parameters Guide</h4>
-          <p className="nav-card-desc">
-            Explore the diagnostic significance, biological normal ranges, and risk correlation for all 11 patient biomarkers.
-          </p>
-          <span className="nav-card-link">
-            <span>Explore Parameters</span>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
-          </span>
-        </div>
+          {loading ? (
+            <div style={{ textAlign: 'center', padding: '3rem', color: '#64748B' }}>Loading assessments…</div>
+          ) : recentAssessments.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '3rem 1.5rem', background: '#F8FAFC', borderRadius: '12px', border: '1px dashed #CBD5E1' }}>
+              <div style={{ fontSize: '1.75rem', marginBottom: '8px' }}>📋</div>
+              <h4 style={{ margin: '0 0 6px', color: '#0B1F3A', fontSize: '0.95rem' }}>No Assessments Recorded Yet</h4>
+              <p style={{ margin: '0 0 14px', color: '#64748B', fontSize: '0.82rem', lineHeight: '1.5' }}>
+                You have not logged any patient profiles. Create your first assessment to record clinical parameters.
+              </p>
+              <button
+                type="button"
+                onClick={() => onNavigate('assessments')}
+                style={{
+                  background: '#1565D8',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  fontSize: '0.82rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                + Create First Assessment
+              </button>
+            </div>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.84rem' }}>
+                <thead>
+                  <tr style={{ background: '#F8FAFC', borderBottom: '2px solid #E2E8F0', color: '#64748B' }}>
+                    <th style={{ padding: '10px 12px' }}>Assessment ID</th>
+                    <th style={{ padding: '10px 12px' }}>Patient Ref</th>
+                    <th style={{ padding: '10px 12px' }}>Date</th>
+                    <th style={{ padding: '10px 12px', textAlign: 'center' }}>Predictions</th>
+                    <th style={{ padding: '10px 12px', textAlign: 'right' }}>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recentAssessments.map((asm) => (
+                    <tr key={asm.assessment_id} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                      <td style={{ padding: '10px 12px', fontFamily: 'monospace', fontWeight: 700, color: '#0B1F3A' }}>
+                        {asm.assessment_id.substring(0, 8).toUpperCase()}…
+                      </td>
+                      <td style={{ padding: '10px 12px', color: '#475569' }}>
+                        {asm.patient_reference ? (
+                          <span style={{ fontWeight: 600, color: '#1565D8' }}>{asm.patient_reference}</span>
+                        ) : (
+                          <span style={{ color: '#94A3B8', fontStyle: 'italic' }}>Anonymous</span>
+                        )}
+                      </td>
+                      <td style={{ padding: '10px 12px', color: '#64748B', fontSize: '0.78rem' }}>
+                        {formatDate(asm.created_at).split(',')[0]}
+                      </td>
+                      <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+                        <span style={{
+                          background: asm.prediction_count > 0 ? '#EFF6FF' : '#F1F5F9',
+                          color: asm.prediction_count > 0 ? '#1565D8' : '#64748B',
+                          padding: '2px 8px',
+                          borderRadius: '10px',
+                          fontSize: '0.75rem',
+                          fontWeight: 700,
+                        }}>
+                          {asm.prediction_count}
+                        </span>
+                      </td>
+                      <td style={{ padding: '10px 12px', textAlign: 'right' }}>
+                        <button
+                          type="button"
+                          onClick={() => onNavigate('assessments')}
+                          style={{
+                            background: '#FFFFFF',
+                            color: '#1565D8',
+                            border: '1px solid #CBD5E1',
+                            padding: '4px 10px',
+                            borderRadius: '6px',
+                            fontSize: '0.76rem',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          View Details
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
 
-        {/* Card 2: Prediction History */}
-        <div
-          className="dash-nav-card"
-          onClick={() => onNavigate('history')}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => e.key === 'Enter' && onNavigate('history')}
-        >
-          <div className="nav-card-icon icon-blue" aria-hidden="true">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10" />
-              <polyline points="12 6 12 12 16 14" />
-            </svg>
+        {/* Panel B: Recent Predictions (Latest 5) */}
+        <section style={{
+          background: '#FFFFFF',
+          borderRadius: '16px',
+          border: '1px solid #DBEAFE',
+          padding: '1.75rem',
+          boxShadow: '0 2px 10px rgba(11, 31, 58, 0.04)',
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+            <div>
+              <h3 style={{ margin: 0, fontSize: '1.15rem', color: '#0B1F3A', fontWeight: 800 }}>
+                Recent Predictions
+              </h3>
+              <span style={{ fontSize: '0.78rem', color: '#64748B' }}>Latest 5 risk calculations by your account</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => onNavigate('history')}
+              style={{
+                background: '#F5F3FF',
+                color: '#7C3AED',
+                border: '1px solid #DDD6FE',
+                padding: '6px 12px',
+                borderRadius: '8px',
+                fontSize: '0.78rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              View History &rarr;
+            </button>
           </div>
-          <h4 className="nav-card-title">Prediction History</h4>
-          <p className="nav-card-desc">
-            Review past patient risk scores, model selections, and probability distributions over time.
-          </p>
-          <span className="nav-card-link">
-            <span>View History</span>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
-          </span>
-        </div>
 
-        {/* Card 3: Model Performance */}
-        <div
-          className="dash-nav-card"
-          onClick={() => onNavigate('performance')}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => e.key === 'Enter' && onNavigate('performance')}
-        >
-          <div className="nav-card-icon icon-purple" aria-hidden="true">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="18" y1="20" x2="18" y2="10" />
-              <line x1="12" y1="20" x2="12" y2="4" />
-              <line x1="6" y1="20" x2="6" y2="14" />
-            </svg>
-          </div>
-          <h4 className="nav-card-title">Model Performance</h4>
-          <p className="nav-card-desc">
-            Analyze architectural metrics, sensitivity, specificity, and ROC-AUC for Logistic Regression vs Deep ANN.
-          </p>
-          <span className="nav-card-link">
-            <span>Compare Models</span>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
-          </span>
-        </div>
-      </section>
+          {loading ? (
+            <div style={{ textAlign: 'center', padding: '3rem', color: '#64748B' }}>Loading predictions…</div>
+          ) : recentPredictions.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '3rem 1.5rem', background: '#F8FAFC', borderRadius: '12px', border: '1px dashed #CBD5E1' }}>
+              <div style={{ fontSize: '1.75rem', marginBottom: '8px' }}>⚡</div>
+              <h4 style={{ margin: '0 0 6px', color: '#0B1F3A', fontSize: '0.95rem' }}>No Predictions Generated Yet</h4>
+              <p style={{ margin: '0 0 14px', color: '#64748B', fontSize: '0.82rem', lineHeight: '1.5' }}>
+                Execute a prediction on any patient profile using Logistic Regression or Deep Neural Network.
+              </p>
+              <button
+                type="button"
+                onClick={() => onNavigate('prediction')}
+                style={{
+                  background: '#7C3AED',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  fontSize: '0.82rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                Run First Prediction
+              </button>
+            </div>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.84rem' }}>
+                <thead>
+                  <tr style={{ background: '#F8FAFC', borderBottom: '2px solid #E2E8F0', color: '#64748B' }}>
+                    <th style={{ padding: '10px 10px' }}>Pred ID</th>
+                    <th style={{ padding: '10px 10px' }}>Model</th>
+                    <th style={{ padding: '10px 10px' }}>Outcome</th>
+                    <th style={{ padding: '10px 10px' }}>Probability</th>
+                    <th style={{ padding: '10px 10px', textAlign: 'right' }}>Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recentPredictions.map((pred) => {
+                    const isPositive = pred.predicted_class === 1
+                    return (
+                      <tr key={pred.prediction_id} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                        <td style={{ padding: '10px 10px', fontFamily: 'monospace', fontWeight: 600, color: '#475569', fontSize: '0.78rem' }}>
+                          {pred.prediction_id?.substring(0, 10) || '—'}
+                        </td>
+                        <td style={{ padding: '10px 10px', fontWeight: 600, color: '#0B1F3A' }}>
+                          {pred.model_name?.includes('Neural') || pred.model_name?.includes('ANN') ? (
+                            <span style={{ color: '#7C3AED' }}>Deep ANN</span>
+                          ) : (
+                            <span style={{ color: '#1565D8' }}>Logistic Reg</span>
+                          )}
+                        </td>
+                        <td style={{ padding: '10px 10px' }}>
+                          <span style={{
+                            padding: '3px 8px',
+                            borderRadius: '12px',
+                            fontSize: '0.72rem',
+                            fontWeight: 700,
+                            background: isPositive ? '#FEE2E2' : '#DCFCE7',
+                            color: isPositive ? '#DC2626' : '#166534',
+                          }}>
+                            {isPositive ? 'Death Event (1)' : 'Survives (0)'}
+                          </span>
+                        </td>
+                        <td style={{ padding: '10px 10px', fontWeight: 700, color: isPositive ? '#DC2626' : '#1565D8' }}>
+                          {(pred.predicted_probability * 100).toFixed(1)}%
+                        </td>
+                        <td style={{ padding: '10px 10px', textAlign: 'right', color: '#64748B', fontSize: '0.76rem' }}>
+                          {formatDate(pred.created_at).split(',')[0]}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      </div>
     </div>
   )
 }

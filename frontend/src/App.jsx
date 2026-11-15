@@ -2,15 +2,14 @@ import React, { useState } from 'react'
 import DoctorLogin from './DoctorLogin.jsx'
 import DoctorRegister from './DoctorRegister.jsx'
 import DoctorOtpVerification from './DoctorOtpVerification.jsx'
-import AdminDoctorVerification from './AdminDoctorVerification.jsx'
+import AdminDashboard from './AdminDashboard.jsx'
 import DoctorDashboard from './DoctorDashboard.jsx'
 import AppLayout from './layouts/AppLayout.jsx'
 import DashboardHome from './pages/DashboardHome.jsx'
 import PatientAssessmentsPage from './pages/PatientAssessmentsPage.jsx'
 import ClinicalGuidePage from './pages/ClinicalGuidePage.jsx'
 import PredictionHistoryPage from './pages/PredictionHistoryPage.jsx'
-import ModelPerformancePage from './pages/ModelPerformancePage.jsx'
-import PlaceholderPage from './pages/PlaceholderPage.jsx'
+import HeartHealthCounsellingPage from './pages/HeartHealthCounsellingPage.jsx'
 
 const DOCTOR_AUTH_KEY = 'hf_predictor_doctor_auth_v1'
 
@@ -99,7 +98,7 @@ export default function App() {
         <DoctorOtpVerification
           email={pendingDoctor?.email || ''}
           doctorData={pendingDoctor}
-          onVerifiedSuccess={(res) => {
+          onVerifiedSuccess={() => {
             // Keep on verification page to display success screen with instructions
           }}
           onNavigateToLogin={() => setAuthMode('login')}
@@ -109,7 +108,7 @@ export default function App() {
 
     if (authMode === 'admin') {
       return (
-        <AdminDoctorVerification
+        <AdminDashboard
           onExitAdmin={() => setAuthMode('login')}
         />
       )
@@ -166,14 +165,14 @@ export default function App() {
         <PredictionHistoryPage
           doctorUser={doctorUser}
           onNavigate={setActivePage}
-          onSelectAssessment={(asmCode) => {
+          onSelectAssessment={() => {
             setActivePage('assessments')
           }}
         />
       )}
 
-      {activePage === 'performance' && (
-        <ModelPerformancePage onNavigate={setActivePage} />
+      {activePage === 'counselling' && (
+        <HeartHealthCounsellingPage onNavigate={setActivePage} />
       )}
     </AppLayout>
   )

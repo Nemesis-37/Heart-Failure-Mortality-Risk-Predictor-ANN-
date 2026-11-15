@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { saveAssessment, savePrediction } from './services/assessmentStore.js'
+import ThemeToggle from './components/ThemeToggle.jsx'
 
 const INITIAL_STATE = {
   age: '60',
@@ -341,6 +342,9 @@ export default function DoctorDashboard({
                     : 'Checking…'}
                 </span>
               </button>
+
+              {/* Theme Toggle Button */}
+              <ThemeToggle className="topbar-theme-toggle" />
 
               {/* Doctor Profile Pill */}
               <div className="doctor-profile-pill" title={`${cleanDoctorName} — ${cleanRole}`}>
@@ -862,78 +866,6 @@ export default function DoctorDashboard({
                   </div>
                 </div>
 
-                {/* Group 3: Model Selection */}
-                <div className="form-group-section">
-                  <div className="section-title-row">
-                    <span className="section-num">3</span>
-                    <div>
-                      <h3 className="section-heading">Model Selection</h3>
-                      <p className="section-desc">Select which machine learning architecture computes inference</p>
-                    </div>
-                  </div>
-
-                  <div className="model-selection-grid" role="radiogroup" aria-label="Prediction model selection">
-                    {MODELS.map((m) => {
-                      const isSelected = selectedModelId === m.id
-                      return (
-                        <label
-                          key={m.id}
-                          htmlFor={`model-choice-${m.id}`}
-                          className={`model-card ${isSelected ? 'selected' : ''}`}
-                        >
-                          <input
-                            id={`model-choice-${m.id}`}
-                            type="radio"
-                            name="model_choice"
-                            value={m.id}
-                            checked={isSelected}
-                            onChange={() => setSelectedModelId(m.id)}
-                            disabled={loading}
-                            className="model-radio-input"
-                          />
-                          <div className="model-card-top">
-                            <div className="model-title-group">
-                              <div className="model-icon-badge" aria-hidden="true">
-                                {m.id === 'lr' ? (
-                                  /* Regression chart icon */
-                                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <line x1="3" y1="20" x2="21" y2="20" />
-                                    <line x1="3" y1="4" x2="3" y2="20" />
-                                    <polyline points="4 16 10 11 15 14 21 6" />
-                                  </svg>
-                                ) : (
-                                  /* Neural network nodes icon */
-                                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <circle cx="5" cy="6" r="2.5" />
-                                    <circle cx="5" cy="18" r="2.5" />
-                                    <circle cx="12" cy="12" r="2.5" />
-                                    <circle cx="19" cy="6" r="2.5" />
-                                    <circle cx="19" cy="18" r="2.5" />
-                                    <line x1="7.5" y1="7" x2="9.5" y2="11" />
-                                    <line x1="7.5" y1="17" x2="9.5" y2="13" />
-                                    <line x1="14.5" y1="11" x2="16.5" y2="7" />
-                                    <line x1="14.5" y1="13" x2="16.5" y2="17" />
-                                  </svg>
-                                )}
-                              </div>
-                              <span className="model-title">{m.label}</span>
-                            </div>
-                            <span className="model-endpoint-pill">
-                              {m.id === 'lr' ? 'POST /predict' : 'POST /predict-ann'}
-                            </span>
-                          </div>
-                          <p className="model-desc">{m.desc}</p>
-                          <div className="model-card-footer">
-                            <span className="model-indicator-check">
-                              {isSelected ? '● Selected Architecture' : '○ Click to Select'}
-                            </span>
-                          </div>
-                        </label>
-                      )
-                    })}
-                  </div>
-                </div>
-
                 {/* Form Action Buttons */}
                 <div className="form-action-bar">
                   <button
@@ -967,7 +899,7 @@ export default function DoctorDashboard({
                           <circle cx="12" cy="12" r="10" />
                           <polygon points="10 8 16 12 10 16 10 8" />
                         </svg>
-                        <span>Run {selectedModel.label} Prediction</span>
+                        <span>Generate Prediction</span>
                       </>
                     )}
                   </button>
@@ -976,8 +908,94 @@ export default function DoctorDashboard({
             </div>
           </section>
 
-          {/* Right Column: Prediction Results Panel */}
-          <aside className="card results-card" aria-label="Prediction results card" aria-live="polite">
+          {/* Right Column: Model Selection (Top) & Prediction Results (Bottom) */}
+          <div className="dashboard-right-column">
+            {/* Top: Model Selection Section */}
+            <section className="card model-selection-card" aria-label="Model Architecture Selection">
+              <div className="card-header">
+                <div className="card-header-title-row">
+                  <h2 className="card-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                      <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+                      <line x1="8" y1="21" x2="16" y2="21" />
+                      <line x1="12" y1="17" x2="12" y2="21" />
+                    </svg>
+                    Model Selection
+                  </h2>
+                  <span className="card-counter-tag">2 Architectures</span>
+                </div>
+                <p className="card-subtitle">
+                  Select which machine learning architecture computes inference
+                </p>
+              </div>
+
+              <div className="card-body">
+                <div className="model-selection-grid" role="radiogroup" aria-label="Prediction model selection">
+                  {MODELS.map((m) => {
+                    const isSelected = selectedModelId === m.id
+                    return (
+                      <label
+                        key={m.id}
+                        htmlFor={`model-choice-${m.id}`}
+                        className={`model-card ${isSelected ? 'selected' : ''}`}
+                      >
+                        <input
+                          id={`model-choice-${m.id}`}
+                          type="radio"
+                          name="model_choice"
+                          value={m.id}
+                          checked={isSelected}
+                          onChange={() => setSelectedModelId(m.id)}
+                          disabled={loading}
+                          className="model-radio-input"
+                        />
+                        <div className="model-card-top">
+                          <div className="model-title-group">
+                            <div className="model-icon-badge" aria-hidden="true">
+                              {m.id === 'lr' ? (
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <line x1="3" y1="20" x2="21" y2="20" />
+                                  <line x1="3" y1="4" x2="3" y2="20" />
+                                  <polyline points="4 16 10 11 15 14 21 6" />
+                                </svg>
+                              ) : (
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <circle cx="5" cy="6" r="2.5" />
+                                  <circle cx="5" cy="18" r="2.5" />
+                                  <circle cx="12" cy="12" r="2.5" />
+                                  <circle cx="19" cy="6" r="2.5" />
+                                  <circle cx="19" cy="18" r="2.5" />
+                                  <line x1="7.5" y1="7" x2="9.5" y2="11" />
+                                  <line x1="7.5" y1="17" x2="9.5" y2="13" />
+                                  <line x1="14.5" y1="11" x2="16.5" y2="7" />
+                                  <line x1="14.5" y1="13" x2="16.5" y2="17" />
+                                </svg>
+                              )}
+                            </div>
+                            <div>
+                              <span className="model-title">{m.label}</span>
+                              <span className="model-badge-sub">{m.shortName}</span>
+                            </div>
+                          </div>
+                          <span className="model-endpoint-pill">
+                            {m.id === 'lr' ? 'POST /predict' : 'POST /predict-ann'}
+                          </span>
+                        </div>
+                        <p className="model-desc">{m.desc}</p>
+                        <div className="model-card-footer">
+                          <span className="model-indicator-check">
+                            {isSelected ? '● Selected Architecture' : '○ Click to Select'}
+                          </span>
+                        </div>
+                      </label>
+                    )
+                  })}
+                </div>
+              </div>
+            </section>
+
+            {/* Bottom: Prediction Results Panel */}
+            <aside className="card results-card" aria-label="Prediction results card" aria-live="polite">
             <div className="card-header">
               <div className="card-header-title-row">
                 <h2 className="card-title">
@@ -1139,7 +1157,8 @@ export default function DoctorDashboard({
               )}
             </div>
           </aside>
-        </main>
+        </div>
+      </main>
 
         {/* Global Footer */}
         {!embedded && (

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import ThemeToggle from '../components/ThemeToggle.jsx'
 
 export default function AppLayout({
   doctorUser,
@@ -65,7 +66,7 @@ export default function AppLayout({
   const navItems = [
     {
       id: 'dashboard',
-      label: 'Dashboard',
+      label: 'Doctor Dashboard',
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <rect x="3" y="3" width="7" height="7" />
@@ -78,7 +79,7 @@ export default function AppLayout({
     },
     {
       id: 'prediction',
-      label: 'New Prediction',
+      label: 'Heart Failure Prediction',
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
@@ -101,6 +102,17 @@ export default function AppLayout({
       badge: null,
     },
     {
+      id: 'history',
+      label: 'Prediction History',
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="10" />
+          <polyline points="12 6 12 12 16 14" />
+        </svg>
+      ),
+      badge: null,
+    },
+    {
       id: 'parameters',
       label: 'Clinical Parameters Guide',
       icon: (
@@ -114,44 +126,31 @@ export default function AppLayout({
       badge: '11 Biomarkers',
     },
     {
-      id: 'history',
-      label: 'Prediction History',
+      id: 'counselling',
+      label: 'Heart Health Counselling',
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="12" cy="12" r="10" />
-          <polyline points="12 6 12 12 16 14" />
+          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
         </svg>
       ),
-      badge: null,
-    },
-    {
-      id: 'performance',
-      label: 'Model Performance',
-      icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <line x1="18" y1="20" x2="18" y2="10" />
-          <line x1="12" y1="20" x2="12" y2="4" />
-          <line x1="6" y1="20" x2="6" y2="14" />
-        </svg>
-      ),
-      badge: 'LR vs ANN',
+      badge: 'Patient Care',
     },
   ]
 
   const getPageTitle = () => {
     switch (activePage) {
       case 'dashboard':
-        return 'Clinical Dashboard'
+        return 'Doctor Dashboard'
       case 'prediction':
-        return 'Heart Failure Risk Prediction'
+        return 'Heart Failure Prediction'
       case 'assessments':
         return 'Patient Assessments'
       case 'parameters':
         return 'Clinical Parameters Guide'
       case 'history':
         return 'Prediction History'
-      case 'performance':
-        return 'Model Performance'
+      case 'counselling':
+        return 'Heart Health Counselling'
       default:
         return 'Clinical Decision Support'
     }
@@ -162,15 +161,15 @@ export default function AppLayout({
       case 'dashboard':
         return 'Overview of clinical risk assessments and predictive analytics'
       case 'prediction':
-        return 'Enter clinical parameters to generate a model-based prediction.'
+        return 'Enter clinical parameters to generate a dual-model heart failure mortality prediction.'
       case 'assessments':
         return 'View and manage recorded clinical assessment details.'
       case 'parameters':
         return 'Understand the clinical measurements and variables used by the prediction models.'
       case 'history':
         return 'Review previous assessments and model-generated prediction results.'
-      case 'performance':
-        return 'Evaluation and comparison of trained prediction models.'
+      case 'counselling':
+        return 'Structured patient discharge counseling checklists and guideline-directed education.'
       default:
         return 'Clinical Decision Support Workspace'
     }
@@ -360,6 +359,9 @@ export default function AppLayout({
                   : 'Checking…'}
               </span>
             </button>
+
+            {/* Theme Toggle (Dark / Light Mode) */}
+            <ThemeToggle className="header-theme-toggle" />
 
             {/* Doctor Profile Header Pill */}
             <div className="header-doctor-pill" title={`${cleanDoctorName} — ${cleanRole}`}>
