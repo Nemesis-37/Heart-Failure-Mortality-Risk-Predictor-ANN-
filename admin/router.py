@@ -3,7 +3,7 @@ admin/router.py
 ===============
 FastAPI router for Hospital Administrator:
 - Administrator Login & JWT Authentication
-- Administrator Password Recovery via 6-digit OTP (Recovery Email: debashish.g333@gmail.com)
+- Administrator Password Recovery via 6-digit OTP
 - Doctor Credential Verification (Approve / Reject)
 - Doctor Management (List, Detail, Toggle Active)
 - Doctor Activity Tracking (Derived from DoctorSessions, Assessments, Predictions)
@@ -58,7 +58,12 @@ from auth.email_service import (
     send_email_otp,
     verify_otp_hash,
 )
-from auth.security import hash_password, verify_password
+from auth.security import (
+    hash_password,
+    is_argon2_native,
+    verify_legacy_password,
+    verify_password,
+)
 from frontend_metrics import VERIFIED_ANN_METRICS, VERIFIED_LR_METRICS
 
 try:
@@ -84,16 +89,25 @@ _ADMIN_PASSWORD_RESET = {}
 ADMIN_RESET_EXPIRY_MINUTES = 5
 ADMIN_RESET_MAX_ATTEMPTS = 5
 ADMIN_RESET_COOLDOWN_SECONDS = 60
-ADMIN_RECOVERY_EMAIL_DEFAULT = "debashish.g333@gmail.com"
-
-
 def ensure_initial_admin(db: Session):
     """Seed initial administrator from environment variables if no admin exists."""
     admin_count = db.query(Administrator).count()
     if admin_count == 0:
-        env_username = os.getenv("ADMIN_USERNAME", "admin").strip()
-        env_password = os.getenv("ADMIN_PASSWORD", "AdminPassword123!").strip()
-        env_email = os.getenv("ADMIN_RECOVERY_EMAIL", ADMIN_RECOVERY_EMAIL_DEFAULT).strip().lower()
+        env_email = os.getenv("ADMIN_EMAIL", "").strip().lower()
+        env_username = os.getenv("ADMIN_USERNAME", "").strip()
+        env_password = os.getenv("ADMIN_PASSWORD", "")
+        if not env_email or not env_password:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="No administrator account is configured. Set ADMIN_EMAIL and ADMIN_PASSWORD to initialize one.",
+            )
+        if not env_username:
+            env_username = env_email.split("@", 1)[0]
+        if not is_argon2_native():
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Native Argon2id support is required to initialize an administrator account.",
+            )
         new_admin = Administrator(
             admin_id=str(uuid.uuid4()),
             username=env_username,
@@ -136,7 +150,6 @@ def _generate_unique_username(db: Session, full_name: str, reg_number: str) -> s
 )
 def admin_login(payload: AdminLoginRequest, db: Session = Depends(get_db)):
     """Authenticate administrator credentials and return an authorized session token."""
-    ensure_initial_admin(db)
     username_clean = payload.username.strip()
     admin = db.query(Administrator).filter(Administrator.username == username_clean).first()
 
@@ -146,7 +159,15 @@ def admin_login(payload: AdminLoginRequest, db: Session = Depends(get_db)):
             detail="Invalid administrator credentials or account disabled.",
         )
 
-    if not verify_password(payload.password, admin.password_hash):
+    if admin.password_hash.startswith("$argon2id-fallback$"):
+        password_matches = verify_legacy_password(payload.password, admin.password_hash)
+        if password_matches:
+            admin.password_hash = hash_password(payload.password)
+            db.commit()
+    else:
+        password_matches = verify_password(payload.password, admin.password_hash)
+
+    if not password_matches:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid administrator credentials.",
@@ -196,17 +217,19 @@ def admin_forgot_password(
     db: Session = Depends(get_db),
 ):
     """
-    Generate and dispatch a 6-digit OTP to the bound recovery email (debashish.g333@gmail.com).
+    Generate and dispatch a 6-digit OTP to the configured administrator recovery email.
     Enforces a 60-second cooldown between requests.
     """
-    ensure_initial_admin(db)
-    username_clean = payload.username.strip()
-    admin = db.query(Administrator).filter(func.lower(Administrator.username) == username_clean.lower()).first()
+    if payload.email:
+        admin = db.query(Administrator).filter(func.lower(Administrator.email) == payload.email.strip().lower()).first()
+    else:
+        admin = db.query(Administrator).filter(func.lower(Administrator.username) == payload.username.strip().lower()).first()
     if not admin:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Administrator account with this username does not exist.",
+            detail="Administrator account with this email does not exist.",
         )
+    username_clean = admin.username.strip()
 
     # Enforce 60-second cooldown
     now_ts = time.time()
@@ -220,7 +243,7 @@ def admin_forgot_password(
                 detail=f"Please wait {wait_sec} seconds before requesting a new verification code.",
             )
 
-    recovery_email = os.getenv("ADMIN_RECOVERY_EMAIL", ADMIN_RECOVERY_EMAIL_DEFAULT).strip()
+    recovery_email = os.getenv("ADMIN_RECOVERY_EMAIL", os.getenv("ADMIN_EMAIL", admin.email)).strip()
     otp_code = generate_otp()
     otp_hash_val = hash_otp(otp_code)
     expires_at = datetime.now(timezone.utc) + timedelta(minutes=ADMIN_RESET_EXPIRY_MINUTES)
@@ -269,7 +292,15 @@ def admin_verify_reset_otp(
     Enforces 5-minute expiry and max 5 attempts.
     Returns a cryptographically secure single-use reset token upon success.
     """
-    username_clean = payload.username.strip().lower()
+    admin_query = db.query(Administrator)
+    if payload.email:
+        admin_query = admin_query.filter(func.lower(Administrator.email) == payload.email.strip().lower())
+    else:
+        admin_query = admin_query.filter(func.lower(Administrator.username) == payload.username.strip().lower())
+    admin = admin_query.first()
+    if not admin:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Administrator account not found.")
+    username_clean = admin.username.strip().lower()
     entry = _ADMIN_PASSWORD_RESET.get(username_clean)
     if not entry:
         raise HTTPException(
@@ -343,8 +374,21 @@ def admin_reset_password(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Password must be at least 8 characters long.",
         )
+    if not is_argon2_native():
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Native Argon2id support is required to reset administrator passwords.",
+        )
 
-    username_clean = payload.username.strip().lower()
+    admin_query = db.query(Administrator)
+    if payload.email:
+        admin_query = admin_query.filter(func.lower(Administrator.email) == payload.email.strip().lower())
+    else:
+        admin_query = admin_query.filter(func.lower(Administrator.username) == payload.username.strip().lower())
+    admin = admin_query.first()
+    if not admin:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Administrator not found.")
+    username_clean = admin.username.strip().lower()
     entry = _ADMIN_PASSWORD_RESET.get(username_clean)
     if not entry:
         raise HTTPException(
@@ -364,13 +408,6 @@ def admin_reset_password(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid or expired reset credentials.",
-        )
-
-    admin = db.query(Administrator).filter(func.lower(Administrator.username) == username_clean).first()
-    if not admin:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Administrator not found.",
         )
 
     # Hash new password

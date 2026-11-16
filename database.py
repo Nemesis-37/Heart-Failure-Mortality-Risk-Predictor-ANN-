@@ -120,6 +120,9 @@ if engine is None:
     except Exception as _fb_err:
         logger.error(f"Fallback database engine error: {_fb_err}")
 
+if engine is not None and engine.dialect.name == "sqlite":
+    engine = engine.execution_options(schema_translate_map={"clinical": None})
+
 
 # ---------------------------------------------------------------------------
 # 5. SessionLocal Session Factory

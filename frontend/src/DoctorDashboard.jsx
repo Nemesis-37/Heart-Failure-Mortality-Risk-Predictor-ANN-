@@ -153,6 +153,12 @@ export default function DoctorDashboard({
 
   const validate = () => {
     const errors = {}
+
+    // Priority 2: Compulsory Patient Reference ID validation
+    if (!patientRef || !patientRef.trim()) {
+      errors.patientRef = 'Patient Reference ID is required (e.g. PT-2026-001).'
+    }
+
     const rules = [
       ['age', 1, 120, 'Age must be between 1 and 120 years'],
       ['creatinine_phosphokinase', 1, 10000, 'CPK must be a positive value (1–10,000 mcg/L)'],
@@ -198,6 +204,8 @@ export default function DoctorDashboard({
           : Number.parseFloat(value),
       ])
     )
+    payload.patient_reference_id = patientRef.trim()
+    payload.patient_reference = patientRef.trim()
 
     const model = MODELS.find((m) => m.id === selectedModelId) || MODELS[0]
 
@@ -503,15 +511,15 @@ export default function DoctorDashboard({
 
             <div className="card-body">
               <form onSubmit={handleSubmit} noValidate>
-                {/* Optional Patient Identification */}
-                <div className="patient-ref-box">
+                {/* Required Patient Identification */}
+                <div className={`patient-ref-box ${fieldErrors.patientRef ? 'has-error' : ''}`}>
                   <div className="patient-ref-header">
                     <label className="form-label" htmlFor="param-patient-ref">
                       <span className="label-with-tip">
-                        Patient Reference ID <span className="optional-tag">(Optional)</span>
+                        Patient Reference ID <span className="required-tag" style={{ color: '#ef4444', fontWeight: 700 }}>*</span>
                         <span
                           className="tooltip-trigger"
-                          title="Optional reference identifier (e.g. PT-2026-084) for audit tracking. Omit for anonymous patient evaluation."
+                          title="Mandatory reference identifier (e.g. PT-2026-001) for clinical audit, risk tracking, and assessment records."
                           tabIndex={0}
                           aria-label="Info: Patient Reference"
                         >
@@ -519,7 +527,9 @@ export default function DoctorDashboard({
                         </span>
                       </span>
                     </label>
-                    <span className="anon-hint">Allows anonymous assessments when omitted</span>
+                    <span className="anon-hint" style={{ color: '#64748b', fontSize: '0.8rem', fontWeight: 500 }}>
+                      Mandatory clinical tracking identifier
+                    </span>
                   </div>
                   <div className="patient-ref-input-wrap">
                     <svg
@@ -539,14 +549,29 @@ export default function DoctorDashboard({
                     <input
                       id="param-patient-ref"
                       type="text"
-                      placeholder="e.g. PT-2026-084 (or leave blank for anonymous)"
-                      className="form-input patient-ref-input"
+                      placeholder="e.g. PT-2026-001"
+                      className={`form-input patient-ref-input ${fieldErrors.patientRef ? 'input-error' : ''}`}
                       value={patientRef}
-                      onChange={(e) => setPatientRef(e.target.value)}
+                      onChange={(e) => {
+                        setPatientRef(e.target.value)
+                        if (fieldErrors.patientRef) {
+                          setFieldErrors((prev) => {
+                            const updated = { ...prev }
+                            delete updated.patientRef
+                            return updated
+                          })
+                        }
+                      }}
                       disabled={loading}
                       maxLength={40}
+                      required
                     />
                   </div>
+                  {fieldErrors.patientRef && (
+                    <span className="field-error-msg" role="alert" style={{ display: 'block', marginTop: '0.35rem', color: '#dc2626', fontSize: '0.78rem', fontWeight: 500 }}>
+                      {fieldErrors.patientRef}
+                    </span>
+                  )}
                 </div>
 
                 {/* Group 1: Quantitative Measurements */}

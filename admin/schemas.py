@@ -6,7 +6,7 @@ Pydantic schemas for Administrator endpoints.
 
 from datetime import datetime
 from typing import Optional, List
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class AdminLoginRequest(BaseModel):
@@ -73,7 +73,14 @@ class ActionResponse(BaseModel):
 # ---------------------------------------------------------------------------
 
 class AdminForgotPasswordRequest(BaseModel):
-    username: str = Field(..., min_length=2, max_length=64, description="Administrator username")
+    username: Optional[str] = Field(None, min_length=2, max_length=64, description="Administrator username")
+    email: Optional[str] = Field(None, min_length=3, max_length=256, description="Administrator email address")
+
+    @model_validator(mode="after")
+    def require_identity(self):
+        if not self.username and not self.email:
+            raise ValueError("Administrator email is required.")
+        return self
 
 
 class AdminForgotPasswordResponse(BaseModel):
@@ -83,8 +90,15 @@ class AdminForgotPasswordResponse(BaseModel):
 
 
 class AdminVerifyResetOTPRequest(BaseModel):
-    username: str = Field(..., min_length=2, max_length=64, description="Administrator username")
+    username: Optional[str] = Field(None, min_length=2, max_length=64, description="Administrator username")
+    email: Optional[str] = Field(None, min_length=3, max_length=256, description="Administrator email address")
     otp: str = Field(..., min_length=6, max_length=6, description="6-digit verification code")
+
+    @model_validator(mode="after")
+    def require_identity(self):
+        if not self.username and not self.email:
+            raise ValueError("Administrator email is required.")
+        return self
 
 
 class AdminVerifyResetOTPResponse(BaseModel):
@@ -94,11 +108,18 @@ class AdminVerifyResetOTPResponse(BaseModel):
 
 
 class AdminResetPasswordRequest(BaseModel):
-    username: str = Field(..., min_length=2, max_length=64, description="Administrator username")
+    username: Optional[str] = Field(None, min_length=2, max_length=64, description="Administrator username")
+    email: Optional[str] = Field(None, min_length=3, max_length=256, description="Administrator email address")
     reset_token: Optional[str] = Field(None, description="Reset token from verify-reset-otp")
     otp: Optional[str] = Field(None, min_length=6, max_length=6, description="6-digit verification code")
     new_password: str = Field(..., min_length=8, max_length=128, description="New password")
     confirm_password: str = Field(..., min_length=8, max_length=128, description="Confirm new password")
+
+    @model_validator(mode="after")
+    def require_identity(self):
+        if not self.username and not self.email:
+            raise ValueError("Administrator email is required.")
+        return self
 
 
 # ---------------------------------------------------------------------------

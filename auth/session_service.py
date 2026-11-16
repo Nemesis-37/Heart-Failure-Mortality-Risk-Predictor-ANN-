@@ -116,7 +116,7 @@ def create_access_token(
         "sub": doctor_id,
         "email": email,
         "name": full_name,
-        "role": "doctor",
+        "role": "DOCTOR",
         "type": "access",
         "iat": now,
         "exp": expire,

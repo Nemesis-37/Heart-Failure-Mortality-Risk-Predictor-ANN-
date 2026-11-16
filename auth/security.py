@@ -82,3 +82,24 @@ except ImportError:
 def is_argon2_native() -> bool:
     """Return True if native argon2-cffi library is active."""
     return _USING_NATIVE_ARGON2
+
+
+def verify_legacy_password(plain_password: str, hashed_password: str) -> bool:
+    """Verify passwords created by the former PBKDF2 compatibility fallback."""
+    import hashlib
+    import hmac
+
+    if not hashed_password or not hashed_password.startswith("$argon2id-fallback$"):
+        return False
+
+    try:
+        parts = hashed_password.split("$")
+        if len(parts) != 5 or parts[1] != "argon2id-fallback" or parts[2] != "v=19":
+            return False
+        salt, expected_key = parts[3], parts[4]
+        actual_key = hashlib.pbkdf2_hmac(
+            "sha256", plain_password.encode("utf-8"), salt.encode("utf-8"), 50000
+        )
+        return hmac.compare_digest(actual_key.hex(), expected_key)
+    except (TypeError, ValueError):
+        return False

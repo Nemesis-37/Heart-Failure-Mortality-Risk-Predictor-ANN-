@@ -120,6 +120,25 @@ class TokenResponse(BaseModel):
     doctor: DoctorSafeResponse
 
 
+class AdminSafeResponse(BaseModel):
+    admin_id: str
+    username: str
+    email: str
+    full_name: str
+    role: str
+
+
+class UnifiedLoginResponse(BaseModel):
+    status: str = "success"
+    role: str
+    access_token: str
+    token_type: str = "Bearer"
+    expires_in: int
+    refresh_token: Optional[str] = None
+    doctor: Optional[DoctorSafeResponse] = None
+    admin: Optional[AdminSafeResponse] = None
+
+
 class RefreshRequest(BaseModel):
     refresh_token: str = Field(..., description="Valid revocable refresh token")
 

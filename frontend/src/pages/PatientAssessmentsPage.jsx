@@ -107,6 +107,12 @@ export default function PatientAssessmentsPage({ doctorUser, onNavigate, onSelec
 
   const validateEditForm = () => {
     const errors = {}
+
+    // Priority 2: Compulsory Patient Reference ID
+    if (!editFormData.patientReferenceId || !editFormData.patientReferenceId.trim()) {
+      errors.patientReferenceId = 'Patient Reference ID is required (e.g. PT-2026-001).'
+    }
+
     const rules = [
       ['age', 1, 120, 'Age must be between 1 and 120'],
       ['creatinine_phosphokinase', 1, 10000, 'CPK must be between 1 and 10,000'],
@@ -757,20 +763,28 @@ export default function PatientAssessmentsPage({ doctorUser, onNavigate, onSelec
 
             <form onSubmit={isCreating ? handleSaveCreate : handleSaveEdit} noValidate>
               <div className="clinical-modal-body form-body-scroll">
-                {/* Patient Ref ID */}
+                {/* Patient Ref ID - Compulsory */}
                 <div className="form-field full-width">
                   <label className="form-label" htmlFor="edit-patient-ref">
-                    <span className="label-with-tip">Patient Reference ID <small>(Optional)</small></span>
-                    <span className="field-unit">Leave blank for anonymous</span>
+                    <span className="label-with-tip">
+                      Patient Reference ID <span style={{ color: '#ef4444', fontWeight: 700 }}>*</span>
+                    </span>
+                    <span className="field-unit">e.g. PT-2026-001 (Compulsory)</span>
                   </label>
                   <input
                     id="edit-patient-ref"
                     type="text"
-                    className="form-input"
-                    placeholder="e.g. PT-2026-084"
+                    className={`form-input ${editErrors.patientReferenceId ? 'has-error' : ''}`}
+                    placeholder="e.g. PT-2026-001"
                     value={editFormData.patientReferenceId}
                     onChange={(e) => setEditFormData({ ...editFormData, patientReferenceId: e.target.value })}
+                    required
                   />
+                  {editErrors.patientReferenceId && (
+                    <span className="field-error-msg" style={{ display: 'block', marginTop: '0.25rem', color: '#dc2626', fontSize: '0.75rem', fontWeight: 500 }}>
+                      {editErrors.patientReferenceId}
+                    </span>
+                  )}
                 </div>
 
                 <h4 className="edit-section-heading">Quantitative Measurements</h4>

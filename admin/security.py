@@ -26,7 +26,7 @@ TOKEN_VALIDITY_SECONDS = 12 * 3600  # 12 hours
 def create_admin_token(admin_id: str, username: str) -> str:
     """Create a cryptographically signed admin session token with timestamp."""
     issued_at = int(time.time())
-    payload = f"{admin_id}:{username}:{issued_at}"
+    payload = f"{admin_id}:{username}:ADMIN:{issued_at}"
     signature = hmac.new(ADMIN_SECRET_KEY, payload.encode("utf-8"), hashlib.sha256).hexdigest()
     return f"{admin_id}.{issued_at}.{signature}"
 
@@ -51,16 +51,18 @@ def verify_admin_token(token: str) -> Optional[str]:
 
     # Verify signature
     # Fetch admin username to verify HMAC
-    from database.config import SessionLocal
+    from database import SessionLocal
     db = SessionLocal()
     try:
         admin = db.query(Administrator).filter(Administrator.admin_id == admin_id).first()
         if not admin or not admin.is_active:
             return None
 
-        expected_payload = f"{admin_id}:{admin.username}:{issued_at}"
+        expected_payload = f"{admin_id}:{admin.username}:ADMIN:{issued_at}"
         expected_sig = hmac.new(ADMIN_SECRET_KEY, expected_payload.encode("utf-8"), hashlib.sha256).hexdigest()
-        if hmac.compare_digest(signature, expected_sig):
+        legacy_payload = f"{admin_id}:{admin.username}:{issued_at}"
+        legacy_sig = hmac.new(ADMIN_SECRET_KEY, legacy_payload.encode("utf-8"), hashlib.sha256).hexdigest()
+        if hmac.compare_digest(signature, expected_sig) or hmac.compare_digest(signature, legacy_sig):
             return admin_id
         return None
     finally:
@@ -95,7 +97,7 @@ def get_current_admin(
             detail="Invalid or expired administrator session. Access denied.",
         )
 
-    from database.config import SessionLocal
+    from database import SessionLocal
     db = SessionLocal()
     try:
         admin = db.query(Administrator).filter(Administrator.admin_id == admin_id).first()

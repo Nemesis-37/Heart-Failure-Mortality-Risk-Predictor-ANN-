@@ -355,26 +355,6 @@ export default function ClinicalGuidePage({ onNavigate }) {
         </div>
       </section>
 
-      {/* 2. Important Clinical & Encoding Distinctions Card */}
-      <section className="guide-notice-card" aria-label="Data Interpretation Guidelines">
-        <div className="notice-icon-box" aria-hidden="true">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="10" />
-            <line x1="12" y1="16" x2="12" y2="12" />
-            <line x1="12" y1="8" x2="12.01" y2="8" />
-          </svg>
-        </div>
-        <div className="notice-body">
-          <h3 className="notice-title">Important Dataset Encoding &amp; Clinical Data Standards</h3>
-          <p className="notice-text">
-            <strong>Dataset Encoding vs. Clinical Severity:</strong> Binary features in this application (such as Anaemia, Diabetes, High Blood Pressure, and Smoking) are coded as binary indicators (<code>0 = Negative / Absence</code>, <code>1 = Positive / Presence</code>). These numeric values represent dataset qualitative encodings, not clinical severity scores or stage ratings.
-          </p>
-          <p className="notice-text" style={{ marginTop: '4px' }}>
-            <strong>Continuous Measurements:</strong> Continuous values (such as Ejection Fraction, Serum Creatinine, and CPK) are normalized through standard z-score scaling (StandardScaler) prior to inference in both the linear and neural architectures.
-          </p>
-        </div>
-      </section>
-
       {/* 3. Search and Category Filter Toolbar */}
       <div className="guide-toolbar-card">
         {/* Search Input */}

@@ -52,6 +52,12 @@ def get_current_doctor(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    if str(payload.get("role", "")).upper() != "DOCTOR":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="This session is not authorized for physician operations.",
+        )
+
     doctor_id = payload.get("sub")
     if not doctor_id:
         raise HTTPException(

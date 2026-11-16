@@ -231,7 +231,7 @@ export default function DoctorRegister({ onNavigateToLogin, onRegisterSuccess })
               </div>
               <div className="feature-card-text">
                 <h3>Council Identity Verification</h3>
-                <p>Every account is verified against official medical registration councils.</p>
+                <p>Official registry validation against state and national medical boards.</p>
               </div>
             </div>
 
@@ -243,8 +243,8 @@ export default function DoctorRegister({ onNavigateToLogin, onRegisterSuccess })
                 </svg>
               </div>
               <div className="feature-card-text">
-                <h3>Argon2id Hybrid Encryption</h3>
-                <p>Industry-standard OWASP credential protection and encrypted audit trails.</p>
+                <h3>Argon2id Credential Protection</h3>
+                <p>OWASP-grade cryptographic protection and secure salted hash verification.</p>
               </div>
             </div>
 
@@ -259,7 +259,19 @@ export default function DoctorRegister({ onNavigateToLogin, onRegisterSuccess })
               </div>
               <div className="feature-card-text">
                 <h3>Encrypted Document Vault</h3>
-                <p>Medical licenses and evidence stored safely outside public directories.</p>
+                <p>Secure credential and license certificate storage outside public directories.</p>
+              </div>
+            </div>
+
+            <div className="feature-card">
+              <div className="feature-card-icon" style={{ background: '#fef3c7', color: '#b45309' }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+                </svg>
+              </div>
+              <div className="feature-card-text">
+                <h3>Secure Clinical Access</h3>
+                <p>Gated predictive cardiology platform with dual ANN &amp; Logistic Regression models.</p>
               </div>
             </div>
           </div>

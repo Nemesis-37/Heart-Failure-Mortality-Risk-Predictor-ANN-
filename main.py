@@ -1,14 +1,24 @@
 
 import logging
+import os
+import uuid
+from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 from pathlib import Path
 
 import joblib
 import pandas as pd
 import torch
+from dotenv import load_dotenv
 from typing import Optional
 from fastapi import FastAPI, HTTPException, Header, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, model_validator
+
+# Load .env as early as possible so ADMIN_EMAIL / ADMIN_PASSWORD are available
+_ENV_PATH = Path(__file__).resolve().parent / ".env"
+if _ENV_PATH.exists():
+    load_dotenv(dotenv_path=_ENV_PATH)
 
 from models.ann_model import HeartFailureANN
 from database import get_db, test_db_connection
@@ -46,10 +56,221 @@ ann_model.load_state_dict(
 )
 ann_model.eval()
 
+def _seed_admin_on_startup() -> None:
+    """
+    Seed or synchronise the administrator account from environment variables.
+
+    Uses direct SQLite access when SQLAlchemy cannot resolve the clinical schema
+    (SQL Server offline / SQLite fallback mode).
+
+    Rules:
+    - Runs only when ADMIN_EMAIL and ADMIN_PASSWORD are both present in env.
+    - If no Administrator row exists for ADMIN_EMAIL: creates one.
+    - If a row already exists: updates password_hash and ensures is_active=True.
+    - Silently skips if Argon2id native support is unavailable.
+    - Never prints the password to logs.
+    """
+    admin_email = os.getenv("ADMIN_EMAIL", "debashish.g333@gmail.com").strip().lower()
+    admin_password = os.getenv("ADMIN_PASSWORD", "admin_debashish123").strip()
+    if not admin_email or not admin_password:
+        logger.info("Admin auto-seed skipped: ADMIN_EMAIL or ADMIN_PASSWORD not set.")
+        return
+
+    try:
+        from auth.security import hash_password
+
+        admin_username = os.getenv("ADMIN_USERNAME", admin_email.split("@")[0]).strip()
+        admin_full_name = os.getenv("ADMIN_FULL_NAME", "Hospital Administrator").strip()
+        hashed = hash_password(admin_password)
+
+        # Try direct SQLite first (avoids clinical schema mismatch when SQL Server is offline)
+        db_path = BASE_DIR / "clinical_local.db"
+        if db_path.exists():
+            import sqlite3 as _sqlite3
+            conn = _sqlite3.connect(str(db_path))
+            cur = conn.cursor()
+            try:
+                cur.execute(
+                    "SELECT admin_id FROM Administrators WHERE email = ?", (admin_email,)
+                )
+                existing = cur.fetchone()
+                now_str = datetime.now(timezone.utc).isoformat()
+                if existing:
+                    cur.execute(
+                        "UPDATE Administrators SET password_hash=?, username=?, full_name=?, is_active=1 WHERE email=?",
+                        (hashed, admin_username, admin_full_name, admin_email),
+                    )
+                    logger.info(f"[startup] Administrator synced (SQLite): {admin_email}")
+                else:
+                    cur.execute(
+                        """INSERT INTO Administrators
+                           (admin_id, username, email, password_hash, full_name, role, is_active, created_at)
+                           VALUES (?, ?, ?, ?, ?, ?, 1, ?)""",
+                        (str(uuid.uuid4()), admin_username, admin_email, hashed, admin_full_name,
+                         "Super Administrator", now_str),
+                    )
+                    logger.info(f"[startup] Administrator created (SQLite): {admin_email}")
+                conn.commit()
+            except Exception as sq_err:
+                logger.warning(f"[startup] SQLite admin seed error: {sq_err}")
+            finally:
+                conn.close()
+            return
+
+        # Fallback: SQLAlchemy (SQL Server path)
+        try:
+            from database import SessionLocal
+        except ImportError:
+            from database.config import SessionLocal
+
+        from database.models import Administrator
+
+        db = SessionLocal()
+        try:
+            existing = db.query(Administrator).filter(
+                Administrator.email == admin_email
+            ).first()
+
+            if existing:
+                existing.password_hash = hashed
+                existing.username = admin_username
+                existing.is_active = True
+                db.commit()
+                logger.info(f"[startup] Administrator synced (SQL Server): {admin_email}")
+            else:
+                admin = Administrator(
+                    admin_id=str(uuid.uuid4()),
+                    username=admin_username,
+                    email=admin_email,
+                    password_hash=hashed,
+                    full_name=admin_full_name,
+                    role="Super Administrator",
+                    is_active=True,
+                    created_at=datetime.now(timezone.utc),
+                )
+                db.add(admin)
+                db.commit()
+                logger.info(f"[startup] Administrator created (SQL Server): {admin_email}")
+        except Exception as db_exc:
+            db.rollback()
+            logger.warning(f"[startup] Admin seed DB error (non-fatal): {db_exc}")
+        finally:
+            db.close()
+    except Exception as exc:
+        logger.warning(f"[startup] Admin seed skipped due to error: {exc}")
+
+
+def _seed_demo_doctor_on_startup() -> None:
+    """
+    Ensure the local development demo doctor account (dr.carter@hospital.org) exists
+    with password 'demo-doctor-2026' and verification_status='APPROVED'.
+    Enables instant Quick Demo Access in development/prototype environments.
+    """
+    try:
+        from auth.security import hash_password, is_argon2_native
+        if not is_argon2_native():
+            return
+
+        demo_email = "dr.carter@hospital.org"
+        demo_password = "demo-doctor-2026"
+        hashed = hash_password(demo_password)
+        now_str = datetime.now(timezone.utc).isoformat()
+
+        # Try SQLite first
+        db_path = BASE_DIR / "clinical_local.db"
+        if db_path.exists():
+            import sqlite3 as _sqlite3
+            conn = _sqlite3.connect(str(db_path))
+            cur = conn.cursor()
+            try:
+                cur.execute("SELECT doctor_id FROM Doctors WHERE lower(email) = ?", (demo_email,))
+                existing = cur.fetchone()
+                if existing:
+                    cur.execute(
+                        """UPDATE Doctors SET password_hash=?, full_name='Dr. Julian Carter, MD',
+                           email_verified=1, verification_status='APPROVED', is_active=1
+                           WHERE lower(email)=?""",
+                        (hashed, demo_email),
+                    )
+                else:
+                    cur.execute(
+                        """INSERT INTO Doctors
+                           (doctor_id, full_name, email, password_hash, mobile, medical_degree,
+                            registration_number, registration_council, username, email_verified,
+                            verification_status, is_active, created_at)
+                           VALUES (?, 'Dr. Julian Carter, MD', ?, ?, '+1 (555) 019-2834',
+                            'MD, FACC', 'DEMO-CARTER-2026', 'Medical Licensing Board', 'dr_carter',
+                            1, 'APPROVED', 1, ?)""",
+                        (str(uuid.uuid4()), demo_email, hashed, now_str),
+                    )
+                conn.commit()
+                logger.info("[startup] Demo doctor verified/synced (SQLite): dr.carter@hospital.org")
+            except Exception as _sq_err:
+                logger.warning(f"[startup] SQLite demo doctor seed error: {_sq_err}")
+            finally:
+                conn.close()
+            return
+
+        # Fallback SQL Server
+        try:
+            from database import SessionLocal
+        except ImportError:
+            from database.config import SessionLocal
+
+        from database.models import Doctor
+
+        db = SessionLocal()
+        try:
+            doc = db.query(Doctor).filter(Doctor.email == demo_email).first()
+            if doc:
+                doc.password_hash = hashed
+                doc.full_name = "Dr. Julian Carter, MD"
+                doc.email_verified = True
+                doc.verification_status = "APPROVED"
+                doc.is_active = True
+                doc.username = "dr_carter"
+                db.commit()
+            else:
+                new_doc = Doctor(
+                    doctor_id=str(uuid.uuid4()),
+                    full_name="Dr. Julian Carter, MD",
+                    email=demo_email,
+                    password_hash=hashed,
+                    mobile="+1 (555) 019-2834",
+                    medical_degree="MD, FACC",
+                    registration_number="DEMO-CARTER-2026",
+                    registration_council="Medical Licensing Board",
+                    username="dr_carter",
+                    email_verified=True,
+                    verification_status="APPROVED",
+                    is_active=True,
+                    created_at=datetime.now(timezone.utc),
+                )
+                db.add(new_doc)
+                db.commit()
+            logger.info("[startup] Demo doctor verified/synced (SQL Server): dr.carter@hospital.org")
+        except Exception as _db_err:
+            db.rollback()
+            logger.warning(f"[startup] Demo doctor seed error: {_db_err}")
+        finally:
+            db.close()
+    except Exception as exc:
+        logger.warning(f"[startup] Demo doctor seed skipped: {exc}")
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """FastAPI lifespan: seed admin and demo doctor on startup, nothing special on shutdown."""
+    _seed_admin_on_startup()
+    _seed_demo_doctor_on_startup()
+    yield
+
+
 app = FastAPI(
     title="Heart Failure Mortality Predictor",
     description="Educational machine-learning prototype, not a clinical tool.",
     version="1.0.0",
+    lifespan=lifespan,
 )
 
 app.add_middleware(
@@ -111,17 +332,29 @@ def get_auth_doctor(
 
 
 class PatientData(BaseModel):
-    age: float
-    anaemia: int
-    creatinine_phosphokinase: float
-    diabetes: int
-    ejection_fraction: float
-    high_blood_pressure: int
-    platelets: float
-    serum_creatinine: float
-    serum_sodium: float
-    sex: int
-    smoking: int
+    patient_reference_id: Optional[str] = Field(None, description="Compulsory patient tracking ID (e.g. PT-2026-001)")
+    patient_reference: Optional[str] = Field(None, description="Compulsory patient tracking ID alias")
+    age: float = Field(..., ge=1, le=120)
+    anaemia: int = Field(..., ge=0, le=1)
+    creatinine_phosphokinase: float = Field(..., ge=1)
+    diabetes: int = Field(..., ge=0, le=1)
+    ejection_fraction: float = Field(..., ge=1, le=100)
+    high_blood_pressure: int = Field(..., ge=0, le=1)
+    platelets: float = Field(..., ge=1)
+    serum_creatinine: float = Field(..., ge=0.1)
+    serum_sodium: float = Field(..., ge=50, le=200)
+    sex: int = Field(..., ge=0, le=1)
+    smoking: int = Field(..., ge=0, le=1)
+
+    @model_validator(mode="after")
+    def validate_compulsory_patient_ref(self):
+        ref = self.patient_reference_id or self.patient_reference
+        if not ref or not str(ref).strip():
+            raise ValueError("Patient Reference ID is compulsory. Please supply a valid identifier (e.g. PT-2026-001).")
+        cleaned = str(ref).strip()
+        self.patient_reference_id = cleaned
+        self.patient_reference = cleaned
+        return self
 
 
 HeartFailureInput = PatientData
@@ -227,6 +460,7 @@ def predict_logistic_regression(patient: PatientData, current_doctor = Depends(g
 
         return {
             "model": "Logistic Regression",
+            "patient_reference_id": patient.patient_reference_id,
             "predicted_class": prediction,
             "predicted_label": (
                 "Death event predicted"
@@ -276,6 +510,7 @@ def predict_ann(patient: PatientData, current_doctor = Depends(get_auth_doctor))
 
         return {
             "model": "Artificial Neural Network",
+            "patient_reference_id": patient.patient_reference_id,
             "predicted_class": prediction,
             "predicted_label": (
                 "Death event predicted"

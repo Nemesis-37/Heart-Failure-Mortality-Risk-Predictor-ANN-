@@ -170,12 +170,14 @@ if engine is None:
     )
 
     @event.listens_for(engine, "connect")
-    def _attach_clinical_schema(dbapi_connection, connection_record):
+    def _sqlite_connect_pragmas(dbapi_connection, connection_record):
         cursor = dbapi_connection.cursor()
         cursor.execute("PRAGMA journal_mode=WAL")
         cursor.execute("PRAGMA busy_timeout=5000")
-        cursor.execute("ATTACH DATABASE 'clinical_schema.db' AS clinical")
         cursor.close()
+
+if engine is not None and engine.dialect.name == "sqlite":
+    engine = engine.execution_options(schema_translate_map={"clinical": None})
 
 
 # ---------------------------------------------------------------------------

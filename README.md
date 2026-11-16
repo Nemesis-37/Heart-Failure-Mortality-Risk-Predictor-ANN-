@@ -634,6 +634,8 @@ The backend architecture uses:
 
 For local development only, create the demo doctor with `APP_ENV=development` and `DEMO_DOCTOR_PASSWORD` set, then run `scripts/create_demo_doctor.py`. The script refuses non-local SQL Server targets and does not change an existing account.
 
+Provision or update the administrator explicitly by setting `ADMIN_EMAIL` and `ADMIN_PASSWORD` in the local environment and running `python scripts/provision_admin.py`. The password is stored as an Argon2id hash; no default administrator credentials are seeded. `ADMIN_RECOVERY_EMAIL` may be set separately for OTP password recovery and otherwise defaults to `ADMIN_EMAIL`. Keep all real credential values out of source control.
+
 The system also includes role/access considerations as defined by the application requirements.
 
 ---

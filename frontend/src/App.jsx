@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import DoctorLogin from './DoctorLogin.jsx'
+import UnifiedLogin from './UnifiedLogin.jsx'
 import DoctorRegister from './DoctorRegister.jsx'
 import DoctorOtpVerification from './DoctorOtpVerification.jsx'
 import AdminDashboard from './AdminDashboard.jsx'
@@ -28,13 +28,30 @@ export default function App() {
 
   const [activePage, setActivePage] = useState('dashboard')
   const [selectedRecordForPrediction, setSelectedRecordForPrediction] = useState(null)
-  const [authMode, setAuthMode] = useState('login')
+  const [authMode, setAuthMode] = useState(() =>
+    sessionStorage.getItem('cardiopredict_admin_token') ? 'admin' : 'login',
+  )
   const [pendingDoctor, setPendingDoctor] = useState(null)
 
-  const handleLogin = (profile, rememberMe) => {
+  const handleLogin = (role, profile, authResponse, rememberMe) => {
+    if (role === 'ADMIN') {
+      sessionStorage.setItem('cardiopredict_admin_token', authResponse.access_token)
+      sessionStorage.setItem('cardiopredict_admin_profile', JSON.stringify(profile))
+      localStorage.removeItem(DOCTOR_AUTH_KEY)
+      sessionStorage.removeItem(DOCTOR_AUTH_KEY)
+      localStorage.removeItem('cardiopredict_access_token')
+      localStorage.removeItem('cardiopredict_refresh_token')
+      localStorage.removeItem('cardiopredict_current_doctor')
+      setDoctorUser(null)
+      setAuthMode('admin')
+      return
+    }
+
     setDoctorUser(profile)
     setActivePage('dashboard')
     try {
+      sessionStorage.removeItem('cardiopredict_admin_token')
+      sessionStorage.removeItem('cardiopredict_admin_profile')
       if (rememberMe) {
         localStorage.setItem(DOCTOR_AUTH_KEY, JSON.stringify(profile))
         sessionStorage.removeItem(DOCTOR_AUTH_KEY)
@@ -70,6 +87,8 @@ export default function App() {
       localStorage.removeItem('cardiopredict_access_token')
       localStorage.removeItem('cardiopredict_refresh_token')
       localStorage.removeItem('cardiopredict_current_doctor')
+      sessionStorage.removeItem('cardiopredict_admin_token')
+      sessionStorage.removeItem('cardiopredict_admin_profile')
     } catch {
       // Storage unavailable fallback
     }
@@ -115,10 +134,9 @@ export default function App() {
     }
 
     return (
-      <DoctorLogin
+      <UnifiedLogin
         onLogin={handleLogin}
         onNavigateToRegister={() => setAuthMode('register')}
-        onNavigateToAdmin={() => setAuthMode('admin')}
       />
     )
   }
