@@ -21,7 +21,8 @@ if _ENV_PATH.exists():
     load_dotenv(dotenv_path=_ENV_PATH)
 
 from models.ann_model import HeartFailureANN
-from database import get_db, test_db_connection
+from backend.database.config import get_db, test_db_connection, SessionLocal, engine, DB_DATABASE, DB_SERVER
+from backend.database.models import Administrator, Doctor
 
 logger = logging.getLogger(__name__)
 
@@ -118,13 +119,6 @@ def _seed_admin_on_startup() -> None:
             return
 
         # Fallback: SQLAlchemy (SQL Server path)
-        try:
-            from database import SessionLocal
-        except ImportError:
-            from database.config import SessionLocal
-
-        from database.models import Administrator
-
         db = SessionLocal()
         try:
             existing = db.query(Administrator).filter(
@@ -167,9 +161,7 @@ def _seed_demo_doctor_on_startup() -> None:
     Enables instant Quick Demo Access in development/prototype environments.
     """
     try:
-        from auth.security import hash_password, is_argon2_native
-        if not is_argon2_native():
-            return
+        from auth.security import hash_password
 
         demo_email = "dr.carter@hospital.org"
         demo_password = "demo-doctor-2026"
@@ -212,13 +204,6 @@ def _seed_demo_doctor_on_startup() -> None:
             return
 
         # Fallback SQL Server
-        try:
-            from database import SessionLocal
-        except ImportError:
-            from database.config import SessionLocal
-
-        from database.models import Doctor
-
         db = SessionLocal()
         try:
             doc = db.query(Doctor).filter(Doctor.email == demo_email).first()
@@ -316,11 +301,6 @@ def get_auth_doctor(
         return None
     try:
         from auth.dependencies import get_current_doctor
-        try:
-            from database.config import SessionLocal
-        except ImportError:
-            from database import SessionLocal
-
         db = SessionLocal()
         try:
             return get_current_doctor(authorization=authorization, db=db)
@@ -393,17 +373,17 @@ def health():
 @app.get("/db-health")
 def db_health():
     """
-    Test SQL Server connectivity by executing SELECT DB_NAME().
-    Verifies that the FastAPI backend connects to Microsoft SQL Server Express.
+    Test database connectivity and return live status.
+    Accurately reports whether SQLite (clinical_local.db) or SQL Server is active.
     """
     try:
-        from database import test_db_connection
         result = test_db_connection()
         if result.get("status") == "connected":
             return {
                 "status": "connected",
                 "database": result.get("database"),
-                "message": "Database connection successful",
+                "dialect": result.get("dialect", engine.dialect.name),
+                "message": result.get("message", "Database connection successful"),
             }
         else:
             raise HTTPException(
@@ -417,6 +397,8 @@ def db_health():
             status_code=500,
             detail={
                 "status": "disconnected",
+                "database": "clinical_local.db" if engine and engine.dialect.name == "sqlite" else DB_DATABASE,
+                "dialect": engine.dialect.name if engine else "none",
                 "message": f"Database connection error: {str(exc)}",
             },
         )
@@ -424,23 +406,24 @@ def db_health():
 
 @app.get("/health/db")
 def health_db():
-    """Test SQL Server database connectivity."""
+    """Test database connectivity and return detailed diagnostics."""
     try:
-        from database.config import DB_NAME, DB_SERVER, test_connection
-
-        is_connected = test_connection()
+        result = test_db_connection()
+        is_connected = result.get("status") == "connected"
+        active_db = result.get("database", "clinical_local.db" if engine and engine.dialect.name == "sqlite" else DB_DATABASE)
         return {
             "status": "connected" if is_connected else "disconnected",
-            "database": DB_NAME,
-            "server": DB_SERVER,
-            "message": "SQL Server connection verified successfully.",
+            "database": active_db,
+            "dialect": result.get("dialect", engine.dialect.name if engine else "none"),
+            "server": DB_SERVER if (engine and engine.dialect.name != "sqlite") else "local-file",
+            "message": result.get("message", "Database connection verified successfully."),
         }
     except Exception as exc:
         return {
             "status": "error",
             "detail": str(exc),
             "message": (
-                "Could not connect to SQL Server. Ensure the service is running "
+                "Could not connect to database. Ensure the service is running "
                 "and dependencies are installed."
             ),
         }

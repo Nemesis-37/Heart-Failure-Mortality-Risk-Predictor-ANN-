@@ -342,24 +342,6 @@ export default function AppLayout({
               </button>
             )}
 
-            {/* API Health Status Indicator */}
-            <button
-              type="button"
-              className={`header-status-pill ${backendStatus}`}
-              onClick={checkHealth}
-              title={`Inference API is ${backendStatus}. Click to refresh health check.`}
-              aria-label={`API Status: ${backendStatus}. Click to refresh.`}
-            >
-              <span className={`status-pulse-dot ${backendStatus}`} aria-hidden="true" />
-              <span className="status-label-text">
-                {backendStatus === 'online'
-                  ? 'API Online'
-                  : backendStatus === 'offline'
-                  ? 'API Offline'
-                  : 'Checking…'}
-              </span>
-            </button>
-
             {/* Theme Toggle (Dark / Light Mode) */}
             <ThemeToggle className="header-theme-toggle" />
 

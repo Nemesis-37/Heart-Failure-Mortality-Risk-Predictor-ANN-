@@ -15,9 +15,9 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Import the Base metadata and engine from our database config
-from database import Base, engine
-import db_models  # ensure database models are registered with Base.metadata
+# Import the Base metadata and engine from our central database config
+from backend.database.config import Base, engine
+import backend.database.models  # ensure all ORM models are registered with Base.metadata
 
 target_metadata = Base.metadata
 

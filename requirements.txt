@@ -1,0 +1,36 @@
+# ==============================================================================
+# Heart Failure Mortality Risk Predictor - Dependencies
+# ==============================================================================
+
+# FastAPI & Web Framework
+fastapi==0.143.1
+uvicorn[standard]==0.54.0
+pydantic==2.14.1
+pydantic-settings==2.9.1
+python-multipart==0.0.20
+
+# Database & Migrations
+SQLAlchemy==2.0.41
+pyodbc==5.5.0
+alembic==1.15.2
+
+# Security & Authentication
+argon2-cffi==25.1.0
+argon2-cffi-bindings==26.2.0
+passlib==1.7.4
+python-jose==3.4.0
+bcrypt==4.3.0
+
+# Machine Learning & Scientific Computing
+torch==2.14.0
+scikit-learn==1.9.1
+joblib==1.6.0
+pandas==3.0.5
+numpy==2.5.3
+scipy==1.18.1
+
+# Environment Configuration & Utilities
+python-dotenv==1.2.4
+python-dateutil==2.9.0.post0
+requests==2.32.3
+aiofiles==24.1.0

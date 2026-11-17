@@ -188,68 +188,71 @@ export default function DoctorRegister({ onNavigateToLogin, onRegisterSuccess })
   return (
     <div className="login-page">
       {/* ───── LEFT PANEL: Clinical SaaS Brand & Trust ───── */}
-      <div className="login-left-panel">
+      <div className="register-left-panel">
         <div className="left-panel-bg-layer" aria-hidden="true" />
         <div className="left-panel-glow-1" aria-hidden="true" />
         <div className="left-panel-glow-2" aria-hidden="true" />
 
-        <div className="left-panel-brand">
-          <div className="brand-icon-shield">
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-            </svg>
+        <div className="register-left-content">
+          {/* Section 2: Branding Typography */}
+          <div className="reg-brand-header">
+            <div className="reg-brand-icon">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              </svg>
+            </div>
+            <div className="reg-brand-titles">
+              <span className="reg-brand-title">CardioPredict SaaS</span>
+              <span className="reg-brand-subtitle">Physician Credentialing System</span>
+            </div>
           </div>
-          <div className="brand-text-block">
-            <span className="brand-name">CardioPredict SaaS</span>
-            <span className="brand-edition">Physician Credentialing System</span>
-          </div>
-        </div>
 
-        <div className="left-panel-body">
-          <div className="left-badge-tag">
+          <div className="reg-badge-tag">
             <span className="badge-pulse-dot" aria-hidden="true" />
             <span>Secure Medical Registration</span>
           </div>
 
-          <h1 className="left-panel-headline">
-            Verified Clinical Access for Healthcare Providers
-          </h1>
+          <div>
+            <h1 className="reg-left-headline">
+              Verified Clinical Access for Healthcare Providers
+            </h1>
+            <p className="reg-left-description">
+              Register your medical credentials to evaluate heart failure mortality risk
+              using dual-engine Artificial Neural Network and Logistic Regression clinical models.
+            </p>
+          </div>
 
-          <p className="left-panel-description">
-            Register your medical credentials to evaluate heart failure mortality risk
-            using dual-engine Artificial Neural Network and Logistic Regression clinical models.
-          </p>
-
-          <div className="left-feature-cards">
-            <div className="feature-card">
-              <div className="feature-card-icon" style={{ background: '#DBEAFE', color: '#1565D8' }}>
+          {/* 4 Feature Cards */}
+          <div className="reg-feature-cards">
+            <div className="reg-feature-card">
+              <div className="reg-feature-icon" style={{ background: '#DBEAFE', color: '#1565D8' }}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
                   <circle cx="8.5" cy="7.5" r="4" />
                   <polyline points="17 11 19 13 23 9" />
                 </svg>
               </div>
-              <div className="feature-card-text">
+              <div className="reg-feature-text">
                 <h3>Council Identity Verification</h3>
                 <p>Official registry validation against state and national medical boards.</p>
               </div>
             </div>
 
-            <div className="feature-card">
-              <div className="feature-card-icon" style={{ background: '#ccfbf1', color: '#0f766e' }}>
+            <div className="reg-feature-card">
+              <div className="reg-feature-icon" style={{ background: '#ccfbf1', color: '#0f766e' }}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
                   <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                 </svg>
               </div>
-              <div className="feature-card-text">
+              <div className="reg-feature-text">
                 <h3>Argon2id Credential Protection</h3>
                 <p>OWASP-grade cryptographic protection and secure salted hash verification.</p>
               </div>
             </div>
 
-            <div className="feature-card">
-              <div className="feature-card-icon" style={{ background: '#f3e8ff', color: '#7e22ce' }}>
+            <div className="reg-feature-card">
+              <div className="reg-feature-icon" style={{ background: '#f3e8ff', color: '#7e22ce' }}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                   <polyline points="14 2 14 8 20 8" />
@@ -257,29 +260,27 @@ export default function DoctorRegister({ onNavigateToLogin, onRegisterSuccess })
                   <line x1="16" y1="17" x2="8" y2="17" />
                 </svg>
               </div>
-              <div className="feature-card-text">
+              <div className="reg-feature-text">
                 <h3>Encrypted Document Vault</h3>
                 <p>Secure credential and license certificate storage outside public directories.</p>
               </div>
             </div>
 
-            <div className="feature-card">
-              <div className="feature-card-icon" style={{ background: '#fef3c7', color: '#b45309' }}>
+            <div className="reg-feature-card">
+              <div className="reg-feature-icon" style={{ background: '#fef3c7', color: '#b45309' }}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
                 </svg>
               </div>
-              <div className="feature-card-text">
+              <div className="reg-feature-text">
                 <h3>Secure Clinical Access</h3>
                 <p>Gated predictive cardiology platform with dual ANN &amp; Logistic Regression models.</p>
               </div>
             </div>
           </div>
-        </div>
 
-        <div className="left-panel-footer">
-          <div className="compliance-shield">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <div className="reg-left-footer">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0 }}>
               <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
             </svg>
             <span>Strict Verification Required &bull; Account Pending Review by Default</span>
@@ -288,12 +289,12 @@ export default function DoctorRegister({ onNavigateToLogin, onRegisterSuccess })
       </div>
 
       {/* ───── RIGHT PANEL: Registration Form ───── */}
-      <div className="login-right-panel" style={{ overflowY: 'auto', maxHeight: '100vh', padding: '2.5rem 1.5rem' }}>
-        <div className="login-form-wrapper" style={{ maxWidth: '640px' }}>
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '8px' }}>
+      <div className="register-right-panel">
+        <div className="register-form-wrapper">
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '12px' }}>
             <ThemeToggle />
           </div>
-          <div className="login-form-card" style={{ padding: '2.25rem' }}>
+          <div className="register-card-box">
 
             {/* Registration Success Confirmation */}
             {registrationComplete ? (
@@ -328,17 +329,16 @@ export default function DoctorRegister({ onNavigateToLogin, onRegisterSuccess })
                   Registration Submitted
                 </span>
 
-                <h2 style={{
+                <h2 className="reg-card-title" style={{
                   fontSize: '1.65rem',
                   fontWeight: 800,
-                  color: '#0B1F3A',
                   marginTop: '0.85rem',
                   marginBottom: '0.5rem',
                 }}>
                   Credentials Received
                 </h2>
 
-                <p style={{ fontSize: '0.92rem', color: '#64748b', lineHeight: 1.6, maxWidth: '480px', margin: '0 auto 1.5rem' }}>
+                <p className="reg-secondary-text" style={{ fontSize: '0.92rem', lineHeight: 1.6, maxWidth: '480px', margin: '0 auto 1.5rem' }}>
                   Thank you, <strong>{registeredDoctor?.full_name}</strong>. Your account has been registered with status{' '}
                   <span style={{ fontWeight: 700, color: '#d97706', background: '#fef3c7', padding: '2px 8px', borderRadius: '4px' }}>
                     PENDING
@@ -379,7 +379,7 @@ export default function DoctorRegister({ onNavigateToLogin, onRegisterSuccess })
                         onRegisterSuccess(registeredDoctor)
                       }
                     }}
-                    style={{ width: '100%' }}
+                    style={{ width: '100%', height: '46px' }}
                   >
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
@@ -401,10 +401,10 @@ export default function DoctorRegister({ onNavigateToLogin, onRegisterSuccess })
             ) : (
               <>
                 {/* Form Header */}
-                <div className="login-card-header" style={{ marginBottom: '1.5rem' }}>
-                  <span className="login-access-kicker">New Practitioner Onboarding</span>
-                  <h2 className="login-card-title" style={{ fontSize: '1.85rem' }}>Physician Registration</h2>
-                  <p className="login-card-subtitle" style={{ fontSize: '0.88rem' }}>
+                <div className="reg-card-header">
+                  <span className="reg-card-kicker">New Practitioner Onboarding</span>
+                  <h2 className="reg-card-title">Physician Registration</h2>
+                  <p className="reg-card-subtitle">
                     Submit your clinical credentials for verification and access to the AI mortality predictor.
                   </p>
                 </div>
@@ -432,16 +432,17 @@ export default function DoctorRegister({ onNavigateToLogin, onRegisterSuccess })
                   </div>
                 )}
 
-                {/* Registration Form */}
-                <form onSubmit={handleSubmit} noValidate className="login-form">
-                  {/* Two column grid on desktop */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
+                {/* Registration Form: Two Column Desktop Grid */}
+                <form onSubmit={handleSubmit} noValidate>
+                  <div className="reg-grid">
                     
                     {/* Full Name */}
-                    <div className="login-field-group">
-                      <label className="login-field-label" htmlFor={fullNameId}>Full Legal Name *</label>
-                      <div className="login-input-container">
-                        <svg className="login-input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <div className="reg-field-group">
+                      <label className="reg-field-label" htmlFor={fullNameId}>
+                        Full Legal Name <span className="reg-star">*</span>
+                      </label>
+                      <div className="reg-input-box">
+                        <svg className="reg-input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                           <circle cx="12" cy="7" r="4" />
                         </svg>
@@ -449,21 +450,23 @@ export default function DoctorRegister({ onNavigateToLogin, onRegisterSuccess })
                           id={fullNameId}
                           name="fullName"
                           type="text"
-                          className={`login-input ${errors.fullName ? 'has-error' : ''}`}
+                          className={`reg-input ${errors.fullName ? 'has-error' : ''}`}
                           placeholder="Dr. Full Name"
                           value={formData.fullName}
                           onChange={handleChange}
                           disabled={isSubmitting}
                         />
                       </div>
-                      {errors.fullName && <span className="login-field-error">{errors.fullName}</span>}
+                      {errors.fullName && <span className="reg-field-error">{errors.fullName}</span>}
                     </div>
 
                     {/* Email */}
-                    <div className="login-field-group">
-                      <label className="login-field-label" htmlFor={emailId}>Professional Email *</label>
-                      <div className="login-input-container">
-                        <svg className="login-input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <div className="reg-field-group">
+                      <label className="reg-field-label" htmlFor={emailId}>
+                        Professional Email <span className="reg-star">*</span>
+                      </label>
+                      <div className="reg-input-box">
+                        <svg className="reg-input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
                           <polyline points="22,6 12,13 2,6" />
                         </svg>
@@ -471,42 +474,46 @@ export default function DoctorRegister({ onNavigateToLogin, onRegisterSuccess })
                           id={emailId}
                           name="email"
                           type="email"
-                          className={`login-input ${errors.email ? 'has-error' : ''}`}
+                          className={`reg-input ${errors.email ? 'has-error' : ''}`}
                           placeholder="doctor@hospital.org"
                           value={formData.email}
                           onChange={handleChange}
                           disabled={isSubmitting}
                         />
                       </div>
-                      {errors.email && <span className="login-field-error">{errors.email}</span>}
+                      {errors.email && <span className="reg-field-error">{errors.email}</span>}
                     </div>
 
-                    {/* Mobile Phone */}
-                    <div className="login-field-group">
-                      <label className="login-field-label" htmlFor={mobileId}>Contact Number *</label>
-                      <div className="login-input-container">
-                        <svg className="login-input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    {/* Contact Number */}
+                    <div className="reg-field-group">
+                      <label className="reg-field-label" htmlFor={mobileId}>
+                        Contact Number <span className="reg-star">*</span>
+                      </label>
+                      <div className="reg-input-box">
+                        <svg className="reg-input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
                         </svg>
                         <input
                           id={mobileId}
                           name="mobile"
                           type="tel"
-                          className={`login-input ${errors.mobile ? 'has-error' : ''}`}
+                          className={`reg-input ${errors.mobile ? 'has-error' : ''}`}
                           placeholder="+1 (555) 000-0000"
                           value={formData.mobile}
                           onChange={handleChange}
                           disabled={isSubmitting}
                         />
                       </div>
-                      {errors.mobile && <span className="login-field-error">{errors.mobile}</span>}
+                      {errors.mobile && <span className="reg-field-error">{errors.mobile}</span>}
                     </div>
 
                     {/* Medical Degree */}
-                    <div className="login-field-group">
-                      <label className="login-field-label" htmlFor={degreeId}>Medical Degree / Qualification *</label>
-                      <div className="login-input-container">
-                        <svg className="login-input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <div className="reg-field-group">
+                      <label className="reg-field-label" htmlFor={degreeId}>
+                        Medical Degree / Qualification <span className="reg-star">*</span>
+                      </label>
+                      <div className="reg-input-box">
+                        <svg className="reg-input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <circle cx="12" cy="8" r="7" />
                           <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88" />
                         </svg>
@@ -514,21 +521,23 @@ export default function DoctorRegister({ onNavigateToLogin, onRegisterSuccess })
                           id={degreeId}
                           name="medicalDegree"
                           type="text"
-                          className={`login-input ${errors.medicalDegree ? 'has-error' : ''}`}
+                          className={`reg-input ${errors.medicalDegree ? 'has-error' : ''}`}
                           placeholder="e.g. MBBS, MD, FACC"
                           value={formData.medicalDegree}
                           onChange={handleChange}
                           disabled={isSubmitting}
                         />
                       </div>
-                      {errors.medicalDegree && <span className="login-field-error">{errors.medicalDegree}</span>}
+                      {errors.medicalDegree && <span className="reg-field-error">{errors.medicalDegree}</span>}
                     </div>
 
                     {/* Registration Number */}
-                    <div className="login-field-group">
-                      <label className="login-field-label" htmlFor={regNumberId}>Medical Registration Number *</label>
-                      <div className="login-input-container">
-                        <svg className="login-input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <div className="reg-field-group">
+                      <label className="reg-field-label" htmlFor={regNumberId}>
+                        Medical Registration Number <span className="reg-star">*</span>
+                      </label>
+                      <div className="reg-input-box">
+                        <svg className="reg-input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
                           <line x1="16" y1="2" x2="16" y2="6" />
                           <line x1="8" y1="2" x2="8" y2="6" />
@@ -538,46 +547,46 @@ export default function DoctorRegister({ onNavigateToLogin, onRegisterSuccess })
                           id={regNumberId}
                           name="registrationNumber"
                           type="text"
-                          className={`login-input ${errors.registrationNumber ? 'has-error' : ''}`}
+                          className={`reg-input ${errors.registrationNumber ? 'has-error' : ''}`}
                           placeholder="e.g. MCI-2024-88421"
                           value={formData.registrationNumber}
                           onChange={handleChange}
                           disabled={isSubmitting}
                         />
                       </div>
-                      {errors.registrationNumber && <span className="login-field-error">{errors.registrationNumber}</span>}
+                      {errors.registrationNumber && <span className="reg-field-error">{errors.registrationNumber}</span>}
                     </div>
 
                     {/* Registration Council */}
-                    <div className="login-field-group">
-                      <label className="login-field-label" htmlFor={councilId}>Registration Council *</label>
-                      <div className="login-input-container">
-                        <svg className="login-input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <div className="reg-field-group">
+                      <label className="reg-field-label" htmlFor={councilId}>
+                        Registration Council <span className="reg-star">*</span>
+                      </label>
+                      <div className="reg-input-box">
+                        <svg className="reg-input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <path d="M3 21h18M3 7v1a3 3 0 0 0 6 0V7m0 1a3 3 0 0 0 6 0V7m0 1a3 3 0 0 0 6 0V7H3l2-4h14l2 4M5 21V10.85M19 21V10.85M9 21v-4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v4" />
                         </svg>
                         <input
                           id={councilId}
                           name="registrationCouncil"
                           type="text"
-                          className={`login-input ${errors.registrationCouncil ? 'has-error' : ''}`}
+                          className={`reg-input ${errors.registrationCouncil ? 'has-error' : ''}`}
                           placeholder="e.g. State Medical Council"
                           value={formData.registrationCouncil}
                           onChange={handleChange}
                           disabled={isSubmitting}
                         />
                       </div>
-                      {errors.registrationCouncil && <span className="login-field-error">{errors.registrationCouncil}</span>}
+                      {errors.registrationCouncil && <span className="reg-field-error">{errors.registrationCouncil}</span>}
                     </div>
-                  </div>
 
-                  {/* Passwords Row */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem', marginTop: '0.25rem' }}>
-                    
                     {/* Password */}
-                    <div className="login-field-group">
-                      <label className="login-field-label" htmlFor={passwordId}>Password *</label>
-                      <div className="login-input-container">
-                        <svg className="login-input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <div className="reg-field-group">
+                      <label className="reg-field-label" htmlFor={passwordId}>
+                        Password <span className="reg-star">*</span>
+                      </label>
+                      <div className="reg-input-box">
+                        <svg className="reg-input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
                           <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                         </svg>
@@ -585,7 +594,7 @@ export default function DoctorRegister({ onNavigateToLogin, onRegisterSuccess })
                           id={passwordId}
                           name="password"
                           type={showPassword ? 'text' : 'password'}
-                          className={`login-input ${errors.password ? 'has-error' : ''}`}
+                          className={`reg-input has-toggle ${errors.password ? 'has-error' : ''}`}
                           placeholder="Minimum 8 characters"
                           value={formData.password}
                           onChange={handleChange}
@@ -593,7 +602,7 @@ export default function DoctorRegister({ onNavigateToLogin, onRegisterSuccess })
                         />
                         <button
                           type="button"
-                          className="btn-toggle-pw"
+                          className="reg-eye-btn"
                           onClick={() => setShowPassword(!showPassword)}
                           aria-label={showPassword ? 'Hide password' : 'Show password'}
                         >
@@ -610,14 +619,16 @@ export default function DoctorRegister({ onNavigateToLogin, onRegisterSuccess })
                           )}
                         </button>
                       </div>
-                      {errors.password && <span className="login-field-error">{errors.password}</span>}
+                      {errors.password && <span className="reg-field-error">{errors.password}</span>}
                     </div>
 
                     {/* Confirm Password */}
-                    <div className="login-field-group">
-                      <label className="login-field-label" htmlFor={confirmPasswordId}>Confirm Password *</label>
-                      <div className="login-input-container">
-                        <svg className="login-input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <div className="reg-field-group">
+                      <label className="reg-field-label" htmlFor={confirmPasswordId}>
+                        Confirm Password <span className="reg-star">*</span>
+                      </label>
+                      <div className="reg-input-box">
+                        <svg className="reg-input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
                           <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                         </svg>
@@ -625,7 +636,7 @@ export default function DoctorRegister({ onNavigateToLogin, onRegisterSuccess })
                           id={confirmPasswordId}
                           name="confirmPassword"
                           type={showConfirmPassword ? 'text' : 'password'}
-                          className={`login-input ${errors.confirmPassword ? 'has-error' : ''}`}
+                          className={`reg-input has-toggle ${errors.confirmPassword ? 'has-error' : ''}`}
                           placeholder="Re-enter password"
                           value={formData.confirmPassword}
                           onChange={handleChange}
@@ -633,7 +644,7 @@ export default function DoctorRegister({ onNavigateToLogin, onRegisterSuccess })
                         />
                         <button
                           type="button"
-                          className="btn-toggle-pw"
+                          className="reg-eye-btn"
                           onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                           aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
                         >
@@ -650,139 +661,131 @@ export default function DoctorRegister({ onNavigateToLogin, onRegisterSuccess })
                           )}
                         </button>
                       </div>
-                      {errors.confirmPassword && <span className="login-field-error">{errors.confirmPassword}</span>}
+                      {errors.confirmPassword && <span className="reg-field-error">{errors.confirmPassword}</span>}
                     </div>
-                  </div>
 
-                  {/* Password Strength Meter */}
-                  {formData.password && (
-                    <div className="register-pw-strength" style={{
-                      background: '#F8FAFC',
-                      padding: '0.75rem 1rem',
-                      borderRadius: '8px',
-                      border: '1px solid #E2E8F0',
-                      marginTop: '0.25rem',
-                      fontSize: '0.78rem',
-                    }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
-                        <span style={{ color: '#64748b' }}>Password Strength:</span>
-                        <strong style={{ color: passwordStrength.color }}>{passwordStrength.label}</strong>
+                    {/* Password Strength Meter (Span Full Width) */}
+                    {formData.password && (
+                      <div className="reg-col-full">
+                        <div className="reg-strength-box">
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
+                            <span className="reg-secondary-text">Password Strength:</span>
+                            <strong style={{ color: passwordStrength.color }}>{passwordStrength.label}</strong>
+                          </div>
+                          <div style={{ width: '100%', height: '5px', background: '#cbd5e1', borderRadius: '4px', overflow: 'hidden' }}>
+                            <div style={{
+                              height: '100%',
+                              width: `${(passwordStrength.score / 5) * 100}%`,
+                              background: passwordStrength.color,
+                              transition: 'width 250ms ease, background 250ms ease',
+                            }} />
+                          </div>
+                          <div style={{ display: 'flex', gap: '0.85rem', flexWrap: 'wrap', marginTop: '0.45rem', fontSize: '0.78rem' }}>
+                            <span style={{ color: formData.password.length >= 8 ? '#16a34a' : '#94a3b8' }}>
+                              {formData.password.length >= 8 ? '✓' : '•'} 8+ chars
+                            </span>
+                            <span style={{ color: /[A-Z]/.test(formData.password) ? '#16a34a' : '#94a3b8' }}>
+                              {/[A-Z]/.test(formData.password) ? '✓' : '•'} Uppercase
+                            </span>
+                            <span style={{ color: /[a-z]/.test(formData.password) ? '#16a34a' : '#94a3b8' }}>
+                              {/[a-z]/.test(formData.password) ? '✓' : '•'} Lowercase
+                            </span>
+                            <span style={{ color: /\d/.test(formData.password) ? '#16a34a' : '#94a3b8' }}>
+                              {/\d/.test(formData.password) ? '✓' : '•'} Number
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                      <div style={{ width: '100%', height: '5px', background: '#e2e8f0', borderRadius: '4px', overflow: 'hidden' }}>
-                        <div style={{
-                          height: '100%',
-                          width: `${(passwordStrength.score / 5) * 100}%`,
-                          background: passwordStrength.color,
-                          transition: 'width 250ms ease, background 250ms ease',
-                        }} />
-                      </div>
-                      <div style={{ display: 'flex', gap: '0.85rem', flexWrap: 'wrap', marginTop: '0.45rem', color: '#64748b' }}>
-                        <span style={{ color: formData.password.length >= 8 ? '#16a34a' : '#94a3b8' }}>
-                          {formData.password.length >= 8 ? '✓' : '•'} 8+ chars
-                        </span>
-                        <span style={{ color: /[A-Z]/.test(formData.password) ? '#16a34a' : '#94a3b8' }}>
-                          {/[A-Z]/.test(formData.password) ? '✓' : '•'} Uppercase
-                        </span>
-                        <span style={{ color: /[a-z]/.test(formData.password) ? '#16a34a' : '#94a3b8' }}>
-                          {/[a-z]/.test(formData.password) ? '✓' : '•'} Lowercase
-                        </span>
-                        <span style={{ color: /\d/.test(formData.password) ? '#16a34a' : '#94a3b8' }}>
-                          {/\d/.test(formData.password) ? '✓' : '•'} Number
-                        </span>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Supporting Document Upload */}
-                  <div className="login-field-group" style={{ marginTop: '0.5rem' }}>
-                    <label className="login-field-label" htmlFor={fileUploadId}>
-                      Medical Registration Proof / Certificate <span style={{ color: '#64748b', fontWeight: 400 }}>(PDF, JPG, PNG - Max 10MB)</span>
-                    </label>
-                    <div className="register-doc-upload" style={{
-                      border: '1.5px dashed #93C5FD',
-                      background: '#EFF6FF',
-                      borderRadius: '12px',
-                      padding: '1.25rem',
-                      textAlign: 'center',
-                      cursor: 'pointer',
-                      position: 'relative',
-                    }}>
-                      <input
-                        id={fileUploadId}
-                        type="file"
-                        accept=".pdf,.jpg,.jpeg,.png"
-                        onChange={handleFileChange}
-                        disabled={isSubmitting}
-                        style={{
-                          position: 'absolute',
-                          inset: 0,
-                          opacity: 0,
-                          cursor: 'pointer',
-                          width: '100%',
-                          height: '100%',
-                        }}
-                      />
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.35rem', pointerEvents: 'none' }}>
-                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#1565D8" strokeWidth="2">
-                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                          <polyline points="17 8 12 3 7 8" />
-                          <line x1="12" y1="3" x2="12" y2="15" />
-                        </svg>
-                        <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#1565D8' }}>
-                          {documentFile ? documentFile.name : 'Click or drag registration certificate to upload'}
-                        </span>
-                        <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                          {documentFile ? `${(documentFile.size / 1024 / 1024).toFixed(2)} MB uploaded` : 'Optional evidence for expedited manual credential approval'}
-                        </span>
-                      </div>
-                    </div>
-                    {errors.document && <span className="login-field-error">{errors.document}</span>}
-                  </div>
-
-                  {/* Submit Registration Button */}
-                  <button
-                    type="submit"
-                    className="btn-login-primary"
-                    disabled={isSubmitting}
-                    style={{ marginTop: '0.75rem' }}
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <span className="login-spinner" aria-hidden="true" />
-                        <span>Submitting Medical Credentials&hellip;</span>
-                      </>
-                    ) : (
-                      <>
-                        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-                          <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                          <circle cx="8.5" cy="7.5" r="4" />
-                          <polyline points="17 11 19 13 23 9" />
-                        </svg>
-                        <span>Register as Physician</span>
-                      </>
                     )}
-                  </button>
 
-                  {/* Switch to Login */}
-                  <div style={{ textAlign: 'center', marginTop: '1rem', fontSize: '0.88rem', color: '#64748b' }}>
-                    Already have a verified physician account?{' '}
-                    <button
-                      type="button"
-                      onClick={onNavigateToLogin}
-                      style={{
-                        background: 'transparent',
-                        border: 'none',
-                        color: '#1565D8',
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                        textDecoration: 'underline',
-                        textUnderlineOffset: '3px',
-                      }}
-                    >
-                      Sign In Here
-                    </button>
+                    {/* Supporting Document Upload (Span Full Width) */}
+                    <div className="reg-col-full">
+                      <div className="reg-field-group">
+                        <label className="reg-field-label" htmlFor={fileUploadId}>
+                          Medical Registration Proof / Certificate <span className="reg-secondary-text" style={{ marginLeft: '0.35rem', fontWeight: 400 }}>(PDF, JPG, PNG - Max 10MB)</span>
+                        </label>
+                        <div className="reg-upload-zone">
+                          <input
+                            id={fileUploadId}
+                            type="file"
+                            accept=".pdf,.jpg,.jpeg,.png"
+                            onChange={handleFileChange}
+                            disabled={isSubmitting}
+                            style={{
+                              position: 'absolute',
+                              inset: 0,
+                              opacity: 0,
+                              cursor: 'pointer',
+                              width: '100%',
+                              height: '100%',
+                            }}
+                          />
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.35rem', pointerEvents: 'none' }}>
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#60A5FA" strokeWidth="2">
+                              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                              <polyline points="17 8 12 3 7 8" />
+                              <line x1="12" y1="3" x2="12" y2="15" />
+                            </svg>
+                            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#38BDF8' }}>
+                              {documentFile ? documentFile.name : 'Click or drag registration certificate to upload'}
+                            </span>
+                            <span className="reg-secondary-text" style={{ fontSize: '0.75rem' }}>
+                              {documentFile ? `${(documentFile.size / 1024 / 1024).toFixed(2)} MB uploaded` : 'Optional evidence for expedited manual credential approval'}
+                            </span>
+                          </div>
+                        </div>
+                        {errors.document && <span className="reg-field-error">{errors.document}</span>}
+                      </div>
+                    </div>
+
+                    {/* Submit Registration Button (Span Full Width) */}
+                    <div className="reg-col-full" style={{ marginTop: '0.5rem' }}>
+                      <button
+                        type="submit"
+                        className="btn-login-primary"
+                        disabled={isSubmitting}
+                        style={{ width: '100%', height: '46px' }}
+                      >
+                        {isSubmitting ? (
+                          <>
+                            <span className="login-spinner" aria-hidden="true" />
+                            <span>Submitting Medical Credentials&hellip;</span>
+                          </>
+                        ) : (
+                          <>
+                            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                              <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                              <circle cx="8.5" cy="7.5" r="4" />
+                              <polyline points="17 11 19 13 23 9" />
+                            </svg>
+                            <span>Register as Physician</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+
                   </div>
                 </form>
+
+                {/* Switch to Login */}
+                <div style={{ textAlign: 'center', marginTop: '1.25rem', fontSize: '0.88rem' }}>
+                  <span className="reg-secondary-text">Already have a verified physician account? </span>
+                  <button
+                    type="button"
+                    onClick={onNavigateToLogin}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: '#60A5FA',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      textDecoration: 'underline',
+                      textUnderlineOffset: '3px',
+                    }}
+                  >
+                    Sign in to Portal
+                  </button>
+                </div>
 
                 <div className="login-card-footer" style={{ marginTop: '1.5rem' }}>
                   <p>

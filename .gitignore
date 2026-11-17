@@ -1,12 +1,19 @@
-# Python bytecode
+# Python bytecode & cache
 __pycache__/
 *.py[cod]
 *$py.class
+.pytest_cache/
 
 # Virtual environment
 venv/
 .venv/
 ENV/
+
+# Node.js & Frontend dependencies / build artifacts
+node_modules/
+frontend/node_modules/
+dist/
+frontend/dist/
 
 # Jupyter notebooks
 .ipynb_checkpoints/
@@ -14,7 +21,7 @@ ENV/
 # Environment files — NEVER commit .env (contains real passwords/secrets)
 .env
 
-# Allow .env.example (no real credentials — safe to commit)
+# Allow .env.example (safe to commit template)
 !.env.example
 
 # IDE / editor settings
@@ -31,13 +38,13 @@ Thumbs.db
 *.log
 *.tmp
 
-# SQLite development fallback databases (auto-created when SQL Server is unavailable)
+# SQLite development fallback databases
 *.db
 *.db-shm
 *.db-wal
 
-# Uploaded medical credential documents (sensitive — never commit)
+# Uploaded medical credential documents
 storage/medical_documents/
 
-# Dataset (large CSV — optional exclude)
-# dataset/
+# Local backup directory
+backup_pre_cleanup/

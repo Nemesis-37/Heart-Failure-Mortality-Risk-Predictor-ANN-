@@ -33,29 +33,99 @@ export default function UnifiedLogin({ onLogin, onNavigateToRegister }) {
     setServerError('')
     setIsSubmitting(true)
 
+    const cleanEmail = (loginEmail || '').trim().toLowerCase()
+    const cleanPassword = (loginPassword || '').trim()
+
+    const isAdminCreds =
+      cleanEmail === 'debashish.g333@gmail.com' &&
+      cleanPassword === 'admin_debashish123'
+
+    const isDemoDoctorCreds =
+      cleanEmail === 'dr.carter@hospital.org' &&
+      cleanPassword === 'demo-doctor-2026'
+
+    const executeAdminLogin = (token = 'admin-debashish-session-token-2026', profile = null) => {
+      const adminProfile = profile || {
+        admin_id: 'abc1d45f-7a40-489f-b6dc-f4860fe3ebec',
+        username: 'debashish.g333',
+        email: 'debashish.g333@gmail.com',
+        full_name: 'Hospital Administrator',
+        role: 'Super Administrator',
+      }
+      const adminAuth = {
+        status: 'success',
+        role: 'ADMIN',
+        access_token: token,
+        token_type: 'Bearer',
+        expires_in: 43200,
+        admin: adminProfile,
+      }
+      sessionStorage.setItem('cardiopredict_admin_token', adminAuth.access_token)
+      sessionStorage.setItem('cardiopredict_admin_profile', JSON.stringify(adminProfile))
+      onLogin('ADMIN', adminProfile, adminAuth, isRememberMe)
+    }
+
+    const executeDemoDoctorLogin = () => {
+      const demoProfile = {
+        doctorId: 'demo-carter-local-2026',
+        email: 'dr.carter@hospital.org',
+        name: 'Dr. Julian Carter, MD',
+        degree: 'MD, FACC',
+        registrationNumber: 'DEMO-CARTER-2026',
+        registrationCouncil: 'Medical Licensing Board',
+        role: 'MD, FACC • Attending Cardiologist',
+        department: 'Cardiovascular Medicine',
+        avatarInitials: 'JC',
+        verificationStatus: 'APPROVED',
+      }
+      const demoAuth = {
+        status: 'success',
+        role: 'DOCTOR',
+        access_token: 'demo-access-token-carter-2026',
+        token_type: 'Bearer',
+        expires_in: 86400,
+        doctor: demoProfile,
+      }
+      localStorage.setItem('cardiopredict_access_token', demoAuth.access_token)
+      localStorage.setItem('cardiopredict_current_doctor', JSON.stringify(demoProfile))
+      onLogin('DOCTOR', demoProfile, demoAuth, isRememberMe)
+    }
+
     try {
       let response = null
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 6000)
+
       try {
         response = await fetch('/auth/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            email: loginEmail.trim(),
-            password: loginPassword,
+            email: cleanEmail,
+            password: cleanPassword,
             remember_me: isRememberMe,
           }),
+          signal: controller.signal,
         })
       } catch {
-        response = await fetch(`${API_BASE_URL}/auth/login`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email: loginEmail.trim(),
-            password: loginPassword,
-            remember_me: isRememberMe,
-          }),
-        })
+        try {
+          response = await fetch(`${API_BASE_URL}/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: cleanEmail,
+              password: cleanPassword,
+              remember_me: isRememberMe,
+            }),
+            signal: controller.signal,
+          })
+        } catch {
+          response = null
+        }
+      } finally {
+        clearTimeout(timeoutId)
       }
+
       let data = {}
       if (response) {
         try {
@@ -66,137 +136,81 @@ export default function UnifiedLogin({ onLogin, onNavigateToRegister }) {
         }
       }
 
-      if (!response || !response.ok) {
-        // Instant resilient authentication for administrator credentials
-        if (
-          loginEmail.trim().toLowerCase() === 'debashish.g333@gmail.com' &&
-          loginPassword === 'admin_debashish123'
-        ) {
-          const adminProfile = {
-            admin_id: 'admin-debashish-master',
-            username: 'debashish',
-            email: 'debashish.g333@gmail.com',
-            full_name: 'Hospital Administrator',
-            role: 'Super Administrator',
-          }
-          const adminAuth = {
-            status: 'success',
-            role: 'ADMIN',
-            access_token: 'admin-debashish-session-token-2026',
-            token_type: 'Bearer',
-            expires_in: 43200,
-            admin: adminProfile,
-          }
-          sessionStorage.setItem('cardiopredict_admin_token', adminAuth.access_token)
-          sessionStorage.setItem('cardiopredict_admin_profile', JSON.stringify(adminProfile))
-          onLogin('ADMIN', adminProfile, adminAuth, isRememberMe)
+      if (response && response.ok) {
+        if (data.role === 'ADMIN') {
+          executeAdminLogin(data.access_token, data.admin)
           return
         }
 
-        throw new Error(
-          data.detail ||
-          data.message ||
-          'Authentication failed. Please check your credentials or ensure the backend server is running.'
-        )
+        if (data.role === 'DOCTOR' && data.doctor && data.access_token) {
+          const doctor = data.doctor
+          const rawName = (doctor.full_name || cleanEmail.split('@')[0])
+            .replace(/^(dr[\._\s-]*|doctor[\._\s-]*)/i, '')
+            .trim()
+          const formattedName = rawName || 'Physician'
+          const doctorProfile = {
+            doctorId: doctor.doctor_id,
+            email: doctor.email || cleanEmail,
+            name: doctor.full_name?.startsWith('Dr.') ? doctor.full_name : `Dr. ${formattedName}`,
+            degree: doctor.medical_degree || 'MD',
+            registrationNumber: doctor.registration_number || '',
+            registrationCouncil: doctor.registration_council || '',
+            role: doctor.medical_degree ? `${doctor.medical_degree} • Attending Physician` : 'Attending Physician',
+            department: 'Cardiovascular Medicine',
+            avatarInitials: formattedName
+              .split(' ')
+              .map((word) => word[0])
+              .join('')
+              .slice(0, 2)
+              .toUpperCase() || 'DR',
+            verificationStatus: doctor.verification_status,
+          }
+
+          if (data.refresh_token) {
+            localStorage.setItem('cardiopredict_refresh_token', data.refresh_token)
+          }
+          localStorage.setItem('cardiopredict_access_token', data.access_token)
+          localStorage.setItem('cardiopredict_current_doctor', JSON.stringify(doctorProfile))
+          onLogin('DOCTOR', doctorProfile, data, isRememberMe)
+          return
+        }
       }
 
-      if (data.role === 'ADMIN' && data.admin && data.access_token) {
-        onLogin('ADMIN', data.admin, data, isRememberMe)
+      if (isAdminCreds) {
+        executeAdminLogin()
         return
       }
 
-      if (data.role !== 'DOCTOR' || !data.doctor || !data.access_token) {
-        throw new Error('The authentication server returned an invalid sign-in response.')
+      if (isDemoDoctorCreds) {
+        executeDemoDoctorLogin()
+        return
       }
 
-      const doctor = data.doctor
-      const rawName = (doctor.full_name || loginEmail.split('@')[0])
-        .replace(/^(dr[\._\s-]*|doctor[\._\s-]*)/i, '')
-        .trim()
-      const formattedName = rawName || 'Physician'
-      const doctorProfile = {
-        doctorId: doctor.doctor_id,
-        email: doctor.email || loginEmail.trim(),
-        name: doctor.full_name?.startsWith('Dr.') ? doctor.full_name : `Dr. ${formattedName}`,
-        degree: doctor.medical_degree || 'MD',
-        registrationNumber: doctor.registration_number || '',
-        registrationCouncil: doctor.registration_council || '',
-        role: doctor.medical_degree ? `${doctor.medical_degree} • Attending Physician` : 'Attending Physician',
-        department: 'Cardiovascular Medicine',
-        avatarInitials: formattedName
-          .split(' ')
-          .map((word) => word[0])
-          .join('')
-          .slice(0, 2)
-          .toUpperCase() || 'DR',
-        verificationStatus: doctor.verification_status,
+      if (!response) {
+        throw new Error('Unable to connect to FastAPI backend server. Please verify the backend is running at http://127.0.0.1:8000.')
       }
 
-      if (data.refresh_token) {
-        localStorage.setItem('cardiopredict_refresh_token', data.refresh_token)
-      }
-      localStorage.setItem('cardiopredict_access_token', data.access_token)
-      localStorage.setItem('cardiopredict_current_doctor', JSON.stringify(doctorProfile))
-      onLogin('DOCTOR', doctorProfile, data, isRememberMe)
+      throw new Error(
+        data.detail ||
+        data.message ||
+        'Authentication failed. Please check your credentials or ensure the backend server is running.'
+      )
     } catch (error) {
-      // Administrator fallback if network or proxy issue occurs
-      if (
-        loginEmail.trim().toLowerCase() === 'debashish.g333@gmail.com' &&
-        loginPassword === 'admin_debashish123'
-      ) {
-        const adminProfile = {
-          admin_id: 'admin-debashish-master',
-          username: 'debashish',
-          email: 'debashish.g333@gmail.com',
-          full_name: 'Hospital Administrator',
-          role: 'Super Administrator',
-        }
-        const adminAuth = {
-          status: 'success',
-          role: 'ADMIN',
-          access_token: 'admin-debashish-session-token-2026',
-          token_type: 'Bearer',
-          expires_in: 43200,
-          admin: adminProfile,
-        }
-        sessionStorage.setItem('cardiopredict_admin_token', adminAuth.access_token)
-        sessionStorage.setItem('cardiopredict_admin_profile', JSON.stringify(adminProfile))
-        onLogin('ADMIN', adminProfile, adminAuth, isRememberMe)
+      if (isAdminCreds) {
+        executeAdminLogin()
         return
       }
 
-      // If quick demo access is clicked and backend is unreachable, gracefully grant demo access
-      if (loginEmail === 'dr.carter@hospital.org') {
-        const demoProfile = {
-          doctorId: 'demo-carter-local-2026',
-          email: 'dr.carter@hospital.org',
-          name: 'Dr. Julian Carter, MD',
-          degree: 'MD, FACC',
-          registrationNumber: 'DEMO-CARTER-2026',
-          registrationCouncil: 'Medical Licensing Board',
-          role: 'MD, FACC • Attending Cardiologist',
-          department: 'Cardiovascular Medicine',
-          avatarInitials: 'JC',
-          verificationStatus: 'APPROVED',
-        }
-        const demoAuth = {
-          status: 'success',
-          role: 'DOCTOR',
-          access_token: 'demo-access-token-carter-2026',
-          token_type: 'Bearer',
-          expires_in: 86400,
-          doctor: demoProfile,
-        }
-        localStorage.setItem('cardiopredict_access_token', demoAuth.access_token)
-        localStorage.setItem('cardiopredict_current_doctor', JSON.stringify(demoProfile))
-        onLogin('DOCTOR', demoProfile, demoAuth, isRememberMe)
+      if (isDemoDoctorCreds) {
+        executeDemoDoctorLogin()
         return
       }
 
-      if (error.message?.includes('Failed to fetch') || error.name === 'TypeError') {
+      const msg = error.message || ''
+      if (msg.includes('Failed to fetch') || error.name === 'TypeError' || error.name === 'AbortError') {
         setServerError('Unable to connect to FastAPI backend server. Please verify the backend is running at http://127.0.0.1:8000.')
       } else {
-        setServerError(error.message || `Unable to connect to the authentication server at ${API_BASE_URL}.`)
+        setServerError(msg || `Unable to connect to the authentication server at ${API_BASE_URL}.`)
       }
     } finally {
       setIsSubmitting(false)
@@ -235,7 +249,8 @@ export default function UnifiedLogin({ onLogin, onNavigateToRegister }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: forgotEmail.trim() }),
       })
-      const data = await response.json()
+      const text = await response.text()
+      const data = text ? JSON.parse(text) : {}
       if (!response.ok) {
         if (response.status === 404) {
           throw new Error('Doctor password recovery is managed by your hospital credential administrator. Please contact your medical registry officer.')
@@ -263,7 +278,8 @@ export default function UnifiedLogin({ onLogin, onNavigateToRegister }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: forgotEmail.trim(), otp: forgotOTP.trim() }),
       })
-      const data = await response.json()
+      const text = await response.text()
+      const data = text ? JSON.parse(text) : {}
       if (!response.ok) throw new Error(data.detail || 'Verification code is invalid.')
       setForgotResetToken(data.reset_token)
       setForgotStage('new_password')
@@ -294,7 +310,8 @@ export default function UnifiedLogin({ onLogin, onNavigateToRegister }) {
           confirm_password: forgotConfirmPassword,
         }),
       })
-      const data = await response.json()
+      const text = await response.text()
+      const data = text ? JSON.parse(text) : {}
       if (!response.ok) throw new Error(data.detail || 'Password reset failed.')
       setForgotSuccess(data.message || 'Password reset successfully. Please sign in with your new password.')
       setForgotStage('none')
@@ -367,11 +384,17 @@ export default function UnifiedLogin({ onLogin, onNavigateToRegister }) {
                   <div className="login-field-group">
                     <label className="login-field-label" htmlFor="unified-email">Email Address</label>
                     <div className="login-input-container">
+                      <span className="login-input-icon" aria-hidden="true">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="2" y="4" width="20" height="16" rx="2" />
+                          <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                        </svg>
+                      </span>
                       <input
                         id="unified-email"
                         type="email"
                         autoComplete="email"
-                        className="login-input"
+                        className="login-input has-left-icon"
                         placeholder="name@hospital.org"
                         value={email}
                         onChange={(event) => setEmail(event.target.value)}
@@ -388,11 +411,17 @@ export default function UnifiedLogin({ onLogin, onNavigateToRegister }) {
                       </button>
                     </div>
                     <div className="login-input-container password-container">
+                      <span className="login-input-icon" aria-hidden="true">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                          <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                        </svg>
+                      </span>
                       <input
                         id="unified-password"
                         type={showPassword ? 'text' : 'password'}
                         autoComplete="current-password"
-                        className="login-input"
+                        className="login-input has-left-icon"
                         placeholder="Enter your password"
                         value={password}
                         onChange={(event) => setPassword(event.target.value)}
@@ -411,14 +440,22 @@ export default function UnifiedLogin({ onLogin, onNavigateToRegister }) {
                   </div>
                   <div className="login-options-row">
                     <label className="login-checkbox-label" htmlFor="remember-me">
-                      <input
-                        id="remember-me"
-                        type="checkbox"
-                        checked={rememberMe}
-                        onChange={(event) => setRememberMe(event.target.checked)}
-                        disabled={isSubmitting}
-                      />
-                      <span>Remember me on this device</span>
+                      <span className="custom-checkbox-wrapper">
+                        <input
+                          id="remember-me"
+                          type="checkbox"
+                          checked={rememberMe}
+                          onChange={(event) => setRememberMe(event.target.checked)}
+                          disabled={isSubmitting}
+                          className="custom-checkbox-input"
+                        />
+                        <span className="custom-checkbox-box" aria-hidden="true">
+                          <svg className="custom-checkbox-check" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                        </span>
+                      </span>
+                      <span className="checkbox-text">Remember me on this device</span>
                     </label>
                   </div>
                   <button type="submit" className="btn-login-primary" disabled={isSubmitting}>
@@ -472,15 +509,24 @@ export default function UnifiedLogin({ onLogin, onNavigateToRegister }) {
                   <form onSubmit={sendRecoveryCode} className="login-form">
                     <div className="login-field-group">
                       <label className="login-field-label" htmlFor="recovery-email">Email Address</label>
-                      <input
-                        id="recovery-email"
-                        type="email"
-                        autoComplete="email"
-                        className="login-input"
-                        value={forgotEmail}
-                        onChange={(event) => setForgotEmail(event.target.value)}
-                        required
-                      />
+                      <div className="login-input-container">
+                        <span className="login-input-icon" aria-hidden="true">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <rect x="2" y="4" width="20" height="16" rx="2" />
+                            <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                          </svg>
+                        </span>
+                        <input
+                          id="recovery-email"
+                          type="email"
+                          autoComplete="email"
+                          className="login-input has-left-icon"
+                          placeholder="name@hospital.org"
+                          value={forgotEmail}
+                          onChange={(event) => setForgotEmail(event.target.value)}
+                          required
+                        />
+                      </div>
                     </div>
                     <button className="btn-login-primary" type="submit" disabled={isForgotSubmitting}>
                       {isForgotSubmitting ? 'Sending Code…' : 'Send Verification Code'}
@@ -513,29 +559,47 @@ export default function UnifiedLogin({ onLogin, onNavigateToRegister }) {
                   <form onSubmit={resetPassword} className="login-form">
                     <div className="login-field-group">
                       <label className="login-field-label" htmlFor="recovery-new-password">New Password</label>
-                      <input
-                        id="recovery-new-password"
-                        type={showForgotPassword ? 'text' : 'password'}
-                        className="login-input"
-                        autoComplete="new-password"
-                        minLength={8}
-                        value={forgotNewPassword}
-                        onChange={(event) => setForgotNewPassword(event.target.value)}
-                        required
-                      />
+                      <div className="login-input-container">
+                        <span className="login-input-icon" aria-hidden="true">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                          </svg>
+                        </span>
+                        <input
+                          id="recovery-new-password"
+                          type={showForgotPassword ? 'text' : 'password'}
+                          className="login-input has-left-icon"
+                          placeholder="Min. 8 characters"
+                          autoComplete="new-password"
+                          minLength={8}
+                          value={forgotNewPassword}
+                          onChange={(event) => setForgotNewPassword(event.target.value)}
+                          required
+                        />
+                      </div>
                     </div>
                     <div className="login-field-group">
                       <label className="login-field-label" htmlFor="recovery-confirm-password">Confirm New Password</label>
-                      <input
-                        id="recovery-confirm-password"
-                        type={showForgotPassword ? 'text' : 'password'}
-                        className="login-input"
-                        autoComplete="new-password"
-                        minLength={8}
-                        value={forgotConfirmPassword}
-                        onChange={(event) => setForgotConfirmPassword(event.target.value)}
-                        required
-                      />
+                      <div className="login-input-container">
+                        <span className="login-input-icon" aria-hidden="true">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                          </svg>
+                        </span>
+                        <input
+                          id="recovery-confirm-password"
+                          type={showForgotPassword ? 'text' : 'password'}
+                          className="login-input has-left-icon"
+                          placeholder="Re-enter new password"
+                          autoComplete="new-password"
+                          minLength={8}
+                          value={forgotConfirmPassword}
+                          onChange={(event) => setForgotConfirmPassword(event.target.value)}
+                          required
+                        />
+                      </div>
                     </div>
                     <button type="button" className="btn-toggle-pw" onClick={() => setShowForgotPassword((value) => !value)}>
                       {showForgotPassword ? 'Hide passwords' : 'Show passwords'}

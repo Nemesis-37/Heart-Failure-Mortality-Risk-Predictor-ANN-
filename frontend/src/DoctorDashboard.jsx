@@ -356,24 +356,6 @@ export default function DoctorDashboard({
             </div>
 
             <div className="topbar-right">
-              {/* API Health Status Indicator */}
-              <button
-                type="button"
-                className="topbar-status-pill"
-                onClick={checkHealth}
-                title={`API Status: ${backendStatus}. Click to check connection with /health.`}
-                aria-label={`API Status: ${backendStatus}. Click to refresh health check.`}
-              >
-                <span className={`status-dot ${backendStatus}`} aria-hidden="true" />
-                <span>
-                  {backendStatus === 'online'
-                    ? 'API Online'
-                    : backendStatus === 'offline'
-                    ? 'API Offline'
-                    : 'Checking…'}
-                </span>
-              </button>
-
               {/* Theme Toggle Button */}
               <ThemeToggle className="topbar-theme-toggle" />
 

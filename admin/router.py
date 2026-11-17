@@ -64,7 +64,10 @@ from auth.security import (
     verify_legacy_password,
     verify_password,
 )
-from frontend_metrics import VERIFIED_ANN_METRICS, VERIFIED_LR_METRICS
+try:
+    from models.metrics import VERIFIED_ANN_METRICS, VERIFIED_LR_METRICS
+except ImportError:
+    from frontend_metrics import VERIFIED_ANN_METRICS, VERIFIED_LR_METRICS
 
 try:
     from database import get_db
