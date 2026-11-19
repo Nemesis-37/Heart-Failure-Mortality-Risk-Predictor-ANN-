@@ -6,6 +6,9 @@ import os
 import sys
 from pathlib import Path
 
+# Add project root to sys.path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 # Set environment
 os.environ["ADMIN_EMAIL"] = "debashish.g333@gmail.com"
 os.environ["ADMIN_PASSWORD"] = "Admin@2026"

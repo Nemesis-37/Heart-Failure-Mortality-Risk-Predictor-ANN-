@@ -419,6 +419,7 @@ def run_tests():
         auth_doc = get_auth_doctor(authorization=f"Bearer {token_a}")
 
         sample = PatientData(
+            patient_reference_id="PT-DASH-TEST-001",
             age=65, anaemia=1, creatinine_phosphokinase=250.0, diabetes=0,
             ejection_fraction=35.0, high_blood_pressure=1, platelets=150000.0,
             serum_creatinine=1.3, serum_sodium=137.0, sex=1, smoking=0,

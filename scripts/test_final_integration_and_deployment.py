@@ -323,6 +323,7 @@ def run_full_integration():
         section("PART 5: MACHINE LEARNING MODEL INTEGRITY (11 FEATURES, NO TIME)")
 
         ml_sample = HeartFailureInput(
+            patient_reference_id="PT-INT-2026-001",
             age=65.0,
             anaemia=0,
             creatinine_phosphokinase=250.0,

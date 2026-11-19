@@ -293,22 +293,44 @@ def get_auth_doctor(
     authorization: Optional[str] = Header(None, description="Bearer <doctor_access_token>"),
 ):
     """
-    Authenticate physician if Bearer token is provided.
-    If authorization is missing, or if database/token verification is unavailable,
-    allows educational prediction to compute without blocking clinical inference.
+    Authenticate physician or administrator if Bearer token is provided.
+    If a Bearer token is provided, strictly enforces verification (invalid/expired tokens raise 401).
+    If no authorization header is provided, returns None for educational baseline inference.
     """
+    if not authorization:
+        return None
     if not isinstance(authorization, str) or not authorization.startswith("Bearer "):
-        return None
+        raise HTTPException(
+            status_code=401,
+            detail="Physician authorization required. Expected 'Bearer <token>'.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    token = authorization.split("Bearer ", 1)[1].strip()
+
+    # 1. Allow Super Administrator session tokens to perform clinical predictions
     try:
-        from auth.dependencies import get_current_doctor
-        db = SessionLocal()
-        try:
-            return get_current_doctor(authorization=authorization, db=db)
-        finally:
-            db.close()
-    except Exception as exc:
-        logger.warning(f"Doctor authorization validation deferred: {exc}")
-        return None
+        from admin.security import verify_admin_token
+        admin_id = verify_admin_token(token)
+        if admin_id:
+            class _AdminAuthProxy:
+                doctor_id = admin_id
+                full_name = "Hospital Administrator"
+                email = "admin@hospital.org"
+                is_active = True
+                verification_status = "APPROVED"
+                role = "ADMIN"
+            return _AdminAuthProxy()
+    except Exception:
+        pass
+
+    # 2. Enforce physician authentication and credential checks
+    from auth.dependencies import get_current_doctor
+    db = SessionLocal()
+    try:
+        return get_current_doctor(authorization=authorization, db=db)
+    finally:
+        db.close()
 
 
 class PatientData(BaseModel):
