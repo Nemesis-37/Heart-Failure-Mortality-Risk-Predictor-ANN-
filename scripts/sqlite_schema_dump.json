@@ -1,0 +1,800 @@
+{
+  "Doctors": {
+    "row_count": 14,
+    "columns": [
+      {
+        "cid": 0,
+        "name": "doctor_id",
+        "type": "VARCHAR(64)",
+        "notnull": true,
+        "default": null,
+        "pk": true
+      },
+      {
+        "cid": 1,
+        "name": "full_name",
+        "type": "VARCHAR(128)",
+        "notnull": true,
+        "default": null,
+        "pk": false
+      },
+      {
+        "cid": 2,
+        "name": "email",
+        "type": "VARCHAR(256)",
+        "notnull": true,
+        "default": null,
+        "pk": false
+      },
+      {
+        "cid": 3,
+        "name": "password_hash",
+        "type": "VARCHAR(256)",
+        "notnull": true,
+        "default": null,
+        "pk": false
+      },
+      {
+        "cid": 4,
+        "name": "mobile",
+        "type": "VARCHAR(32)",
+        "notnull": true,
+        "default": null,
+        "pk": false
+      },
+      {
+        "cid": 5,
+        "name": "medical_degree",
+        "type": "VARCHAR(128)",
+        "notnull": true,
+        "default": null,
+        "pk": false
+      },
+      {
+        "cid": 6,
+        "name": "registration_number",
+        "type": "VARCHAR(64)",
+        "notnull": true,
+        "default": null,
+        "pk": false
+      },
+      {
+        "cid": 7,
+        "name": "registration_council",
+        "type": "VARCHAR(128)",
+        "notnull": true,
+        "default": null,
+        "pk": false
+      },
+      {
+        "cid": 8,
+        "name": "email_verified",
+        "type": "BOOLEAN",
+        "notnull": true,
+        "default": null,
+        "pk": false
+      },
+      {
+        "cid": 9,
+        "name": "verification_status",
+        "type": "VARCHAR(32)",
+        "notnull": true,
+        "default": null,
+        "pk": false
+      },
+      {
+        "cid": 10,
+        "name": "is_active",
+        "type": "BOOLEAN",
+        "notnull": true,
+        "default": null,
+        "pk": false
+      },
+      {
+        "cid": 11,
+        "name": "created_at",
+        "type": "DATETIME",
+        "notnull": true,
+        "default": null,
+        "pk": false
+      },
+      {
+        "cid": 12,
+        "name": "verified_at",
+        "type": "DATETIME",
+        "notnull": false,
+        "default": null,
+        "pk": false
+      },
+      {
+        "cid": 13,
+        "name": "verified_by",
+        "type": "VARCHAR(64)",
+        "notnull": false,
+        "default": null,
+        "pk": false
+      },
+      {
+        "cid": 14,
+        "name": "rejection_reason",
+        "type": "VARCHAR(512)",
+        "notnull": false,
+        "default": null,
+        "pk": false
+      },
+      {
+        "cid": 15,
+        "name": "document_filename",
+        "type": "VARCHAR(256)",
+        "notnull": false,
+        "default": null,
+        "pk": false
+      },
+      {
+        "cid": 16,
+        "name": "document_path",
+        "type": "VARCHAR(512)",
+        "notnull": false,
+        "default": null,
+        "pk": false
+      },
+      {
+        "cid": 17,
+        "name": "document_uploaded_at",
+        "type": "DATETIME",
+        "notnull": false,
+        "default": null,
+        "pk": false
+      },
+      {
+        "cid": 18,
+        "name": "username",
+        "type": "VARCHAR(64)",
+        "notnull": false,
+        "default": null,
+        "pk": false
+      },
+      {
+        "cid": 19,
+        "name": "last_login",
+        "type": "DATETIME",
+        "notnull": false,
+        "default": null,
+        "pk": false
+      },
+      {
+        "cid": 20,
+        "name": "approved_at",
+        "type": "DATETIME",
+        "notnull": false,
+        "default": null,
+        "pk": false
+      }
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "UQ_Doctors_username",
+        "unique": true
+      },
+      {
+        "seq": 1,
+        "name": "IX_Doctors_Email",
+        "unique": false
+      },
+      {
+        "seq": 2,
+        "name": "IX_Doctors_RegistrationNumber",
+        "unique": false
+      },
+      {
+        "seq": 3,
+        "name": "sqlite_autoindex_Doctors_3",
+        "unique": true
+      },
+      {
+        "seq": 4,
+        "name": "sqlite_autoindex_Doctors_2",
+        "unique": true
+      },
+      {
+        "seq": 5,
+        "name": "sqlite_autoindex_Doctors_1",
+        "unique": true
+      }
+    ]
+  },
+  "EmailOTP": {
+    "row_count": 0,
+    "columns": [
+      {
+        "cid": 0,
+        "name": "otp_id",
+        "type": "VARCHAR(64)",
+        "notnull": true,
+        "default": null,
+        "pk": true
+      },
+      {
+        "cid": 1,
+        "name": "doctor_id",
+        "type": "VARCHAR(64)",
+        "notnull": true,
+        "default": null,
+        "pk": false
+      },
+      {
+        "cid": 2,
+        "name": "otp_hash",
+        "type": "VARCHAR(256)",
+        "notnull": true,
+        "default": null,
+        "pk": false
+      },
+      {
+        "cid": 3,
+        "name": "expires_at",
+        "type": "DATETIME",
+        "notnull": true,
+        "default": null,
+        "pk": false
+      },
+      {
+        "cid": 4,
+        "name": "attempts",
+        "type": "INTEGER",
+        "notnull": true,
+        "default": null,
+        "pk": false
+      },
+      {
+        "cid": 5,
+        "name": "is_used",
+        "type": "BOOLEAN",
+        "notnull": true,
+        "default": null,
+        "pk": false
+      },
+      {
+        "cid": 6,
+        "name": "created_at",
+        "type": "DATETIME",
+        "notnull": true,
+        "default": null,
+        "pk": false
+      }
+    ],
+    "foreign_keys": [
+      {
+        "id": 0,
+        "seq": 0,
+        "table": "Doctors",
+        "from": "doctor_id",
+        "to": "doctor_id"
+      }
+    ],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "IX_EmailOTP_ExpiresAt",
+        "unique": false
+      },
+      {
+        "seq": 1,
+        "name": "IX_EmailOTP_DoctorId",
+        "unique": false
+      },
+      {
+        "seq": 2,
+        "name": "sqlite_autoindex_EmailOTP_1",
+        "unique": true
+      }
+    ]
+  },
+  "Administrators": {
+    "row_count": 1,
+    "columns": [
+      {
+        "cid": 0,
+        "name": "admin_id",
+        "type": "VARCHAR(64)",
+        "notnull": true,
+        "default": null,
+        "pk": true
+      },
+      {
+        "cid": 1,
+        "name": "username",
+        "type": "VARCHAR(64)",
+        "notnull": true,
+        "default": null,
+        "pk": false
+      },
+      {
+        "cid": 2,
+        "name": "email",
+        "type": "VARCHAR(256)",
+        "notnull": true,
+        "default": null,
+        "pk": false
+      },
+      {
+        "cid": 3,
+        "name": "password_hash",
+        "type": "VARCHAR(256)",
+        "notnull": true,
+        "default": null,
+        "pk": false
+      },
+      {
+        "cid": 4,
+        "name": "full_name",
+        "type": "VARCHAR(128)",
+        "notnull": true,
+        "default": null,
+        "pk": false
+      },
+      {
+        "cid": 5,
+        "name": "role",
+        "type": "VARCHAR(64)",
+        "notnull": true,
+        "default": null,
+        "pk": false
+      },
+      {
+        "cid": 6,
+        "name": "is_active",
+        "type": "BOOLEAN",
+        "notnull": true,
+        "default": null,
+        "pk": false
+      },
+      {
+        "cid": 7,
+        "name": "created_at",
+        "type": "DATETIME",
+        "notnull": true,
+        "default": null,
+        "pk": false
+      }
+    ],
+    "foreign_keys": [],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "sqlite_autoindex_Administrators_3",
+        "unique": true
+      },
+      {
+        "seq": 1,
+        "name": "sqlite_autoindex_Administrators_2",
+        "unique": true
+      },
+      {
+        "seq": 2,
+        "name": "sqlite_autoindex_Administrators_1",
+        "unique": true
+      }
+    ]
+  },
+  "DoctorSessions": {
+    "row_count": 10,
+    "columns": [
+      {
+        "cid": 0,
+        "name": "session_id",
+        "type": "VARCHAR(64)",
+        "notnull": true,
+        "default": null,
+        "pk": true
+      },
+      {
+        "cid": 1,
+        "name": "doctor_id",
+        "type": "VARCHAR(64)",
+        "notnull": true,
+        "default": null,
+        "pk": false
+      },
+      {
+        "cid": 2,
+        "name": "refresh_token_hash",
+        "type": "VARCHAR(256)",
+        "notnull": true,
+        "default": null,
+        "pk": false
+      },
+      {
+        "cid": 3,
+        "name": "expires_at",
+        "type": "DATETIME",
+        "notnull": true,
+        "default": null,
+        "pk": false
+      },
+      {
+        "cid": 4,
+        "name": "is_revoked",
+        "type": "BOOLEAN",
+        "notnull": true,
+        "default": null,
+        "pk": false
+      },
+      {
+        "cid": 5,
+        "name": "created_at",
+        "type": "DATETIME",
+        "notnull": true,
+        "default": null,
+        "pk": false
+      },
+      {
+        "cid": 6,
+        "name": "user_agent",
+        "type": "VARCHAR(256)",
+        "notnull": false,
+        "default": null,
+        "pk": false
+      },
+      {
+        "cid": 7,
+        "name": "ip_address",
+        "type": "VARCHAR(64)",
+        "notnull": false,
+        "default": null,
+        "pk": false
+      }
+    ],
+    "foreign_keys": [
+      {
+        "id": 0,
+        "seq": 0,
+        "table": "Doctors",
+        "from": "doctor_id",
+        "to": "doctor_id"
+      }
+    ],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "sqlite_autoindex_DoctorSessions_1",
+        "unique": true
+      }
+    ]
+  },
+  "Assessments": {
+    "row_count": 4,
+    "columns": [
+      {
+        "cid": 0,
+        "name": "id",
+        "type": "VARCHAR(64)",
+        "notnull": true,
+        "default": null,
+        "pk": true
+      },
+      {
+        "cid": 1,
+        "name": "assessment_code",
+        "type": "VARCHAR(32)",
+        "notnull": true,
+        "default": null,
+        "pk": false
+      },
+      {
+        "cid": 2,
+        "name": "patient_reference_id",
+        "type": "VARCHAR(64)",
+        "notnull": false,
+        "default": null,
+        "pk": false
+      },
+      {
+        "cid": 3,
+        "name": "doctor_id",
+        "type": "VARCHAR(64)",
+        "notnull": false,
+        "default": null,
+        "pk": false
+      },
+      {
+        "cid": 4,
+        "name": "age",
+        "type": "DECIMAL(5, 1)",
+        "notnull": true,
+        "default": null,
+        "pk": false
+      },
+      {
+        "cid": 5,
+        "name": "anaemia",
+        "type": "SMALLINT",
+        "notnull": true,
+        "default": null,
+        "pk": false
+      },
+      {
+        "cid": 6,
+        "name": "creatinine_phosphokinase",
+        "type": "DECIMAL(8, 2)",
+        "notnull": true,
+        "default": null,
+        "pk": false
+      },
+      {
+        "cid": 7,
+        "name": "diabetes",
+        "type": "SMALLINT",
+        "notnull": true,
+        "default": null,
+        "pk": false
+      },
+      {
+        "cid": 8,
+        "name": "ejection_fraction",
+        "type": "DECIMAL(5, 2)",
+        "notnull": true,
+        "default": null,
+        "pk": false
+      },
+      {
+        "cid": 9,
+        "name": "high_blood_pressure",
+        "type": "SMALLINT",
+        "notnull": true,
+        "default": null,
+        "pk": false
+      },
+      {
+        "cid": 10,
+        "name": "platelets",
+        "type": "DECIMAL(10, 2)",
+        "notnull": true,
+        "default": null,
+        "pk": false
+      },
+      {
+        "cid": 11,
+        "name": "serum_creatinine",
+        "type": "DECIMAL(5, 2)",
+        "notnull": true,
+        "default": null,
+        "pk": false
+      },
+      {
+        "cid": 12,
+        "name": "serum_sodium",
+        "type": "DECIMAL(5, 2)",
+        "notnull": true,
+        "default": null,
+        "pk": false
+      },
+      {
+        "cid": 13,
+        "name": "sex",
+        "type": "SMALLINT",
+        "notnull": true,
+        "default": null,
+        "pk": false
+      },
+      {
+        "cid": 14,
+        "name": "smoking",
+        "type": "SMALLINT",
+        "notnull": true,
+        "default": null,
+        "pk": false
+      },
+      {
+        "cid": 15,
+        "name": "selected_model",
+        "type": "VARCHAR(64)",
+        "notnull": false,
+        "default": null,
+        "pk": false
+      },
+      {
+        "cid": 16,
+        "name": "predicted_class",
+        "type": "SMALLINT",
+        "notnull": false,
+        "default": null,
+        "pk": false
+      },
+      {
+        "cid": 17,
+        "name": "predicted_probability",
+        "type": "DECIMAL(6, 4)",
+        "notnull": false,
+        "default": null,
+        "pk": false
+      },
+      {
+        "cid": 18,
+        "name": "prediction_timestamp",
+        "type": "DATETIME",
+        "notnull": false,
+        "default": null,
+        "pk": false
+      },
+      {
+        "cid": 19,
+        "name": "is_prediction_stale",
+        "type": "BOOLEAN",
+        "notnull": true,
+        "default": null,
+        "pk": false
+      },
+      {
+        "cid": 20,
+        "name": "version",
+        "type": "INTEGER",
+        "notnull": true,
+        "default": null,
+        "pk": false
+      },
+      {
+        "cid": 21,
+        "name": "created_at",
+        "type": "DATETIME",
+        "notnull": true,
+        "default": null,
+        "pk": false
+      },
+      {
+        "cid": 22,
+        "name": "updated_at",
+        "type": "DATETIME",
+        "notnull": true,
+        "default": null,
+        "pk": false
+      }
+    ],
+    "foreign_keys": [
+      {
+        "id": 0,
+        "seq": 0,
+        "table": "Doctors",
+        "from": "doctor_id",
+        "to": "doctor_id"
+      }
+    ],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "IX_Assessments_CreatedAt",
+        "unique": false
+      },
+      {
+        "seq": 1,
+        "name": "IX_Assessments_PatientRef",
+        "unique": false
+      },
+      {
+        "seq": 2,
+        "name": "IX_Assessments_DoctorId",
+        "unique": false
+      },
+      {
+        "seq": 3,
+        "name": "sqlite_autoindex_Assessments_2",
+        "unique": true
+      },
+      {
+        "seq": 4,
+        "name": "sqlite_autoindex_Assessments_1",
+        "unique": true
+      }
+    ]
+  },
+  "Predictions": {
+    "row_count": 0,
+    "columns": [
+      {
+        "cid": 0,
+        "name": "id",
+        "type": "VARCHAR(64)",
+        "notnull": true,
+        "default": null,
+        "pk": true
+      },
+      {
+        "cid": 1,
+        "name": "prediction_code",
+        "type": "VARCHAR(32)",
+        "notnull": true,
+        "default": null,
+        "pk": false
+      },
+      {
+        "cid": 2,
+        "name": "assessment_id",
+        "type": "VARCHAR(64)",
+        "notnull": true,
+        "default": null,
+        "pk": false
+      },
+      {
+        "cid": 3,
+        "name": "model_name",
+        "type": "VARCHAR(64)",
+        "notnull": true,
+        "default": null,
+        "pk": false
+      },
+      {
+        "cid": 4,
+        "name": "predicted_class",
+        "type": "SMALLINT",
+        "notnull": true,
+        "default": null,
+        "pk": false
+      },
+      {
+        "cid": 5,
+        "name": "predicted_probability",
+        "type": "DECIMAL(6, 4)",
+        "notnull": true,
+        "default": null,
+        "pk": false
+      },
+      {
+        "cid": 6,
+        "name": "classification_threshold",
+        "type": "DECIMAL(4, 2)",
+        "notnull": true,
+        "default": null,
+        "pk": false
+      },
+      {
+        "cid": 7,
+        "name": "model_version",
+        "type": "VARCHAR(32)",
+        "notnull": true,
+        "default": null,
+        "pk": false
+      },
+      {
+        "cid": 8,
+        "name": "created_at",
+        "type": "DATETIME",
+        "notnull": true,
+        "default": null,
+        "pk": false
+      }
+    ],
+    "foreign_keys": [
+      {
+        "id": 0,
+        "seq": 0,
+        "table": "Assessments",
+        "from": "assessment_id",
+        "to": "id"
+      }
+    ],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "IX_Predictions_CreatedAt",
+        "unique": false
+      },
+      {
+        "seq": 1,
+        "name": "IX_Predictions_AssessmentId",
+        "unique": false
+      },
+      {
+        "seq": 2,
+        "name": "sqlite_autoindex_Predictions_2",
+        "unique": true
+      },
+      {
+        "seq": 3,
+        "name": "sqlite_autoindex_Predictions_1",
+        "unique": true
+      }
+    ]
+  }
+}
