@@ -84,7 +84,42 @@ def _seed_admin_on_startup() -> None:
         admin_full_name = os.getenv("ADMIN_FULL_NAME", "Hospital Administrator").strip()
         hashed = hash_password(admin_password)
 
-        # Try direct SQLite first (avoids clinical schema mismatch when SQL Server is offline)
+        # When SQL Server is active, primary to SQLAlchemy SessionLocal
+        if engine is not None and engine.dialect.name != "sqlite":
+            db = SessionLocal()
+            try:
+                existing = db.query(Administrator).filter(
+                    Administrator.email == admin_email
+                ).first()
+
+                if existing:
+                    existing.password_hash = hashed
+                    existing.username = admin_username
+                    existing.is_active = True
+                    db.commit()
+                    logger.info(f"[startup] Administrator synced (SQL Server): {admin_email}")
+                else:
+                    admin = Administrator(
+                        admin_id=str(uuid.uuid4()),
+                        username=admin_username,
+                        email=admin_email,
+                        password_hash=hashed,
+                        full_name=admin_full_name,
+                        role="Super Administrator",
+                        is_active=True,
+                        created_at=datetime.now(timezone.utc),
+                    )
+                    db.add(admin)
+                    db.commit()
+                    logger.info(f"[startup] Administrator created (SQL Server): {admin_email}")
+                return
+            except Exception as db_exc:
+                db.rollback()
+                logger.warning(f"[startup] SQL Server admin seed error, falling back to SQLite: {db_exc}")
+            finally:
+                db.close()
+
+        # Development / offline fallback: direct SQLite
         db_path = BASE_DIR / "clinical_local.db"
         if db_path.exists():
             import sqlite3 as _sqlite3
@@ -116,40 +151,6 @@ def _seed_admin_on_startup() -> None:
                 logger.warning(f"[startup] SQLite admin seed error: {sq_err}")
             finally:
                 conn.close()
-            return
-
-        # Fallback: SQLAlchemy (SQL Server path)
-        db = SessionLocal()
-        try:
-            existing = db.query(Administrator).filter(
-                Administrator.email == admin_email
-            ).first()
-
-            if existing:
-                existing.password_hash = hashed
-                existing.username = admin_username
-                existing.is_active = True
-                db.commit()
-                logger.info(f"[startup] Administrator synced (SQL Server): {admin_email}")
-            else:
-                admin = Administrator(
-                    admin_id=str(uuid.uuid4()),
-                    username=admin_username,
-                    email=admin_email,
-                    password_hash=hashed,
-                    full_name=admin_full_name,
-                    role="Super Administrator",
-                    is_active=True,
-                    created_at=datetime.now(timezone.utc),
-                )
-                db.add(admin)
-                db.commit()
-                logger.info(f"[startup] Administrator created (SQL Server): {admin_email}")
-        except Exception as db_exc:
-            db.rollback()
-            logger.warning(f"[startup] Admin seed DB error (non-fatal): {db_exc}")
-        finally:
-            db.close()
     except Exception as exc:
         logger.warning(f"[startup] Admin seed skipped due to error: {exc}")
 
@@ -168,7 +169,46 @@ def _seed_demo_doctor_on_startup() -> None:
         hashed = hash_password(demo_password)
         now_str = datetime.now(timezone.utc).isoformat()
 
-        # Try SQLite first
+        # When SQL Server is active, primary to SQLAlchemy SessionLocal
+        if engine is not None and engine.dialect.name != "sqlite":
+            db = SessionLocal()
+            try:
+                doc = db.query(Doctor).filter(Doctor.email == demo_email).first()
+                if doc:
+                    doc.password_hash = hashed
+                    doc.full_name = "Dr. Julian Carter, MD"
+                    doc.email_verified = True
+                    doc.verification_status = "APPROVED"
+                    doc.is_active = True
+                    doc.username = "dr_carter"
+                    db.commit()
+                else:
+                    new_doc = Doctor(
+                        doctor_id=str(uuid.uuid4()),
+                        full_name="Dr. Julian Carter, MD",
+                        email=demo_email,
+                        password_hash=hashed,
+                        mobile="+1 (555) 019-2834",
+                        medical_degree="MD, FACC",
+                        registration_number="DEMO-CARTER-2026",
+                        registration_council="Medical Licensing Board",
+                        username="dr_carter",
+                        email_verified=True,
+                        verification_status="APPROVED",
+                        is_active=True,
+                        created_at=datetime.now(timezone.utc),
+                    )
+                    db.add(new_doc)
+                    db.commit()
+                logger.info("[startup] Demo doctor verified/synced (SQL Server): dr.carter@hospital.org")
+                return
+            except Exception as _db_err:
+                db.rollback()
+                logger.warning(f"[startup] Demo doctor SQL Server seed error, falling back to SQLite: {_db_err}")
+            finally:
+                db.close()
+
+        # Development / offline fallback: direct SQLite
         db_path = BASE_DIR / "clinical_local.db"
         if db_path.exists():
             import sqlite3 as _sqlite3
@@ -201,44 +241,6 @@ def _seed_demo_doctor_on_startup() -> None:
                 logger.warning(f"[startup] SQLite demo doctor seed error: {_sq_err}")
             finally:
                 conn.close()
-            return
-
-        # Fallback SQL Server
-        db = SessionLocal()
-        try:
-            doc = db.query(Doctor).filter(Doctor.email == demo_email).first()
-            if doc:
-                doc.password_hash = hashed
-                doc.full_name = "Dr. Julian Carter, MD"
-                doc.email_verified = True
-                doc.verification_status = "APPROVED"
-                doc.is_active = True
-                doc.username = "dr_carter"
-                db.commit()
-            else:
-                new_doc = Doctor(
-                    doctor_id=str(uuid.uuid4()),
-                    full_name="Dr. Julian Carter, MD",
-                    email=demo_email,
-                    password_hash=hashed,
-                    mobile="+1 (555) 019-2834",
-                    medical_degree="MD, FACC",
-                    registration_number="DEMO-CARTER-2026",
-                    registration_council="Medical Licensing Board",
-                    username="dr_carter",
-                    email_verified=True,
-                    verification_status="APPROVED",
-                    is_active=True,
-                    created_at=datetime.now(timezone.utc),
-                )
-                db.add(new_doc)
-                db.commit()
-            logger.info("[startup] Demo doctor verified/synced (SQL Server): dr.carter@hospital.org")
-        except Exception as _db_err:
-            db.rollback()
-            logger.warning(f"[startup] Demo doctor seed error: {_db_err}")
-        finally:
-            db.close()
     except Exception as exc:
         logger.warning(f"[startup] Demo doctor seed skipped: {exc}")
 

@@ -34,7 +34,7 @@ except ImportError:
     sys.exit(1)
 
 # Connection parameters
-DB_SERVER = os.getenv("SERVER", os.getenv("DB_SERVER", r".\SQLEXPRESS")).strip()
+DB_SERVER = os.getenv("SERVER", os.getenv("DB_SERVER", r"DESKTOP-NA0D6N1\SQLEXPRESS")).strip()
 DB_DATABASE = os.getenv("DATABASE", os.getenv("DB_NAME", os.getenv("DB_DATABASE", "HeartMortalityPredictor"))).strip()
 DB_AUTH_MODE = os.getenv("DB_AUTH_MODE", "windows").lower().strip()
 DB_USERNAME = os.getenv("DB_USERNAME", "").strip()
@@ -44,7 +44,15 @@ DB_DRIVER = os.getenv("DRIVER", os.getenv("DB_DRIVER", "{ODBC Driver 18 for SQL 
 SQLITE_PATH = PROJECT_ROOT / "clinical_local.db"
 
 
-def get_odbc_conn_str(database: str = "master") -> str:
+def get_odbc_conn_str(database: str = "HeartMortalityPredictor") -> str:
+    raw_env_str = os.getenv("DB_CONNECTION_STRING", "").strip("\"'")
+    if raw_env_str:
+        if database == "master":
+            # Swap DATABASE=... for master
+            import re
+            return re.sub(r"DATABASE=[^;]+;", "DATABASE=master;", raw_env_str, flags=re.IGNORECASE)
+        return raw_env_str
+
     params = {
         "DRIVER": f"{{{DB_DRIVER}}}",
         "SERVER": DB_SERVER,
@@ -52,7 +60,6 @@ def get_odbc_conn_str(database: str = "master") -> str:
         "Trusted_Connection": "yes" if DB_AUTH_MODE == "windows" else "no",
         "Encrypt": "yes",
         "TrustServerCertificate": "yes",
-        "Connection Timeout": "5",
     }
     if DB_AUTH_MODE == "sql" and DB_USERNAME and DB_PASSWORD:
         params["UID"] = DB_USERNAME
@@ -62,25 +69,24 @@ def get_odbc_conn_str(database: str = "master") -> str:
 
 
 def ensure_sqlserver_database():
-    """Ensure HeartMortalityPredictor database exists on SQL Server."""
-    print(f"Connecting to SQL Server master on '{DB_SERVER}'...")
-    master_conn_str = get_odbc_conn_str("master")
+    """Verify live connection to target HeartMortalityPredictor database on SQL Server."""
+    print(f"Connecting to SQL Server database '{DB_DATABASE}' on '{DB_SERVER}'...")
+    db_conn_str = get_odbc_conn_str(DB_DATABASE)
     try:
-        conn = pyodbc.connect(master_conn_str, autocommit=True)
+        conn = pyodbc.connect(db_conn_str, autocommit=True, timeout=5)
     except Exception as e:
         print(f"\n[FATAL] Could not connect to SQL Server on '{DB_SERVER}': {e}")
         print("\nPlease ensure the SQL Server service is running and accessible.")
         sys.exit(1)
 
     cur = conn.cursor()
-    cur.execute("SELECT name FROM sys.databases WHERE name = ?", (DB_DATABASE,))
-    exists = cur.fetchone()
-    if not exists:
-        print(f"Database '{DB_DATABASE}' does not exist. Creating it now...")
-        cur.execute(f"CREATE DATABASE [{DB_DATABASE}]")
-        print(f"✓ Database '{DB_DATABASE}' created successfully.")
-    else:
-        print(f"✓ Database '{DB_DATABASE}' already exists.")
+    cur.execute("SELECT @@SERVERNAME, DB_NAME(), @@VERSION")
+    row = cur.fetchone()
+    print("✓ Live SQL Server connection verified!")
+    print(f" - Connected Server: {row[0]}")
+    print(f" - Connected Database: {row[1]}")
+    print(f" - SQL Server Version: {row[2].splitlines()[0]}")
+    assert row[1].lower() == DB_DATABASE.lower(), f"Connected DB '{row[1]}' does not match target '{DB_DATABASE}'!"
     conn.close()
 
 
@@ -112,6 +118,32 @@ def apply_schema_ddl():
         print("✓ Schema DDL applied successfully.")
     else:
         print("Warning: sql_server_assessments_schema.sql not found; relying on existing tables.")
+
+    # Ensure DoctorSessions table exists (from Alembic revision 20261114_03)
+    doctor_sessions_ddl = """
+    IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[clinical].[DoctorSessions]') AND type in (N'U'))
+    BEGIN
+        CREATE TABLE [clinical].[DoctorSessions] (
+            [session_id]         NVARCHAR(64)   NOT NULL,
+            [doctor_id]          NVARCHAR(64)   NOT NULL,
+            [refresh_token_hash] NVARCHAR(256)  NOT NULL,
+            [expires_at]         DATETIMEOFFSET NOT NULL,
+            [is_revoked]         BIT            NOT NULL DEFAULT 0,
+            [created_at]         DATETIMEOFFSET NOT NULL DEFAULT SYSDATETIMEOFFSET(),
+            [user_agent]         NVARCHAR(256)  NULL,
+            [ip_address]         NVARCHAR(64)   NULL,
+            CONSTRAINT [PK_DoctorSessions] PRIMARY KEY CLUSTERED ([session_id]),
+            CONSTRAINT [FK_DoctorSessions_Doctors] FOREIGN KEY ([doctor_id]) REFERENCES [clinical].[Doctors] ([doctor_id]) ON DELETE CASCADE
+        );
+        CREATE NONCLUSTERED INDEX [IX_DoctorSessions_DoctorId] ON [clinical].[DoctorSessions] ([doctor_id], [created_at]);
+        CREATE NONCLUSTERED INDEX [IX_DoctorSessions_ExpiresAt] ON [clinical].[DoctorSessions] ([expires_at]);
+    END
+    """
+    try:
+        cur.execute(doctor_sessions_ddl)
+    except Exception as d_err:
+        if "already exists" not in str(d_err).lower():
+            print(f"Notice on DoctorSessions DDL: {d_err}")
 
     conn.close()
 
@@ -180,7 +212,7 @@ def migrate_data():
                 v = row_dict[c]
                 # Convert SQLite boolean (0/1) to Python bool for SQL Server BIT column
                 if isinstance(v, int) and c in (
-                    "is_active", "email_verified", "is_revoked", "is_used", "document_uploaded"
+                    "is_active", "email_verified", "is_revoked", "is_used", "document_uploaded", "is_prediction_stale"
                 ):
                     vals.append(bool(v))
                 else:

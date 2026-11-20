@@ -52,7 +52,7 @@ else:
 def _get_env(key: str, default: str = "") -> str:
     return os.getenv(key, default).strip()
 
-DB_SERVER = _get_env("SERVER", _get_env("DB_SERVER", r".\SQLEXPRESS"))
+DB_SERVER = _get_env("SERVER", _get_env("DB_SERVER", r"DESKTOP-NA0D6N1\SQLEXPRESS"))
 DB_DATABASE = _get_env("DATABASE", _get_env("DB_NAME", _get_env("DB_DATABASE", "HeartMortalityPredictor")))
 DB_AUTH_MODE = _get_env("DB_AUTH_MODE", "windows").lower()
 DB_USERNAME = _get_env("DB_USERNAME")
@@ -71,6 +71,12 @@ DB_POOL_RECYCLE = int(_get_env("DB_POOL_RECYCLE", "1800"))
 # Build the ODBC connection string
 # ---------------------------------------------------------------------------
 def _build_connection_string() -> str:
+    # 1. Direct raw connection string from environment if provided
+    raw_conn_str = _get_env("DB_CONNECTION_STRING")
+    if raw_conn_str:
+        clean_raw = raw_conn_str.strip("\"'")
+        return f"mssql+pyodbc:///?odbc_connect={urllib.parse.quote_plus(clean_raw)}"
+
     clean_driver = DB_DRIVER.strip("{}")
     formatted_driver = f"{{{clean_driver}}}"
 
@@ -81,7 +87,6 @@ def _build_connection_string() -> str:
         "Trusted_Connection": DB_TRUST_CONNECTION,
         "Encrypt": DB_ENCRYPT,
         "TrustServerCertificate": DB_TRUST_SERVER_CERTIFICATE,
-        "Connection Timeout": "1",
     }
 
     if DB_AUTH_MODE == "sql" and DB_USERNAME and DB_PASSWORD:
@@ -107,7 +112,7 @@ DATABASE_URL = None
 if HAS_PYODBC:
     try:
         DATABASE_URL = _build_connection_string()
-        _probe_engine = create_engine(DATABASE_URL, connect_args={"timeout": 2})
+        _probe_engine = create_engine(DATABASE_URL, connect_args={"timeout": 5})
         with _probe_engine.connect() as _probe_conn:
             _probe_conn.execute(text("SELECT 1"))
         _probe_engine.dispose()
@@ -123,7 +128,11 @@ if HAS_PYODBC:
             fast_executemany=True,
         )
     except Exception as exc:
-        logger.info(f"SQL Server not reachable ({exc}). Falling back to local SQLite.")
+        REQUIRE_SQL_SERVER = _get_env("REQUIRE_SQL_SERVER", "false").lower() in ("true", "1", "yes")
+        if REQUIRE_SQL_SERVER:
+            logger.error(f"[FATAL] SQL Server connection failed and REQUIRE_SQL_SERVER=true: {exc}")
+            raise RuntimeError(f"SQL Server connection failed: {exc}") from exc
+        logger.warning(f"SQL Server not reachable ({exc}). Falling back to local SQLite.")
         engine = None
 
 if engine is None:

@@ -41,6 +41,11 @@ def run_migrations_online() -> None:
     connectable = engine
 
     with connectable.connect() as connection:
+        if connection.dialect.name == "mssql":
+            import sqlalchemy as sa
+            connection.execute(sa.text("IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = 'clinical') EXEC('CREATE SCHEMA [clinical]')"))
+            connection.commit()
+
         context.configure(
             connection=connection,
             target_metadata=target_metadata,

@@ -243,13 +243,17 @@ export default function DoctorDashboard({
           } else {
             try {
               const errBody = await res.json()
-              lastErrorMessage = errBody.detail || `Server returned status ${res.status}`
+              lastErrorMessage = errBody.detail || `Inference error (status ${res.status})`
             } catch {
-              lastErrorMessage = `Server returned status ${res.status}`
+              if (res.status === 500 || res.status === 502 || res.status === 503) {
+                lastErrorMessage = 'FastAPI backend server is unreachable. Please verify that backend is running on http://127.0.0.1:8000.'
+              } else {
+                lastErrorMessage = `Server returned status ${res.status}`
+              }
             }
           }
         } catch (fetchErr) {
-          lastErrorMessage = fetchErr.message || 'Connection refused'
+          lastErrorMessage = 'Could not connect to FastAPI server at http://127.0.0.1:8000 (Connection refused).'
         }
       }
 
