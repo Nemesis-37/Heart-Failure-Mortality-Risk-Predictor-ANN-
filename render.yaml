@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: heart-failure-mortality-risk-predictor
+    env: python
+    plan: free
+    buildCommand: bash render-build.sh
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: REQUIRE_SQL_SERVER
+        value: "false"
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: ADMIN_SECRET_KEY
+        generateValue: true
+      - key: ADMIN_EMAIL
+        value: debashish.g333@gmail.com
+      - key: ADMIN_PASSWORD
+        value: admin_debashish123
+      - key: ADMIN_USERNAME
+        value: debashish.g333
+      - key: ADMIN_FULL_NAME
+        value: Hospital Administrator

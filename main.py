@@ -84,8 +84,8 @@ def _seed_admin_on_startup() -> None:
         admin_full_name = os.getenv("ADMIN_FULL_NAME", "Hospital Administrator").strip()
         hashed = hash_password(admin_password)
 
-        # When SQL Server is active, primary to SQLAlchemy SessionLocal
-        if engine is not None and engine.dialect.name != "sqlite":
+        # Primary: SQLAlchemy SessionLocal (works for SQL Server, PostgreSQL, and SQLite)
+        if engine is not None:
             db = SessionLocal()
             try:
                 existing = db.query(Administrator).filter(
@@ -97,7 +97,7 @@ def _seed_admin_on_startup() -> None:
                     existing.username = admin_username
                     existing.is_active = True
                     db.commit()
-                    logger.info(f"[startup] Administrator synced (SQL Server): {admin_email}")
+                    logger.info(f"[startup] Administrator synced ({engine.dialect.name}): {admin_email}")
                 else:
                     admin = Administrator(
                         admin_id=str(uuid.uuid4()),
@@ -111,11 +111,11 @@ def _seed_admin_on_startup() -> None:
                     )
                     db.add(admin)
                     db.commit()
-                    logger.info(f"[startup] Administrator created (SQL Server): {admin_email}")
+                    logger.info(f"[startup] Administrator created ({engine.dialect.name}): {admin_email}")
                 return
             except Exception as db_exc:
                 db.rollback()
-                logger.warning(f"[startup] SQL Server admin seed error, falling back to SQLite: {db_exc}")
+                logger.warning(f"[startup] Database admin seed error: {db_exc}")
             finally:
                 db.close()
 
@@ -169,8 +169,8 @@ def _seed_demo_doctor_on_startup() -> None:
         hashed = hash_password(demo_password)
         now_str = datetime.now(timezone.utc).isoformat()
 
-        # When SQL Server is active, primary to SQLAlchemy SessionLocal
-        if engine is not None and engine.dialect.name != "sqlite":
+        # Primary: SQLAlchemy SessionLocal (works for SQL Server, PostgreSQL, and SQLite)
+        if engine is not None:
             db = SessionLocal()
             try:
                 doc = db.query(Doctor).filter(Doctor.email == demo_email).first()
@@ -200,11 +200,11 @@ def _seed_demo_doctor_on_startup() -> None:
                     )
                     db.add(new_doc)
                     db.commit()
-                logger.info("[startup] Demo doctor verified/synced (SQL Server): dr.carter@hospital.org")
+                logger.info(f"[startup] Demo doctor verified/synced ({engine.dialect.name}): dr.carter@hospital.org")
                 return
             except Exception as _db_err:
                 db.rollback()
-                logger.warning(f"[startup] Demo doctor SQL Server seed error, falling back to SQLite: {_db_err}")
+                logger.warning(f"[startup] Demo doctor database seed error: {_db_err}")
             finally:
                 db.close()
 
@@ -247,7 +247,14 @@ def _seed_demo_doctor_on_startup() -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """FastAPI lifespan: seed admin and demo doctor on startup, nothing special on shutdown."""
+    """FastAPI lifespan: ensure tables exist, then seed admin and demo doctor on startup."""
+    try:
+        if engine is not None:
+            Base.metadata.create_all(bind=engine)
+            logger.info("[startup] Database tables verified/created via Base.metadata.create_all.")
+    except Exception as _schema_err:
+        logger.warning(f"[startup] Table creation check notice: {_schema_err}")
+
     _seed_admin_on_startup()
     _seed_demo_doctor_on_startup()
     yield
@@ -379,6 +386,10 @@ def prepare_input(patient: PatientData, feature_names):
 
 @app.get("/")
 def home():
+    frontend_index = FRONTEND_DIST / "index.html"
+    if frontend_index.exists():
+        from starlette.responses import FileResponse
+        return FileResponse(str(frontend_index))
     return {
         "message": "Heart Failure Mortality Predictor API is running"
     }
@@ -537,6 +548,28 @@ def predict_ann(patient: PatientData, current_doctor = Depends(get_auth_doctor))
             status_code=500,
             detail="ANN prediction failed. Please try again.",
         ) from exc
+
+
+# ---------------------------------------------------------------------------
+# Serve React Frontend Build (Production / Render single-service deployment)
+# ---------------------------------------------------------------------------
+FRONTEND_DIST = BASE_DIR / "frontend" / "dist"
+if FRONTEND_DIST.exists():
+    from fastapi.staticfiles import StaticFiles
+    from starlette.responses import FileResponse
+
+    if (FRONTEND_DIST / "assets").exists():
+        app.mount("/assets", StaticFiles(directory=str(FRONTEND_DIST / "assets")), name="assets")
+
+    @app.get("/{full_path:path}")
+    async def serve_frontend(full_path: str):
+        # Do not intercept API, auth, admin, health, docs routes
+        if full_path.startswith(("api", "auth", "admin", "docs", "openapi.json", "health", "predict", "db-health")):
+            raise HTTPException(status_code=404, detail="Not Found")
+        target_file = FRONTEND_DIST / full_path
+        if target_file.is_file():
+            return FileResponse(str(target_file))
+        return FileResponse(str(FRONTEND_DIST / "index.html"))
 
 
 if __name__ == "__main__":

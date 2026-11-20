@@ -1,5 +1,6 @@
 import React, { useState, useId } from 'react'
 import ThemeToggle from './components/ThemeToggle.jsx'
+import { apiUrl } from './apiConfig.js'
 
 export default function DoctorRegister({ onNavigateToLogin, onRegisterSuccess }) {
   const [formData, setFormData] = useState({
@@ -159,7 +160,7 @@ export default function DoctorRegister({ onNavigateToLogin, onRegisterSuccess })
         data.append('document', documentFile)
       }
 
-      const res = await fetch('http://127.0.0.1:8000/auth/register', {
+      const res = await fetch(apiUrl('/auth/register'), {
         method: 'POST',
         body: data,
       })

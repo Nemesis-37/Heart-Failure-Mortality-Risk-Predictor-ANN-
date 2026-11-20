@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import ThemeToggle from './components/ThemeToggle.jsx'
+import { apiUrl } from './apiConfig.js'
 
 export default function DoctorOtpVerification({
   email,
@@ -101,7 +102,7 @@ export default function DoctorOtpVerification({
     setErrorMessage('')
 
     try {
-      const res = await fetch('http://127.0.0.1:8000/auth/verify-otp', {
+      const res = await fetch(apiUrl('/auth/verify-otp'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -133,7 +134,7 @@ export default function DoctorOtpVerification({
     setErrorMessage('')
 
     try {
-      const res = await fetch('http://127.0.0.1:8000/auth/resend-otp', {
+      const res = await fetch(apiUrl('/auth/resend-otp'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: email.trim().toLowerCase() }),

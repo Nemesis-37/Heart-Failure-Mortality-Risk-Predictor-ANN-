@@ -10,6 +10,7 @@ import PatientAssessmentsPage from './pages/PatientAssessmentsPage.jsx'
 import ClinicalGuidePage from './pages/ClinicalGuidePage.jsx'
 import PredictionHistoryPage from './pages/PredictionHistoryPage.jsx'
 import HeartHealthCounsellingPage from './pages/HeartHealthCounsellingPage.jsx'
+import { apiUrl } from './apiConfig.js'
 
 const DOCTOR_AUTH_KEY = 'hf_predictor_doctor_auth_v1'
 
@@ -68,7 +69,7 @@ export default function App() {
     const refreshToken = localStorage.getItem('cardiopredict_refresh_token')
     if (refreshToken) {
       try {
-        await fetch('http://127.0.0.1:8000/auth/logout', {
+        await fetch(apiUrl('/auth/logout'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ refresh_token: refreshToken }),

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { saveAssessment, savePrediction } from './services/assessmentStore.js'
 import ThemeToggle from './components/ThemeToggle.jsx'
+import { apiUrl } from './apiConfig.js'
 
 const INITIAL_STATE = {
   age: '60',
@@ -51,16 +52,16 @@ const MODELS = [
     id: 'lr',
     label: 'Logistic Regression',
     shortName: 'Linear Baseline',
-    endpoint: '/api/predict',
-    fallbackEndpoint: 'http://127.0.0.1:8000/predict',
+    endpoint: apiUrl('/api/predict'),
+    fallbackEndpoint: apiUrl('/predict'),
     desc: 'Classical linear statistical baseline with interpretable feature coefficients.',
   },
   {
     id: 'ann',
     label: 'Artificial Neural Network',
     shortName: 'Deep ANN',
-    endpoint: '/api/predict-ann',
-    fallbackEndpoint: 'http://127.0.0.1:8000/predict-ann',
+    endpoint: apiUrl('/api/predict-ann'),
+    fallbackEndpoint: apiUrl('/predict-ann'),
     desc: 'Multi-layer feed-forward network trained to capture non-linear biomarker interactions.',
   },
 ]
@@ -133,7 +134,7 @@ export default function DoctorDashboard({
     }
 
     try {
-      const response = await fetch('http://127.0.0.1:8000/health')
+      const response = await fetch(apiUrl('/health'))
       setBackendStatus(response.ok ? 'online' : 'offline')
     } catch {
       setBackendStatus('offline')
@@ -220,8 +221,8 @@ export default function DoctorDashboard({
       const endpointsToTry = [
         model.endpoint,
         model.fallbackEndpoint,
-        model.id === 'ann' ? 'http://127.0.0.1:8000/api/predict-ann' : 'http://127.0.0.1:8000/api/predict',
-        model.id === 'ann' ? '/predict-ann' : '/predict',
+        apiUrl(model.id === 'ann' ? '/api/predict-ann' : '/api/predict'),
+        apiUrl(model.id === 'ann' ? '/predict-ann' : '/predict'),
       ].filter(Boolean)
 
       let response = null
@@ -246,20 +247,20 @@ export default function DoctorDashboard({
               lastErrorMessage = errBody.detail || `Inference error (status ${res.status})`
             } catch {
               if (res.status === 500 || res.status === 502 || res.status === 503) {
-                lastErrorMessage = 'FastAPI backend server is unreachable. Please verify that backend is running on http://127.0.0.1:8000.'
+                lastErrorMessage = 'FastAPI backend server is currently unreachable or starting up.'
               } else {
                 lastErrorMessage = `Server returned status ${res.status}`
               }
             }
           }
         } catch (fetchErr) {
-          lastErrorMessage = 'Could not connect to FastAPI server at http://127.0.0.1:8000 (Connection refused).'
+          lastErrorMessage = 'Could not connect to FastAPI server (Connection refused).'
         }
       }
 
       if (!response || !response.ok || !data) {
         throw new Error(
-          lastErrorMessage || `Could not connect to FastAPI inference server at http://127.0.0.1:8000 for ${model.label}.`
+          lastErrorMessage || `Could not connect to FastAPI inference server for ${model.label}.`
         )
       }
 
@@ -311,7 +312,7 @@ export default function DoctorDashboard({
       }
     } catch (error) {
       setApiError(
-        error.message || 'Could not connect to FastAPI backend at http://127.0.0.1:8000.'
+        error.message || 'Could not connect to FastAPI inference backend.'
       )
       setResult(null)
       setBackendStatus('offline')
@@ -449,7 +450,7 @@ export default function DoctorDashboard({
             </svg>
             <div className="alert-text">
               <strong>Connection Error: </strong>
-              <span>{apiError} (Ensure FastAPI backend is running via <code>python -m uvicorn main:app</code> at http://127.0.0.1:8000)</span>
+              <span>{apiError}</span>
             </div>
             <button type="button" className="btn-alert-retry" onClick={handleSubmit}>
               Retry Prediction

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { MODEL_DATA } from './pages/ModelPerformancePage.jsx'
 import ThemeToggle from './components/ThemeToggle.jsx'
+import { apiUrl } from './apiConfig.js'
 
 const ADMIN_TOKEN_KEY = 'cardiopredict_admin_token'
 const ADMIN_PROFILE_KEY = 'cardiopredict_admin_profile'
@@ -80,7 +81,7 @@ export default function AdminDashboard({ onExitAdmin }) {
   const fetchOverview = async () => {
     setOverviewLoading(true)
     try {
-      const res = await fetch('http://127.0.0.1:8000/admin/overview', {
+      const res = await fetch(apiUrl('/admin/overview'), {
         headers: { Authorization: `Bearer ${adminToken}` },
       })
       if (res.ok) {
@@ -98,7 +99,7 @@ export default function AdminDashboard({ onExitAdmin }) {
 
   const fetchRecentActivity = async () => {
     try {
-      const res = await fetch('http://127.0.0.1:8000/admin/dashboard/recent-activity', {
+      const res = await fetch(apiUrl('/admin/dashboard/recent-activity'), {
         headers: { Authorization: `Bearer ${adminToken}` },
       })
       if (res.ok) {
@@ -115,8 +116,8 @@ export default function AdminDashboard({ onExitAdmin }) {
     setListError('')
     try {
       const url = status && status !== 'ALL'
-        ? `http://127.0.0.1:8000/admin/doctors?status_filter=${status}`
-        : 'http://127.0.0.1:8000/admin/doctors?status_filter=ALL'
+        ? apiUrl(`/admin/doctors?status_filter=${status}`)
+        : apiUrl('/admin/doctors?status_filter=ALL')
 
       const res = await fetch(url, {
         headers: { Authorization: `Bearer ${adminToken}` },
@@ -140,7 +141,7 @@ export default function AdminDashboard({ onExitAdmin }) {
   const fetchActivity = async () => {
     setActivityLoading(true)
     try {
-      const res = await fetch('http://127.0.0.1:8000/admin/doctor-activity', {
+      const res = await fetch(apiUrl('/admin/doctor-activity'), {
         headers: { Authorization: `Bearer ${adminToken}` },
       })
       if (res.ok) {
@@ -159,7 +160,7 @@ export default function AdminDashboard({ onExitAdmin }) {
   const handleToggleActive = async (doctor) => {
     setActionInProgress(true)
     try {
-      const res = await fetch(`http://127.0.0.1:8000/admin/doctors/${doctor.doctor_id}/toggle-active`, {
+      const res = await fetch(apiUrl(`/admin/doctors/${doctor.doctor_id}/toggle-active`), {
         method: 'POST',
         headers: { Authorization: `Bearer ${adminToken}` },
       })
@@ -186,7 +187,7 @@ export default function AdminDashboard({ onExitAdmin }) {
     setDocumentUrl(null)
 
     try {
-      const res = await fetch(`http://127.0.0.1:8000/admin/doctors/${doctor.doctor_id}/document`, {
+      const res = await fetch(apiUrl(`/admin/doctors/${doctor.doctor_id}/document`), {
         headers: { Authorization: `Bearer ${adminToken}` },
       })
       if (!res.ok) throw new Error('Failed to retrieve medical registration document.')
@@ -203,7 +204,7 @@ export default function AdminDashboard({ onExitAdmin }) {
     if (!selectedDoctor) return
     setActionInProgress(true)
     try {
-      const res = await fetch(`http://127.0.0.1:8000/admin/doctors/${selectedDoctor.doctor_id}/approve`, {
+      const res = await fetch(apiUrl(`/admin/doctors/${selectedDoctor.doctor_id}/approve`), {
         method: 'POST',
         headers: { Authorization: `Bearer ${adminToken}` },
       })
@@ -225,7 +226,7 @@ export default function AdminDashboard({ onExitAdmin }) {
     if (!selectedDoctor || !rejectionReason.trim()) return
     setActionInProgress(true)
     try {
-      const res = await fetch(`http://127.0.0.1:8000/admin/doctors/${selectedDoctor.doctor_id}/reject`, {
+      const res = await fetch(apiUrl(`/admin/doctors/${selectedDoctor.doctor_id}/reject`), {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${adminToken}`,

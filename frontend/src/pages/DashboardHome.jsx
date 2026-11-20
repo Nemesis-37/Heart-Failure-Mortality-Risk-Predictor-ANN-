@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react'
-
-const API_BASE = 'http://127.0.0.1:8000'
+import { apiUrl } from '../apiConfig.js'
 
 function fetchWithAuth(path) {
   const token = localStorage.getItem('cardiopredict_access_token')
-  return fetch(`${API_BASE}${path}`, {
+  return fetch(apiUrl(path), {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
   })
 }

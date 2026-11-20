@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import ThemeToggle from '../components/ThemeToggle.jsx'
+import { apiUrl } from '../apiConfig.js'
 
 export default function AppLayout({
   doctorUser,
@@ -41,17 +42,17 @@ export default function AppLayout({
   const checkHealth = async () => {
     setBackendStatus('checking')
     try {
-      const response = await fetch('/api/health')
+      const response = await fetch(apiUrl('/health'))
       if (response.ok) {
         setBackendStatus('online')
         return
       }
     } catch {
-      // Fallback probe direct to local FastAPI backend
+      // Fallback check
     }
 
     try {
-      const response = await fetch('http://127.0.0.1:8000/health')
+      const response = await fetch(apiUrl('/api/health'))
       setBackendStatus(response.ok ? 'online' : 'offline')
     } catch {
       setBackendStatus('offline')

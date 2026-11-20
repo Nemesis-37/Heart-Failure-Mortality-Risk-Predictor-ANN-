@@ -27,13 +27,21 @@ from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 logger = logging.getLogger(__name__)
 
-# Register SQLite dialect mappings for MSSQL specific types if SQLite is active
+# Register dialect mappings for MSSQL specific types if SQLite or PostgreSQL is active
 @compiles(DATETIMEOFFSET, "sqlite")
 def _compile_datetimeoffset_sqlite(type_, compiler, **kw):
     return "DATETIME"
 
 @compiles(UNIQUEIDENTIFIER, "sqlite")
 def _compile_uniqueidentifier_sqlite(type_, compiler, **kw):
+    return "VARCHAR(64)"
+
+@compiles(DATETIMEOFFSET, "postgresql")
+def _compile_datetimeoffset_pg(type_, compiler, **kw):
+    return "TIMESTAMP WITH TIME ZONE"
+
+@compiles(UNIQUEIDENTIFIER, "postgresql")
+def _compile_uniqueidentifier_pg(type_, compiler, **kw):
     return "VARCHAR(64)"
 
 # ---------------------------------------------------------------------------
@@ -109,7 +117,24 @@ except ImportError:
 engine = None
 DATABASE_URL = None
 
-if HAS_PYODBC:
+# 0. Check direct DATABASE_URL from environment (e.g. Render PostgreSQL or cloud database)
+_direct_db_url = _get_env("DATABASE_URL")
+if _direct_db_url:
+    clean_url = _direct_db_url.replace("postgres://", "postgresql://", 1)
+    try:
+        engine = create_engine(clean_url, pool_pre_ping=True)
+        DATABASE_URL = clean_url
+        logger.info(f"Connected via environment DATABASE_URL ({engine.dialect.name})")
+    except Exception as _url_err:
+        logger.warning(f"Direct DATABASE_URL connection failed: {_url_err}")
+        engine = None
+
+is_render = bool(os.getenv("RENDER"))
+should_probe_sql_server = HAS_PYODBC and (
+    not is_render or bool(_get_env("DB_CONNECTION_STRING")) or bool(_get_env("SERVER"))
+)
+
+if engine is None and should_probe_sql_server:
     try:
         DATABASE_URL = _build_connection_string()
         _probe_engine = create_engine(DATABASE_URL, connect_args={"timeout": 5})
@@ -152,7 +177,7 @@ if engine is None:
         cursor.execute("PRAGMA busy_timeout=5000")
         cursor.close()
 
-if engine is not None and engine.dialect.name == "sqlite":
+if engine is not None and engine.dialect.name in ("sqlite", "postgresql"):
     engine = engine.execution_options(schema_translate_map={"clinical": None})
 
 # ---------------------------------------------------------------------------

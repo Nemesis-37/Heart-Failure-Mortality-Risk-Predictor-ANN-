@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import ThemeToggle from './components/ThemeToggle.jsx'
-
-const API_BASE_URL = 'http://127.0.0.1:8000'
+import { API_BASE_URL } from './apiConfig.js'
 
 export default function UnifiedLogin({ onLogin, onNavigateToRegister }) {
   const [email, setEmail] = useState('')
@@ -187,7 +186,7 @@ export default function UnifiedLogin({ onLogin, onNavigateToRegister }) {
       }
 
       if (!response) {
-        throw new Error('Unable to connect to FastAPI backend server. Please verify the backend is running at http://127.0.0.1:8000.')
+        throw new Error('Unable to connect to FastAPI backend server. Please verify the backend is running.')
       }
 
       throw new Error(
@@ -208,7 +207,7 @@ export default function UnifiedLogin({ onLogin, onNavigateToRegister }) {
 
       const msg = error.message || ''
       if (msg.includes('Failed to fetch') || error.name === 'TypeError' || error.name === 'AbortError') {
-        setServerError('Unable to connect to FastAPI backend server. Please verify the backend is running at http://127.0.0.1:8000.')
+        setServerError('Unable to connect to FastAPI backend server. Please verify the backend is running.')
       } else {
         setServerError(msg || `Unable to connect to the authentication server at ${API_BASE_URL}.`)
       }
