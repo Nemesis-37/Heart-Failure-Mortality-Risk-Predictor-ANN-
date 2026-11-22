@@ -1,12 +1,24 @@
 """
-db_models package.
-
-SQLAlchemy database models for Heart Failure Mortality Risk Predictor.
-Separated from the ML models/ folder to avoid namespace conflicts.
+db_models package (Compatibility Forwarder).
+============================================
+Forward to backend.database.models to ensure a single central declarative Base
+and unified ORM model definitions across the entire application.
 """
 
-from db_models.doctor import Doctor
-from db_models.otp import EmailOTP
-from db_models.assessment import Assessment
+from backend.database.models import (
+    Administrator,
+    Assessment,
+    Doctor,
+    DoctorSession,
+    EmailOTP,
+    Prediction,
+)
 
-__all__ = ["Doctor", "EmailOTP", "Assessment"]
+__all__ = [
+    "Administrator",
+    "Assessment",
+    "Doctor",
+    "DoctorSession",
+    "EmailOTP",
+    "Prediction",
+]

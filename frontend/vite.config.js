@@ -9,9 +9,8 @@ export default defineConfig({
     tailwindcss(),
   ],
   server: {
-    host: '127.0.0.1',
+    host: '0.0.0.0',
     port: 5173,
-    strictPort: true,
     proxy: {
       '/api': {
         target: 'http://127.0.0.1:8000',
@@ -31,6 +30,49 @@ export default defineConfig({
         changeOrigin: true,
       },
       '/predict-ann': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+      },
+      '/health': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+      },
+      '/db-health': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+      },
+    }
+  },
+  preview: {
+    host: '0.0.0.0',
+    port: 4173,
+    proxy: {
+      '/api': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, '')
+      },
+      '/auth': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+      },
+      '/admin': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+      },
+      '/predict': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+      },
+      '/predict-ann': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+      },
+      '/health': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+      },
+      '/db-health': {
         target: 'http://127.0.0.1:8000',
         changeOrigin: true,
       },

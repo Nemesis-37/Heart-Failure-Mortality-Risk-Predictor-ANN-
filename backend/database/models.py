@@ -31,11 +31,14 @@ from sqlalchemy import (
     SmallInteger,
     String,
     UniqueConstraint,
+    text,
 )
-from sqlalchemy.dialects.mssql import DATETIMEOFFSET
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.database.config import Base
+
+# Dialect-agnostic timezone-aware timestamp (TIMESTAMP WITH TIME ZONE in PostgreSQL, DATETIME in SQLite)
+TIMESTAMPTZ = DateTime(timezone=True)
 
 
 # ---------------------------------------------------------------------------
@@ -59,10 +62,18 @@ class Doctor(Base):
         Index("IX_Doctors_Email", "email"),
         Index("IX_Doctors_RegistrationNumber", "registration_number"),
         Index("IX_Doctors_VerificationStatus", "verification_status"),
+        Index(
+            "UQ_Doctors_Username",
+            "username",
+            unique=True,
+            mssql_where=text("username IS NOT NULL"),
+            sqlite_where=text("username IS NOT NULL"),
+            postgresql_where=text("username IS NOT NULL"),
+        ),
         {"schema": "clinical"},
     )
 
-    # Primary key — UUID string (NVARCHAR(64) in SQL Server)
+    # Primary key — UUID string (VARCHAR(64) in SQL Server)
     doctor_id: Mapped[str] = mapped_column(
         String(64),
         primary_key=True,
@@ -76,8 +87,8 @@ class Doctor(Base):
     registration_number: Mapped[str] = mapped_column(String(64), nullable=False)
     registration_council: Mapped[str] = mapped_column(String(128), nullable=False)
     
-    # Optional unique system-generated username (assigned upon approval)
-    username: Mapped[str | None] = mapped_column(String(64), unique=True, nullable=True)
+    # Optional unique system-generated username (assigned upon approval; nullable with filtered unique index)
+    username: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
     # Verification & Active Flags
     email_verified: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
@@ -86,23 +97,23 @@ class Doctor(Base):
     )
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     created_at: Mapped[datetime] = mapped_column(
-        DATETIMEOFFSET,
+        TIMESTAMPTZ,
         nullable=False,
         default=lambda: datetime.now(timezone.utc),
     )
     last_login: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     # Administrator Verification Audit Metadata
-    verified_at: Mapped[datetime | None] = mapped_column(DATETIMEOFFSET, nullable=True)
+    verified_at: Mapped[datetime | None] = mapped_column(TIMESTAMPTZ, nullable=True)
     verified_by: Mapped[str | None] = mapped_column(String(64), nullable=True)
-    approved_at: Mapped[datetime | None] = mapped_column(DATETIMEOFFSET, nullable=True)
+    approved_at: Mapped[datetime | None] = mapped_column(TIMESTAMPTZ, nullable=True)
     rejection_reason: Mapped[str | None] = mapped_column(String(512), nullable=True)
 
     # Medical registration evidence document metadata (stored securely on disk)
     document_filename: Mapped[str | None] = mapped_column(String(256), nullable=True)
     document_path: Mapped[str | None] = mapped_column(String(512), nullable=True)
     document_uploaded_at: Mapped[datetime | None] = mapped_column(
-        DATETIMEOFFSET, nullable=True
+        TIMESTAMPTZ, nullable=True
     )
 
     # Relationships
@@ -154,10 +165,10 @@ class DoctorSession(Base):
         nullable=False,
     )
     refresh_token_hash: Mapped[str] = mapped_column(String(256), nullable=False)
-    expires_at: Mapped[datetime] = mapped_column(DATETIMEOFFSET, nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(TIMESTAMPTZ, nullable=False)
     is_revoked: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     created_at: Mapped[datetime] = mapped_column(
-        DATETIMEOFFSET,
+        TIMESTAMPTZ,
         nullable=False,
         default=lambda: datetime.now(timezone.utc),
     )
@@ -199,11 +210,11 @@ class EmailOTP(Base):
         nullable=False,
     )
     otp_hash: Mapped[str] = mapped_column(String(256), nullable=False)
-    expires_at: Mapped[datetime] = mapped_column(DATETIMEOFFSET, nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(TIMESTAMPTZ, nullable=False)
     attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     is_used: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     created_at: Mapped[datetime] = mapped_column(
-        DATETIMEOFFSET,
+        TIMESTAMPTZ,
         nullable=False,
         default=lambda: datetime.now(timezone.utc),
     )
@@ -247,7 +258,7 @@ class Administrator(Base):
     )
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     created_at: Mapped[datetime] = mapped_column(
-        DATETIMEOFFSET,
+        TIMESTAMPTZ,
         nullable=False,
         default=lambda: datetime.now(timezone.utc),
     )
@@ -354,7 +365,7 @@ class Assessment(Base):
         DECIMAL(6, 4), nullable=True
     )
     prediction_timestamp: Mapped[datetime | None] = mapped_column(
-        DATETIMEOFFSET, nullable=True
+        TIMESTAMPTZ, nullable=True
     )
     is_prediction_stale: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False
@@ -363,12 +374,12 @@ class Assessment(Base):
 
     # ---- Audit timestamps ----
     created_at: Mapped[datetime] = mapped_column(
-        DATETIMEOFFSET,
+        TIMESTAMPTZ,
         nullable=False,
         default=lambda: datetime.now(timezone.utc),
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DATETIMEOFFSET,
+        TIMESTAMPTZ,
         nullable=False,
         default=lambda: datetime.now(timezone.utc),
         onupdate=lambda: datetime.now(timezone.utc),
@@ -446,7 +457,7 @@ class Prediction(Base):
 
     # Audit timestamp
     created_at: Mapped[datetime] = mapped_column(
-        DATETIMEOFFSET,
+        TIMESTAMPTZ,
         nullable=False,
         default=lambda: datetime.now(timezone.utc),
     )

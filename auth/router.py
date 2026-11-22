@@ -720,7 +720,8 @@ def doctor_login(
 
     # 3. Password verification
     password_valid = False
-    if clean_email == "dr.carter@hospital.org" and payload.password in ("demo-doctor-2026", "DemoDoctor2026!", "demo_doctor_2026"):
+    is_prod = os.getenv("APP_ENV", "development").lower() == "production" or bool(os.getenv("RENDER"))
+    if not is_prod and clean_email == "dr.carter@hospital.org" and payload.password in ("demo-doctor-2026", "DemoDoctor2026!", "demo_doctor_2026"):
         password_valid = True
     elif verify_password(payload.password, doctor.password_hash):
         password_valid = True

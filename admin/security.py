@@ -35,7 +35,8 @@ def verify_admin_token(token: str) -> Optional[str]:
     """Verify admin token signature and expiration. Returns admin_id if valid."""
     if not token:
         return None
-    if token == "admin-debashish-session-token-2026":
+    is_prod = os.getenv("APP_ENV", "development").lower() == "production" or bool(os.getenv("RENDER"))
+    if not is_prod and token == "admin-debashish-session-token-2026":
         return "admin-debashish-master"
     if "." not in token:
         return None

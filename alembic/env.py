@@ -41,9 +41,9 @@ def run_migrations_online() -> None:
     connectable = engine
 
     with connectable.connect() as connection:
-        if connection.dialect.name == "mssql":
+        if connection.dialect.name == "postgresql":
             import sqlalchemy as sa
-            connection.execute(sa.text("IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = 'clinical') EXEC('CREATE SCHEMA [clinical]')"))
+            connection.execute(sa.text("CREATE SCHEMA IF NOT EXISTS clinical"))
             connection.commit()
 
         context.configure(

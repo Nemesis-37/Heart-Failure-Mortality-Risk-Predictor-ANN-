@@ -21,7 +21,16 @@ if _ENV_PATH.exists():
     load_dotenv(dotenv_path=_ENV_PATH)
 
 from models.ann_model import HeartFailureANN
-from backend.database.config import get_db, test_db_connection, SessionLocal, engine, DB_DATABASE, DB_SERVER
+from backend.database.config import (
+    Base,
+    DB_DATABASE,
+    DB_SERVER,
+    SessionLocal,
+    engine,
+    get_db,
+    test_db_connection,
+)
+import backend.database.models  # ensure all ORM models are registered with Base.metadata
 from backend.database.models import Administrator, Doctor
 
 logger = logging.getLogger(__name__)
@@ -159,8 +168,12 @@ def _seed_demo_doctor_on_startup() -> None:
     """
     Ensure the local development demo doctor account (dr.carter@hospital.org) exists
     with password 'demo-doctor-2026' and verification_status='APPROVED'.
-    Enables instant Quick Demo Access in development/prototype environments.
+    Enables instant Quick Demo Access strictly in local development environments.
+    Explicitly disabled in production to prevent unauthorized access.
     """
+    if os.getenv("APP_ENV", "development").lower() == "production" or os.getenv("RENDER"):
+        logger.info("[startup] Production mode active: demo doctor seeding is strictly disabled.")
+        return
     try:
         from auth.security import hash_password
 
@@ -247,11 +260,31 @@ def _seed_demo_doctor_on_startup() -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """FastAPI lifespan: ensure tables exist, then seed admin and demo doctor on startup."""
+    """FastAPI lifespan: ensure tables exist via Alembic / create_all, then seed admin and demo doctor on startup."""
     try:
         if engine is not None:
-            Base.metadata.create_all(bind=engine)
-            logger.info("[startup] Database tables verified/created via Base.metadata.create_all.")
+            # 1. Prefer existing Alembic migration workflow for PostgreSQL
+            alembic_migrated = False
+            if engine.dialect.name == "postgresql":
+                try:
+                    from alembic import command
+                    from alembic.config import Config
+
+                    alembic_cfg_path = BASE_DIR / "alembic.ini"
+                    if alembic_cfg_path.exists():
+                        alembic_cfg = Config(str(alembic_cfg_path))
+                        command.upgrade(alembic_cfg, "head")
+                        logger.info(f"[startup] Alembic migrations upgraded to head successfully ({engine.dialect.name}).")
+                        alembic_migrated = True
+                except Exception as _alembic_err:
+                    logger.info(f"[startup] Alembic migration notice: {_alembic_err}. Verifying schema with Base.metadata.create_all.")
+
+            # 2. Schema check / create_all to guarantee all 6 tables exist (PostgreSQL / SQLite / fallback)
+            if not alembic_migrated:
+                Base.metadata.create_all(bind=engine)
+                logger.info(f"[startup] Database tables verified/created via Base.metadata.create_all ({engine.dialect.name}).")
+        else:
+            logger.warning("[startup] Database engine is None; skipping schema initialization.")
     except Exception as _schema_err:
         logger.warning(f"[startup] Table creation check notice: {_schema_err}")
 
@@ -267,9 +300,36 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+is_prod_env = os.getenv("APP_ENV", "development").lower() == "production" or bool(os.getenv("RENDER"))
+raw_origins = os.getenv("ALLOWED_ORIGINS", "").strip()
+if raw_origins:
+    allowed_origins = [o.strip() for o in raw_origins.split(",") if o.strip()]
+elif is_prod_env:
+    allowed_origins = [
+        "https://heart-failure-mortality-risk-predictor.onrender.com",
+    ]
+else:
+    allowed_origins = [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:4173",
+        "http://127.0.0.1:4173",
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+    ]
+
+dev_origin_regex = (
+    r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$"
+    if not is_prod_env
+    else None
+)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,
+    allow_origin_regex=dev_origin_regex,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -409,7 +469,7 @@ def health():
 def db_health():
     """
     Test database connectivity and return live status.
-    Accurately reports whether SQLite (clinical_local.db) or SQL Server is active.
+    Accurately reports whether PostgreSQL (clinical schema) or offline fallback SQLite is active.
     """
     try:
         result = test_db_connection()
@@ -575,11 +635,15 @@ if FRONTEND_DIST.exists():
 if __name__ == "__main__":
     import uvicorn
 
+    host = os.getenv("HOST", "0.0.0.0")
+    port = int(os.getenv("PORT", "8000"))
+    reload_flag = False if os.getenv("RENDER") or os.getenv("APP_ENV") == "production" else True
+
     uvicorn.run(
         "main:app",
-        host="127.0.0.1",
-        port=8000,
-        reload=True,
+        host=host,
+        port=port,
+        reload=reload_flag,
     )
 
 

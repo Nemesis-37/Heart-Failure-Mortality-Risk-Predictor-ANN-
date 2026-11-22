@@ -1,30 +1,35 @@
-# CardioPredict - Migrate SQLite to Microsoft SQL Server
+# ========================================================
+# Migrate Database to PostgreSQL
+# Source: clinical_local.db (SQLite)
+# Target: PostgreSQL (localhost:5433 / heartmortality)
+# ========================================================
+
 Write-Host "========================================================" -ForegroundColor Cyan
-Write-Host "Migrating Heart Failure Mortality Risk Predictor Data" -ForegroundColor Green
-Write-Host "Source: clinical_local.db (SQLite)" -ForegroundColor White
-Write-Host "Target: DESKTOP-NA0D6N1\SQLEXPRESS (HeartMortalityPredictor)" -ForegroundColor White
+Write-Host "Migrating Heart Failure Mortality Risk Predictor Data" -ForegroundColor Cyan
+Write-Host "Source: clinical_local.db (SQLite)" -ForegroundColor Cyan
+Write-Host "Target: PostgreSQL (localhost:5433 / heartmortality)" -ForegroundColor Cyan
 Write-Host "========================================================" -ForegroundColor Cyan
+Write-Host ""
 
-$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-Set-Location $scriptDir
+Set-Location $PSScriptRoot
 
-Write-Host "`n[1/2] Executing Data Migration Script..." -ForegroundColor Yellow
-python scripts/migrate_sqlite_to_sqlserver.py
-
+Write-Host "[1/2] Executing Data Migration Script..." -ForegroundColor Yellow
+python scripts/migrate_to_postgresql.py
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "`n[ERROR] Migration script reported an error (Exit Code: $LASTEXITCODE)." -ForegroundColor Red
+    Write-Host "`n[ERROR] Migration failed. Check error output above." -ForegroundColor Red
     pause
     exit $LASTEXITCODE
 }
 
-Write-Host "`n[2/2] Running Complete E2E Verification Suite..." -ForegroundColor Yellow
-python scripts/test_sqlserver_e2e_verification.py
-
-if ($LASTEXITCODE -eq 0) {
-    Write-Host "`n========================================================" -ForegroundColor Cyan
-    Write-Host "ALL MIGRATION AND E2E CHECKS PASSED SUCCESSFULLY!" -ForegroundColor Green
-    Write-Host "SQL Server Express is now the active verified database." -ForegroundColor Green
-    Write-Host "========================================================" -ForegroundColor Cyan
-} else {
-    Write-Host "`n[WARNING] Verification checks exited with code $LASTEXITCODE." -ForegroundColor Yellow
+Write-Host "`n[2/2] Running Complete PostgreSQL E2E Verification Suite..." -ForegroundColor Yellow
+python scripts/test_postgresql_e2e_verification.py
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "`n[WARNING] Verification reported issues. Check output above." -ForegroundColor Yellow
+    pause
+    exit $LASTEXITCODE
 }
+
+Write-Host "`n========================================================" -ForegroundColor Green
+Write-Host "POSTGRESQL MIGRATION AND VERIFICATION COMPLETED!" -ForegroundColor Green
+Write-Host "========================================================" -ForegroundColor Green
+pause

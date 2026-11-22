@@ -175,12 +175,14 @@ export default function UnifiedLogin({ onLogin, onNavigateToRegister }) {
         }
       }
 
-      if (isAdminCreds) {
+      const isProduction = import.meta.env.PROD || false
+
+      if (!isProduction && isAdminCreds) {
         executeAdminLogin()
         return
       }
 
-      if (isDemoDoctorCreds) {
+      if (!isProduction && isDemoDoctorCreds) {
         executeDemoDoctorLogin()
         return
       }
@@ -195,12 +197,14 @@ export default function UnifiedLogin({ onLogin, onNavigateToRegister }) {
         'Authentication failed. Please check your credentials or ensure the backend server is running.'
       )
     } catch (error) {
-      if (isAdminCreds) {
+      const isProduction = import.meta.env.PROD || false
+
+      if (!isProduction && isAdminCreds) {
         executeAdminLogin()
         return
       }
 
-      if (isDemoDoctorCreds) {
+      if (!isProduction && isDemoDoctorCreds) {
         executeDemoDoctorLogin()
         return
       }

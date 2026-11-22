@@ -1,6 +1,6 @@
 /**
  * assessmentStore.js
- * Client-side clinical assessment store preparing for SQL Server /api/assessments integration.
+ * Client-side clinical assessment store for PostgreSQL /api/assessments integration.
  * Ensures data entered during physician sessions persists cleanly without fabricating fake records.
  */
 
@@ -236,8 +236,8 @@ export const fetchBackendAssessments = async () => {
             d.predicted_class === 1
               ? 'Death event predicted'
               : d.predicted_class === 0
-              ? 'No death event predicted'
-              : null,
+                ? 'No death event predicted'
+                : null,
           predictedProbability: d.predicted_probability,
           createdAt: d.created_at,
           updatedAt: d.updated_at,

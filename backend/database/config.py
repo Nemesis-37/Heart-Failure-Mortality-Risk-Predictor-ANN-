@@ -5,10 +5,12 @@ Single Central Source of Truth for SQLAlchemy Database Configuration in the
 Heart Failure Mortality Risk Predictor application.
 
 Features:
-- Primary Engine: Microsoft SQL Server via ODBC Driver 18 (configurable via environment variables)
-- Development / Active Fallback Engine: SQLite (clinical_local.db) with WAL journal mode and busy_timeout
+- Primary Engine: PostgreSQL (Local & Render Production) via psycopg2
+- Dialect: postgresql+psycopg2
+- Schema: [clinical] automatically created and set in search_path
+- Offline Development Fallback: SQLite (clinical_local.db) with WAL mode
 - Thread-safe SessionLocal session factory
-- Declarative Base for all ORM models
+- Shared Declarative Base for all ORM models
 - get_db session dependency with automatic rollback on failure and session closing
 - test_db_connection() and test_connection() utilities for diagnostics and health endpoints
 """
@@ -21,28 +23,17 @@ from typing import Generator
 
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, event, text
-from sqlalchemy.dialects.mssql import DATETIMEOFFSET, UNIQUEIDENTIFIER
-from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 logger = logging.getLogger(__name__)
 
-# Register dialect mappings for MSSQL specific types if SQLite or PostgreSQL is active
-@compiles(DATETIMEOFFSET, "sqlite")
-def _compile_datetimeoffset_sqlite(type_, compiler, **kw):
-    return "DATETIME"
+# ---------------------------------------------------------------------------
+# Declarative Base (Single Shared Base for all ORM models)
+# ---------------------------------------------------------------------------
+class Base(DeclarativeBase):
+    """Single shared Declarative Base class for all SQLAlchemy ORM models."""
+    pass
 
-@compiles(UNIQUEIDENTIFIER, "sqlite")
-def _compile_uniqueidentifier_sqlite(type_, compiler, **kw):
-    return "VARCHAR(64)"
-
-@compiles(DATETIMEOFFSET, "postgresql")
-def _compile_datetimeoffset_pg(type_, compiler, **kw):
-    return "TIMESTAMP WITH TIME ZONE"
-
-@compiles(UNIQUEIDENTIFIER, "postgresql")
-def _compile_uniqueidentifier_pg(type_, compiler, **kw):
-    return "VARCHAR(64)"
 
 # ---------------------------------------------------------------------------
 # Load .env from project root
@@ -54,116 +45,103 @@ if _ENV_PATH.exists():
 else:
     load_dotenv()
 
-# ---------------------------------------------------------------------------
-# Read connection settings from environment variables
-# ---------------------------------------------------------------------------
+
 def _get_env(key: str, default: str = "") -> str:
     return os.getenv(key, default).strip()
 
-DB_SERVER = _get_env("SERVER", _get_env("DB_SERVER", r"DESKTOP-NA0D6N1\SQLEXPRESS"))
-DB_DATABASE = _get_env("DATABASE", _get_env("DB_NAME", _get_env("DB_DATABASE", "HeartMortalityPredictor")))
-DB_AUTH_MODE = _get_env("DB_AUTH_MODE", "windows").lower()
-DB_USERNAME = _get_env("DB_USERNAME")
-DB_PASSWORD = _get_env("DB_PASSWORD")
-DB_DRIVER = _get_env("DRIVER", _get_env("DB_DRIVER", "{ODBC Driver 18 for SQL Server}"))
-DB_TRUST_CONNECTION = _get_env("Trusted_Connection", _get_env("DB_TRUSTED_CONNECTION", "yes"))
-DB_ENCRYPT = _get_env("Encrypt", _get_env("DB_ENCRYPT", "yes"))
-DB_TRUST_SERVER_CERTIFICATE = _get_env("TrustServerCertificate", _get_env("DB_TRUST_SERVER_CERTIFICATE", "yes"))
 
+# Pool settings
 DB_POOL_SIZE = int(_get_env("DB_POOL_SIZE", "5"))
 DB_MAX_OVERFLOW = int(_get_env("DB_MAX_OVERFLOW", "10"))
 DB_POOL_TIMEOUT = int(_get_env("DB_POOL_TIMEOUT", "30"))
 DB_POOL_RECYCLE = int(_get_env("DB_POOL_RECYCLE", "1800"))
 
+is_render = bool(os.getenv("RENDER")) or os.getenv("RENDER_SERVICE_ID") is not None
+is_prod = _get_env("APP_ENV").lower() == "production" or is_render
+
+
+def _build_pg_url() -> str:
+    """Build or normalize PostgreSQL connection URL from environment variables."""
+    raw_url = _get_env("DATABASE_URL")
+    if raw_url:
+        # Render provides postgres:// which SQLAlchemy 2.0 requires as postgresql://
+        url = raw_url.replace("postgres://", "postgresql://", 1)
+        if url.startswith("postgresql://") and not url.startswith("postgresql+"):
+            url = url.replace("postgresql://", "postgresql+psycopg2://", 1)
+        return url
+
+    # Fallback to individual PG* environment variables
+    pg_host = _get_env("PGHOST", _get_env("POSTGRES_HOST", "localhost"))
+    pg_port = _get_env("PGPORT", _get_env("POSTGRES_PORT", "5433"))
+    pg_db = _get_env("PGDATABASE", _get_env("POSTGRES_DB", "heartmortality"))
+    pg_user = _get_env("PGUSER", _get_env("POSTGRES_USER", "postgres"))
+    pg_pass = _get_env("PGPASSWORD", _get_env("POSTGRES_PASSWORD", ""))
+
+    if pg_host and pg_db and pg_user:
+        encoded_pass = urllib.parse.quote_plus(pg_pass)
+        auth = f"{pg_user}:{encoded_pass}@" if pg_pass else f"{pg_user}@"
+        return f"postgresql+psycopg2://{auth}{pg_host}:{pg_port}/{pg_db}"
+
+    return ""
+
+
 # ---------------------------------------------------------------------------
-# Build the ODBC connection string
+# SQLAlchemy Engine Initialization (PostgreSQL Primary)
 # ---------------------------------------------------------------------------
-def _build_connection_string() -> str:
-    # 1. Direct raw connection string from environment if provided
-    raw_conn_str = _get_env("DB_CONNECTION_STRING")
-    if raw_conn_str:
-        clean_raw = raw_conn_str.strip("\"'")
-        return f"mssql+pyodbc:///?odbc_connect={urllib.parse.quote_plus(clean_raw)}"
-
-    clean_driver = DB_DRIVER.strip("{}")
-    formatted_driver = f"{{{clean_driver}}}"
-
-    params = {
-        "DRIVER": formatted_driver,
-        "SERVER": DB_SERVER,
-        "DATABASE": DB_DATABASE,
-        "Trusted_Connection": DB_TRUST_CONNECTION,
-        "Encrypt": DB_ENCRYPT,
-        "TrustServerCertificate": DB_TRUST_SERVER_CERTIFICATE,
-    }
-
-    if DB_AUTH_MODE == "sql" and DB_USERNAME and DB_PASSWORD:
-        params["Trusted_Connection"] = "no"
-        params["UID"] = DB_USERNAME
-        params["PWD"] = DB_PASSWORD
-
-    odbc_str = ";".join(f"{k}={v}" for k, v in params.items())
-    return f"mssql+pyodbc:///?odbc_connect={urllib.parse.quote_plus(odbc_str)}"
-
-# ---------------------------------------------------------------------------
-# SQLAlchemy Engine Initialization
-# ---------------------------------------------------------------------------
-try:
-    import pyodbc  # noqa: F401
-    HAS_PYODBC = True
-except ImportError:
-    HAS_PYODBC = False
-
 engine = None
 DATABASE_URL = None
+DB_DATABASE = "heartmortality"
+DB_SERVER = "PostgreSQL"
 
-# 0. Check direct DATABASE_URL from environment (e.g. Render PostgreSQL or cloud database)
-_direct_db_url = _get_env("DATABASE_URL")
-if _direct_db_url:
-    clean_url = _direct_db_url.replace("postgres://", "postgresql://", 1)
+_pg_url = _build_pg_url()
+
+if _pg_url:
     try:
-        engine = create_engine(clean_url, pool_pre_ping=True)
-        DATABASE_URL = clean_url
-        logger.info(f"Connected via environment DATABASE_URL ({engine.dialect.name})")
-    except Exception as _url_err:
-        logger.warning(f"Direct DATABASE_URL connection failed: {_url_err}")
-        engine = None
-
-is_render = bool(os.getenv("RENDER"))
-should_probe_sql_server = HAS_PYODBC and (
-    not is_render or bool(_get_env("DB_CONNECTION_STRING")) or bool(_get_env("SERVER"))
-)
-
-if engine is None and should_probe_sql_server:
-    try:
-        DATABASE_URL = _build_connection_string()
-        _probe_engine = create_engine(DATABASE_URL, connect_args={"timeout": 5})
+        # Fast probe with short timeout to detect reachability
+        _probe_engine = create_engine(
+            _pg_url,
+            connect_args={"connect_timeout": 3},
+        )
         with _probe_engine.connect() as _probe_conn:
+            _probe_conn.execute(text("CREATE SCHEMA IF NOT EXISTS clinical"))
+            _probe_conn.commit()
             _probe_conn.execute(text("SELECT 1"))
         _probe_engine.dispose()
 
+        # Connect full engine with search_path set to clinical,public
         engine = create_engine(
-            DATABASE_URL,
+            _pg_url,
+            connect_args={"options": "-c search_path=clinical,public"},
             pool_size=DB_POOL_SIZE,
             max_overflow=DB_MAX_OVERFLOW,
             pool_timeout=DB_POOL_TIMEOUT,
             pool_recycle=DB_POOL_RECYCLE,
             pool_pre_ping=True,
-            echo=False,
-            fast_executemany=True,
         )
-    except Exception as exc:
-        REQUIRE_SQL_SERVER = _get_env("REQUIRE_SQL_SERVER", "false").lower() in ("true", "1", "yes")
-        if REQUIRE_SQL_SERVER:
-            logger.error(f"[FATAL] SQL Server connection failed and REQUIRE_SQL_SERVER=true: {exc}")
-            raise RuntimeError(f"SQL Server connection failed: {exc}") from exc
-        logger.warning(f"SQL Server not reachable ({exc}). Falling back to local SQLite.")
+        DATABASE_URL = _pg_url
+        logger.info(f"Connected successfully to PostgreSQL database ({_pg_url.split('@')[-1] if '@' in _pg_url else 'local'})")
+    except Exception as _pg_err:
+        logger.error(f"PostgreSQL connection failed: {_pg_err}")
+        if is_prod:
+            raise RuntimeError(f"FATAL: Production requires PostgreSQL DATABASE_URL. Connection failed: {_pg_err}") from _pg_err
         engine = None
 
 if engine is None:
-    # Active development fallback to SQLite
+    if is_prod:
+        raise RuntimeError("FATAL: Production requires PostgreSQL DATABASE_URL. SQLite/MSSQL are strictly forbidden in production.")
+
+    _allow_sqlite = _get_env("ALLOW_SQLITE_OFFLINE", "true").lower() in ("true", "1", "yes")
+    if not _allow_sqlite:
+        raise RuntimeError(
+            "FATAL: PostgreSQL connection failed to localhost:5433 (heartmortality). "
+            "Silent fallback to SQLite is disabled to prevent accidental SQLite usage in development. "
+            "To allow offline sandbox testing, set ALLOW_SQLITE_OFFLINE=true."
+        )
+
+    # Offline development fallback strictly for sandboxed automated testing
     sqlite_db_path = PROJECT_ROOT / "clinical_local.db"
     DATABASE_URL = f"sqlite:///{sqlite_db_path.as_posix()}"
+    logger.warning("Active fallback: PostgreSQL unavailable and ALLOW_SQLITE_OFFLINE=true; initializing SQLite (clinical_local.db).")
     engine = create_engine(
         DATABASE_URL,
         connect_args={"check_same_thread": False},
@@ -177,8 +155,9 @@ if engine is None:
         cursor.execute("PRAGMA busy_timeout=5000")
         cursor.close()
 
-if engine is not None and engine.dialect.name in ("sqlite", "postgresql"):
+    # In SQLite, strip 'clinical' schema prefix
     engine = engine.execution_options(schema_translate_map={"clinical": None})
+
 
 # ---------------------------------------------------------------------------
 # Session Factory
@@ -190,12 +169,6 @@ SessionLocal = sessionmaker(
     expire_on_commit=False,
 )
 
-# ---------------------------------------------------------------------------
-# Declarative Base
-# ---------------------------------------------------------------------------
-class Base(DeclarativeBase):
-    """Declarative Base class for all SQLAlchemy ORM models."""
-    pass
 
 # ---------------------------------------------------------------------------
 # FastAPI Session Dependency
@@ -217,6 +190,7 @@ def get_db() -> Generator:
     finally:
         db.close()
 
+
 # ---------------------------------------------------------------------------
 # Diagnostic Connection Test Utilities
 # ---------------------------------------------------------------------------
@@ -231,41 +205,50 @@ def test_connection() -> bool:
     except Exception:
         return False
 
+
 def test_db_connection() -> dict:
     """
     Detailed database health report verifying active engine and target database.
-    Accurately identifies whether SQLite or SQL Server is currently serving traffic.
+    Accurately identifies whether PostgreSQL or SQLite is currently active.
     """
     if engine is None:
         return {
             "status": "error",
-            "database": DB_DATABASE,
+            "database": "none",
             "dialect": "none",
             "message": "SQLAlchemy engine is not initialized.",
         }
 
     try:
         with engine.connect() as conn:
-            if conn.dialect.name == "sqlite":
+            if conn.dialect.name == "postgresql":
+                db_name = conn.execute(text("SELECT current_database()")).scalar()
+                return {
+                    "status": "connected",
+                    "database": db_name or "heartmortality",
+                    "dialect": "postgresql",
+                    "message": "PostgreSQL database connection verified (schema: clinical)",
+                }
+            elif conn.dialect.name == "sqlite":
                 conn.execute(text("SELECT 1"))
                 return {
                     "status": "connected",
                     "database": "clinical_local.db",
                     "dialect": "sqlite",
-                    "message": "Active SQLite fallback database connection verified (clinical_local.db)",
+                    "message": "Offline fallback SQLite database active (clinical_local.db)",
                 }
             else:
-                db_name = conn.execute(text("SELECT DB_NAME()")).scalar()
+                conn.execute(text("SELECT 1"))
                 return {
                     "status": "connected",
-                    "database": db_name or DB_DATABASE,
-                    "dialect": "mssql",
-                    "message": "Microsoft SQL Server Express connection verified",
+                    "database": "connected",
+                    "dialect": conn.dialect.name,
+                    "message": f"{conn.dialect.name} database connection verified",
                 }
     except Exception as exc:
         return {
             "status": "disconnected",
             "database": DB_DATABASE,
-            "dialect": engine.dialect.name,
+            "dialect": engine.dialect.name if engine else "none",
             "message": f"Database connection failed: {str(exc)}",
         }

@@ -128,11 +128,24 @@ export default function AdminDashboard({ onExitAdmin }) {
         throw new Error('Administrator session expired. Please sign in again.')
       }
 
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.detail || 'Failed to fetch doctor registrations.')
-      setDoctors(data)
+      let data
+      try {
+        data = await res.json()
+      } catch (parseErr) {
+        if (!res.ok) {
+          throw new Error(`Server returned HTTP ${res.status}: ${res.statusText || 'Error'}`)
+        }
+        throw new Error('Invalid JSON response received from server.')
+      }
+
+      if (!res.ok) throw new Error(data.detail || `Failed to fetch doctor registrations (HTTP ${res.status}).`)
+      setDoctors(Array.isArray(data) ? data : [])
     } catch (err) {
-      setListError(err.message)
+      if (err.name === 'TypeError' && err.message.includes('fetch')) {
+        setListError(`Cannot connect to the backend API at ${apiUrl('/admin/doctors')}. Ensure the FastAPI server is running.`)
+      } else {
+        setListError(err.message)
+      }
     } finally {
       setIsLoading(false)
     }
@@ -519,7 +532,7 @@ export default function AdminDashboard({ onExitAdmin }) {
               }} />
               <span>Session: <strong>{adminProfile?.username || 'admin'}</strong></span>
               <span style={{ color: '#94A3B8' }}>|</span>
-              <span style={{ color: '#0D9488', fontWeight: 600 }}>SQL Server Express</span>
+              <span style={{ color: '#0D9488', fontWeight: 600 }}>{overviewStats?.database_engine || 'PostgreSQL'}</span>
             </div>
 
             {onExitAdmin && (
@@ -588,7 +601,7 @@ export default function AdminDashboard({ onExitAdmin }) {
               {overviewLoading ? (
                 <div style={{ textAlign: 'center', padding: '4rem', color: '#64748B' }}>
                   <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>⏳</div>
-                  <div>Loading live database statistics from SQL Server…</div>
+                  <div>Loading live database statistics from {overviewStats?.database_engine || 'PostgreSQL'}…</div>
                 </div>
               ) : (
                 <>
@@ -845,7 +858,7 @@ export default function AdminDashboard({ onExitAdmin }) {
                         <h3 style={{ margin: 0, fontSize: '1.15rem', color: '#0B1F3A', fontWeight: 800 }}>
                           Recent Activity Summary
                         </h3>
-                        <span style={{ fontSize: '0.78rem', color: '#64748B' }}>Actual telemetry from SQL Server</span>
+                        <span style={{ fontSize: '0.78rem', color: '#64748B' }}>Actual telemetry from {overviewStats?.database_engine || 'PostgreSQL'}</span>
                       </div>
 
                       {/* 7-Day Volume Ticker */}
@@ -1388,20 +1401,6 @@ export default function AdminDashboard({ onExitAdmin }) {
                 />
               </div>
 
-              {/* Informational Notice */}
-              <div style={{
-                background: '#F8FAFC',
-                border: '1px dashed #CBD5E1',
-                padding: '12px 16px',
-                borderRadius: '8px',
-                fontSize: '0.82rem',
-                color: '#64748B',
-                marginBottom: '1.5rem',
-                lineHeight: '1.5',
-              }}>
-                ℹ️ <strong>System Architecture Note:</strong> Clinician activity metrics are derived strictly from actual SQL Server login sessions, saved patient assessments, and model prediction runs. In accordance with clinical privacy standards, live telemetry, online/offline indicators, and heartbeat monitoring are not deployed.
-              </div>
-
               {activityLoading ? (
                 <div style={{ textAlign: 'center', padding: '4rem', color: '#64748B' }}>Loading activity logs…</div>
               ) : filteredActivities.length === 0 ? (
@@ -1635,24 +1634,6 @@ export default function AdminDashboard({ onExitAdmin }) {
                     </div>
                   </div>
                 ))}
-              </div>
-
-              {/* Clinical Explanations Card */}
-              <div style={{
-                background: '#F8FAFC',
-                border: '1px solid #E2E8F0',
-                borderRadius: '12px',
-                padding: '1.25rem 1.5rem',
-                fontSize: '0.82rem',
-                color: '#475569',
-                lineHeight: '1.6',
-              }}>
-                <div style={{ fontWeight: 700, color: '#0B1F3A', marginBottom: '6px' }}>
-                  ⚖️ Clinical Validation & Regulatory Governance Note:
-                </div>
-                <div>
-                  Cross-validation estimates reflect internal retrospective validation on the 299-patient UCI Heart Failure clinical cohort. Both models rely strictly on the 11 clinical biomarkers without follow-up observation duration (<code>time</code>) to prevent target leakage. These machine learning inferences serve strictly as an educational clinical decision support prototype and do not replace formal cardiology evaluations.
-                </div>
               </div>
             </div>
           )}

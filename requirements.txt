@@ -14,7 +14,6 @@ python-multipart==0.0.20
 SQLAlchemy==2.0.38
 alembic==1.14.1
 psycopg2-binary==2.9.10
-pyodbc==5.2.0
 
 # Security & Authentication
 argon2-cffi==23.1.0

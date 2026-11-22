@@ -9,7 +9,6 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
-from sqlalchemy.dialects import mssql
 
 # revision identifiers, used by Alembic.
 revision: str = '20261114_02'
@@ -19,8 +18,26 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
+    bind = op.get_bind()
+    dialect = bind.dialect.name
+    if dialect == "mssql":
+        dt_type = mssql.DATETIMEOFFSET()
+        now_def = sa.text('SYSDATETIMEOFFSET()')
+        b_false = sa.text('0')
+        b_true = sa.text('1')
+    elif dialect == "postgresql":
+        dt_type = sa.TIMESTAMP(timezone=True)
+        now_def = sa.text('CURRENT_TIMESTAMP')
+        b_false = sa.text('false')
+        b_true = sa.text('true')
+    else:
+        dt_type = sa.DateTime()
+        now_def = sa.text('CURRENT_TIMESTAMP')
+        b_false = sa.text('0')
+        b_true = sa.text('1')
+
     # 1. Add verification audit columns to Doctors if not present
-    op.add_column('Doctors', sa.Column('verified_at', mssql.DATETIMEOFFSET(), nullable=True), schema='clinical')
+    op.add_column('Doctors', sa.Column('verified_at', dt_type, nullable=True), schema='clinical')
     op.add_column('Doctors', sa.Column('verified_by', sa.String(length=64), nullable=True), schema='clinical')
     op.add_column('Doctors', sa.Column('rejection_reason', sa.String(length=512), nullable=True), schema='clinical')
 
@@ -30,10 +47,10 @@ def upgrade() -> None:
         sa.Column('otp_id', sa.String(length=64), nullable=False),
         sa.Column('doctor_id', sa.String(length=64), nullable=False),
         sa.Column('otp_hash', sa.String(length=256), nullable=False),
-        sa.Column('expires_at', mssql.DATETIMEOFFSET(), nullable=False),
+        sa.Column('expires_at', dt_type, nullable=False),
         sa.Column('attempts', sa.Integer(), server_default='0', nullable=False),
-        sa.Column('is_used', sa.Boolean(), server_default=sa.text('0'), nullable=False),
-        sa.Column('created_at', mssql.DATETIMEOFFSET(), server_default=sa.text('SYSDATETIMEOFFSET()'), nullable=False),
+        sa.Column('is_used', sa.Boolean(), server_default=b_false, nullable=False),
+        sa.Column('created_at', dt_type, server_default=now_def, nullable=False),
         sa.ForeignKeyConstraint(['doctor_id'], ['clinical.Doctors.doctor_id'], ondelete='CASCADE'),
         sa.PrimaryKeyConstraint('otp_id', name='PK_EmailOTP'),
         schema='clinical'
@@ -50,8 +67,8 @@ def upgrade() -> None:
         sa.Column('password_hash', sa.String(length=256), nullable=False),
         sa.Column('full_name', sa.String(length=128), nullable=False),
         sa.Column('role', sa.String(length=64), server_default='Medical Credentialing Officer', nullable=False),
-        sa.Column('is_active', sa.Boolean(), server_default=sa.text('1'), nullable=False),
-        sa.Column('created_at', mssql.DATETIMEOFFSET(), server_default=sa.text('SYSDATETIMEOFFSET()'), nullable=False),
+        sa.Column('is_active', sa.Boolean(), server_default=b_true, nullable=False),
+        sa.Column('created_at', dt_type, server_default=now_def, nullable=False),
         sa.PrimaryKeyConstraint('admin_id', name='PK_Administrators'),
         sa.UniqueConstraint('username', name='UQ_Admin_Username'),
         sa.UniqueConstraint('email', name='UQ_Admin_Email'),

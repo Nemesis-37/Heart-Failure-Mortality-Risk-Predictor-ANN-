@@ -1,9 +1,7 @@
 -- ==============================================================================
 -- Heart Failure Mortality Risk Predictor — Microsoft SQL Server Database Schema
--- Table: Assessments
--- Version: 1.0.0
--- Description: Stores recorded clinical biomarkers and metadata for patient
---              heart failure risk evaluations.
+-- Schema: [clinical]
+-- Version: 2.0.0 (Unified with SQLAlchemy ORM and SQLite)
 -- ==============================================================================
 
 -- 1. Create Schema if needed
@@ -17,31 +15,31 @@ GO
 IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[clinical].[Doctors]') AND type in (N'U'))
 BEGIN
     CREATE TABLE [clinical].[Doctors] (
-        [doctor_id]             NVARCHAR(64)   NOT NULL,
-        [full_name]             NVARCHAR(128)  NOT NULL,
-        [email]                 NVARCHAR(256)  NOT NULL,
-        [password_hash]         NVARCHAR(256)  NOT NULL,
-        [mobile]                NVARCHAR(32)   NOT NULL,
-        [medical_degree]        NVARCHAR(128)  NOT NULL,
-        [registration_number]   NVARCHAR(64)   NOT NULL,
-        [registration_council]  NVARCHAR(128)  NOT NULL,
+        [doctor_id]             VARCHAR(64)    NOT NULL,
+        [full_name]             VARCHAR(128)   NOT NULL,
+        [email]                 VARCHAR(256)   NOT NULL,
+        [password_hash]         VARCHAR(256)   NOT NULL,
+        [mobile]                VARCHAR(32)    NOT NULL,
+        [medical_degree]        VARCHAR(128)   NOT NULL,
+        [registration_number]   VARCHAR(64)    NOT NULL,
+        [registration_council]  VARCHAR(128)   NOT NULL,
         [email_verified]        BIT            NOT NULL DEFAULT 0,
-        [verification_status]   NVARCHAR(32)   NOT NULL DEFAULT N'PENDING',
+        [verification_status]   VARCHAR(32)    NOT NULL DEFAULT 'PENDING',
         [is_active]             BIT            NOT NULL DEFAULT 1,
         [created_at]            DATETIMEOFFSET NOT NULL DEFAULT SYSDATETIMEOFFSET(),
-        [username]              NVARCHAR(64)   NULL,
+        [username]              VARCHAR(64)    NULL,
         [last_login]            DATETIME       NULL,
         [approved_at]           DATETIMEOFFSET NULL,
-        [document_filename]     NVARCHAR(256)  NULL,
-        [document_path]         NVARCHAR(512)  NULL,
+        [document_filename]     VARCHAR(256)   NULL,
+        [document_path]         VARCHAR(512)   NULL,
         [document_uploaded_at]  DATETIMEOFFSET NULL,
         [verified_at]           DATETIMEOFFSET NULL,
-        [verified_by]           NVARCHAR(64)   NULL,
-        [rejection_reason]      NVARCHAR(512)  NULL,
+        [verified_by]           VARCHAR(64)    NULL,
+        [rejection_reason]      VARCHAR(512)   NULL,
         CONSTRAINT [PK_Doctors] PRIMARY KEY CLUSTERED ([doctor_id]),
         CONSTRAINT [UQ_Doctors_Email] UNIQUE NONCLUSTERED ([email]),
         CONSTRAINT [UQ_Doctors_RegNumber] UNIQUE NONCLUSTERED ([registration_number]),
-        CONSTRAINT [CK_Doctors_VerificationStatus] CHECK ([verification_status] IN (N'PENDING', N'APPROVED', N'REJECTED'))
+        CONSTRAINT [CK_Doctors_VerificationStatus] CHECK ([verification_status] IN ('PENDING', 'APPROVED', 'REJECTED'))
     );
 
     CREATE NONCLUSTERED INDEX [IX_Doctors_Email] ON [clinical].[Doctors] ([email]);
@@ -50,13 +48,32 @@ BEGIN
 END
 GO
 
--- 2B. Create Email OTP Verification Table
+-- Ensure Filtered Unique Index on Doctors.username (allows multiple NULLs for pending doctors)
+IF EXISTS (SELECT * FROM sys.key_constraints WHERE name = 'UQ_Doctors_Username' AND parent_object_id = OBJECT_ID('[clinical].[Doctors]'))
+BEGIN
+    ALTER TABLE [clinical].[Doctors] DROP CONSTRAINT [UQ_Doctors_Username];
+END
+GO
+IF EXISTS (SELECT * FROM sys.indexes WHERE name = 'UQ_Doctors_Username' AND object_id = OBJECT_ID('[clinical].[Doctors]'))
+BEGIN
+    DROP INDEX [UQ_Doctors_Username] ON [clinical].[Doctors];
+END
+GO
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'UQ_Doctors_Username' AND object_id = OBJECT_ID('[clinical].[Doctors]'))
+BEGIN
+    CREATE UNIQUE NONCLUSTERED INDEX [UQ_Doctors_Username]
+    ON [clinical].[Doctors] ([username])
+    WHERE [username] IS NOT NULL;
+END
+GO
+
+-- 3. Create Email OTP Verification Table
 IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[clinical].[EmailOTP]') AND type in (N'U'))
 BEGIN
     CREATE TABLE [clinical].[EmailOTP] (
-        [otp_id]      NVARCHAR(64)   NOT NULL,
-        [doctor_id]   NVARCHAR(64)   NOT NULL,
-        [otp_hash]    NVARCHAR(256)  NOT NULL,
+        [otp_id]      VARCHAR(64)    NOT NULL,
+        [doctor_id]   VARCHAR(64)    NOT NULL,
+        [otp_hash]    VARCHAR(256)   NOT NULL,
         [expires_at]  DATETIMEOFFSET NOT NULL,
         [attempts]    INT            NOT NULL DEFAULT 0,
         [is_used]     BIT            NOT NULL DEFAULT 0,
@@ -71,16 +88,16 @@ BEGIN
 END
 GO
 
--- 2C. Create Administrators Table
+-- 4. Create Administrators Table
 IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[clinical].[Administrators]') AND type in (N'U'))
 BEGIN
     CREATE TABLE [clinical].[Administrators] (
-        [admin_id]       NVARCHAR(64)   NOT NULL,
-        [username]       NVARCHAR(64)   NOT NULL,
-        [email]          NVARCHAR(256)  NOT NULL,
-        [password_hash]  NVARCHAR(256)  NOT NULL,
-        [full_name]      NVARCHAR(128)  NOT NULL,
-        [role]           NVARCHAR(64)   NOT NULL DEFAULT N'Medical Credentialing Officer',
+        [admin_id]       VARCHAR(64)    NOT NULL,
+        [username]       VARCHAR(64)    NOT NULL,
+        [email]          VARCHAR(256)   NOT NULL,
+        [password_hash]  VARCHAR(256)   NOT NULL,
+        [full_name]      VARCHAR(128)   NOT NULL,
+        [role]           VARCHAR(64)    NOT NULL DEFAULT 'Medical Credentialing Officer',
         [is_active]      BIT            NOT NULL DEFAULT 1,
         [created_at]     DATETIMEOFFSET NOT NULL DEFAULT SYSDATETIMEOFFSET(),
         CONSTRAINT [PK_Administrators] PRIMARY KEY CLUSTERED ([admin_id]),
@@ -92,38 +109,73 @@ BEGIN
 END
 GO
 
--- 3. Create Assessments Table
+-- 5. Create DoctorSessions Table
+IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[clinical].[DoctorSessions]') AND type in (N'U'))
+BEGIN
+    CREATE TABLE [clinical].[DoctorSessions] (
+        [session_id]         VARCHAR(64)    NOT NULL,
+        [doctor_id]          VARCHAR(64)    NOT NULL,
+        [refresh_token_hash] VARCHAR(256)   NOT NULL,
+        [expires_at]         DATETIMEOFFSET NOT NULL,
+        [is_revoked]         BIT            NOT NULL DEFAULT 0,
+        [created_at]         DATETIMEOFFSET NOT NULL DEFAULT SYSDATETIMEOFFSET(),
+        [user_agent]         VARCHAR(256)   NULL,
+        [ip_address]         VARCHAR(64)    NULL,
+        CONSTRAINT [PK_DoctorSessions] PRIMARY KEY CLUSTERED ([session_id]),
+        CONSTRAINT [FK_DoctorSessions_Doctors] FOREIGN KEY ([doctor_id])
+            REFERENCES [clinical].[Doctors] ([doctor_id]) ON DELETE CASCADE
+    );
+
+    CREATE NONCLUSTERED INDEX [IX_DoctorSessions_DoctorId] ON [clinical].[DoctorSessions] ([doctor_id], [created_at]);
+    CREATE NONCLUSTERED INDEX [IX_DoctorSessions_ExpiresAt] ON [clinical].[DoctorSessions] ([expires_at]);
+END
+GO
+
+-- Reconcile legacy Assessments / Predictions tables if schema columns are mismatched
+IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[clinical].[Assessments]') AND type in (N'U'))
+BEGIN
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[clinical].[Assessments]') AND name = 'id')
+       OR NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[clinical].[Assessments]') AND name = 'patient_reference_id')
+       OR NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[clinical].[Assessments]') AND name = 'assessment_code')
+    BEGIN
+        DROP TABLE IF EXISTS [clinical].[Predictions];
+        DROP TABLE IF EXISTS [clinical].[Assessments];
+    END
+END
+GO
+
+-- 6. Create Assessments Table
 IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[clinical].[Assessments]') AND type in (N'U'))
 BEGIN
     CREATE TABLE [clinical].[Assessments] (
-        -- Primary Surrogate Key (Internal UUID, never exposed directly in UI)
-        [id]                          UNIQUEIDENTIFIER NOT NULL DEFAULT NEWSEQUENTIALID(),
+        -- Primary Surrogate Key (Internal UUID, VARCHAR(64) aligned with ORM model)
+        [id]                          VARCHAR(64)      NOT NULL,
         
         -- Public-facing Clinical Identifier (e.g., ASM-2026-0001)
-        [assessment_code]             NVARCHAR(32)     NOT NULL,
+        [assessment_code]             VARCHAR(32)      NOT NULL,
         
         -- Optional Patient Reference Code (e.g., PT-8942 or NULL for anonymous)
-        [patient_reference_id]        NVARCHAR(64)     NULL,
+        [patient_reference_id]        VARCHAR(64)      NULL,
         
-        -- Physician attribution
-        [doctor_id]                   NVARCHAR(64)     NULL,
+        -- Physician attribution (VARCHAR(64) strictly matching Doctors.doctor_id)
+        [doctor_id]                   VARCHAR(64)      NULL,
         
         -- 11 Patient Clinical Parameters (UCI Dataset Specs)
         [age]                         DECIMAL(5, 1)    NOT NULL,
-        [anaemia]                     TINYINT          NOT NULL,
+        [anaemia]                     SMALLINT         NOT NULL,
         [creatinine_phosphokinase]    DECIMAL(8, 2)    NOT NULL,
-        [diabetes]                    TINYINT          NOT NULL,
+        [diabetes]                    SMALLINT         NOT NULL,
         [ejection_fraction]           DECIMAL(5, 2)    NOT NULL,
-        [high_blood_pressure]         TINYINT          NOT NULL,
+        [high_blood_pressure]         SMALLINT         NOT NULL,
         [platelets]                   DECIMAL(10, 2)   NOT NULL,
         [serum_creatinine]            DECIMAL(5, 2)    NOT NULL,
         [serum_sodium]                DECIMAL(5, 2)    NOT NULL,
-        [sex]                         TINYINT          NOT NULL,
-        [smoking]                     TINYINT          NOT NULL,
+        [sex]                         SMALLINT         NOT NULL,
+        [smoking]                     SMALLINT         NOT NULL,
         
         -- Model Inference Tracking
-        [selected_model]              NVARCHAR(64)     NULL,
-        [predicted_class]             TINYINT          NULL,
+        [selected_model]              VARCHAR(64)      NULL,
+        [predicted_class]             SMALLINT         NULL,
         [predicted_probability]       DECIMAL(6, 4)    NULL,
         [prediction_timestamp]        DATETIMEOFFSET   NULL,
         [is_prediction_stale]         BIT              NOT NULL DEFAULT 0,
@@ -133,18 +185,14 @@ BEGIN
         [created_at]                  DATETIMEOFFSET   NOT NULL DEFAULT SYSDATETIMEOFFSET(),
         [updated_at]                  DATETIMEOFFSET   NOT NULL DEFAULT SYSDATETIMEOFFSET(),
 
-        -- Primary Key
+        -- Constraints
         CONSTRAINT [PK_Assessments] PRIMARY KEY CLUSTERED ([id]),
-        
-        -- Unique Public Code
         CONSTRAINT [UQ_Assessments_Code] UNIQUE NONCLUSTERED ([assessment_code]),
-
-        -- Foreign Key to Doctors
         CONSTRAINT [FK_Assessments_Doctors] FOREIGN KEY ([doctor_id])
             REFERENCES [clinical].[Doctors] ([doctor_id])
             ON DELETE SET NULL,
 
-        -- Clinical Range Check Constraints
+        -- Range Checks
         CONSTRAINT [CK_Assessments_Age] 
             CHECK ([age] >= 1.0 AND [age] <= 120.0),
         CONSTRAINT [CK_Assessments_Anaemia] 
@@ -175,7 +223,7 @@ BEGIN
 END
 GO
 
--- 4. Create Performance Indexes for Search & Filter queries
+-- Indexes on Assessments
 IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_Assessments_PatientRef' AND object_id = OBJECT_ID('[clinical].[Assessments]'))
 BEGIN
     CREATE NONCLUSTERED INDEX [IX_Assessments_PatientRef]
@@ -198,7 +246,7 @@ BEGIN
 END
 GO
 
--- 5. Audit Trigger to automatically maintain [updated_at] timestamp
+-- Audit Trigger to maintain updated_at
 IF OBJECT_ID(N'[clinical].[TR_Assessments_UpdateAudit]', N'TR') IS NOT NULL
     DROP TRIGGER [clinical].[TR_Assessments_UpdateAudit];
 GO
@@ -216,32 +264,19 @@ BEGIN
 END;
 GO
 
--- 6. Create Predictions Table
--- One assessment may have multiple prediction records (e.g., comparing models or repeated runs)
--- Records are immutable and never overwritten upon re-prediction.
+-- 7. Create Predictions Table
 IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[clinical].[Predictions]') AND type in (N'U'))
 BEGIN
     CREATE TABLE [clinical].[Predictions] (
-        -- Primary Key
-        [id]                          UNIQUEIDENTIFIER NOT NULL DEFAULT NEWSEQUENTIALID(),
-
-        -- Public Prediction Identifier (e.g., PRD-2026-0001)
-        [prediction_code]             NVARCHAR(32)     NOT NULL,
-
-        -- Foreign Key to Parent Assessment
-        [assessment_id]               UNIQUEIDENTIFIER NOT NULL,
-
-        -- Model Details
-        [model_name]                  NVARCHAR(64)     NOT NULL,
-        [predicted_class]             TINYINT          NOT NULL,
+        [id]                          VARCHAR(64)      NOT NULL,
+        [prediction_code]             VARCHAR(32)      NOT NULL,
+        [assessment_id]               VARCHAR(64)      NOT NULL,
+        [model_name]                  VARCHAR(64)      NOT NULL,
+        [predicted_class]             SMALLINT         NOT NULL,
         [predicted_probability]       DECIMAL(6, 4)    NOT NULL,
         [classification_threshold]    DECIMAL(4, 2)    NOT NULL DEFAULT 0.50,
-        [model_version]               NVARCHAR(32)     NOT NULL DEFAULT N'v1.0.0',
-
-        -- Audit Timestamp
+        [model_version]               VARCHAR(32)      NOT NULL DEFAULT 'v1.0.0',
         [created_at]                  DATETIMEOFFSET   NOT NULL DEFAULT SYSDATETIMEOFFSET(),
-
-        -- Constraints
         CONSTRAINT [PK_Predictions] PRIMARY KEY CLUSTERED ([id]),
         CONSTRAINT [UQ_Predictions_Code] UNIQUE NONCLUSTERED ([prediction_code]),
         CONSTRAINT [FK_Predictions_Assessments] FOREIGN KEY ([assessment_id])
@@ -253,7 +288,6 @@ BEGIN
 END
 GO
 
--- 7. Performance Indexes for Predictions
 IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_Predictions_AssessmentId' AND object_id = OBJECT_ID('[clinical].[Predictions]'))
 BEGIN
     CREATE NONCLUSTERED INDEX [IX_Predictions_AssessmentId]
@@ -267,5 +301,3 @@ BEGIN
     ON [clinical].[Predictions] ([created_at] DESC);
 END
 GO
-
-

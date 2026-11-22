@@ -19,14 +19,29 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
+    bind = op.get_bind()
+    dialect = bind.dialect.name
+    if dialect == "mssql":
+        dt_type = mssql.DATETIMEOFFSET()
+        now_def = sa.text('SYSDATETIMEOFFSET()')
+        b_false = sa.text('0')
+    elif dialect == "postgresql":
+        dt_type = sa.TIMESTAMP(timezone=True)
+        now_def = sa.text('CURRENT_TIMESTAMP')
+        b_false = sa.text('false')
+    else:
+        dt_type = sa.DateTime()
+        now_def = sa.text('CURRENT_TIMESTAMP')
+        b_false = sa.text('0')
+
     op.create_table(
         'DoctorSessions',
         sa.Column('session_id', sa.String(length=64), nullable=False),
         sa.Column('doctor_id', sa.String(length=64), nullable=False),
         sa.Column('refresh_token_hash', sa.String(length=256), nullable=False),
-        sa.Column('expires_at', mssql.DATETIMEOFFSET(), nullable=False),
-        sa.Column('is_revoked', sa.Boolean(), server_default=sa.text('0'), nullable=False),
-        sa.Column('created_at', mssql.DATETIMEOFFSET(), server_default=sa.text('SYSDATETIMEOFFSET()'), nullable=False),
+        sa.Column('expires_at', dt_type, nullable=False),
+        sa.Column('is_revoked', sa.Boolean(), server_default=b_false, nullable=False),
+        sa.Column('created_at', dt_type, server_default=now_def, nullable=False),
         sa.Column('user_agent', sa.String(length=256), nullable=True),
         sa.Column('ip_address', sa.String(length=64), nullable=True),
         sa.ForeignKeyConstraint(['doctor_id'], ['clinical.Doctors.doctor_id'], ondelete='CASCADE'),

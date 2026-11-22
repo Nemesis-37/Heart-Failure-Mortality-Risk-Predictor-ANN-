@@ -25,7 +25,16 @@ class AdminProfile(BaseModel):
 class AdminLoginResponse(BaseModel):
     status: str = "success"
     token: str
+    access_token: Optional[str] = None
     admin: AdminProfile
+
+    @model_validator(mode="after")
+    def sync_tokens(self):
+        if not self.access_token and self.token:
+            self.access_token = self.token
+        elif not self.token and self.access_token:
+            self.token = self.access_token
+        return self
 
 
 class DoctorAdminView(BaseModel):
@@ -40,7 +49,7 @@ class DoctorAdminView(BaseModel):
     email_verified: bool
     verification_status: str
     is_active: bool
-    created_at: datetime
+    created_at: Optional[datetime] = None
     last_login: Optional[datetime] = None
     has_document: bool
     document_filename: Optional[str] = None
@@ -133,6 +142,7 @@ class AdminOverviewResponse(BaseModel):
     rejected_doctors: int
     total_assessments: int
     total_predictions: int
+    database_engine: Optional[str] = "PostgreSQL"
 
 
 class DoctorActivityView(BaseModel):
@@ -154,7 +164,7 @@ class RecentDoctorRegistration(BaseModel):
     full_name: str
     username: Optional[str] = None
     email: str
-    created_at: datetime
+    created_at: Optional[datetime] = None
     verification_status: str
 
 

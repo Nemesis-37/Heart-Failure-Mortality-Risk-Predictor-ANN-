@@ -154,7 +154,9 @@ def _generate_unique_username(db: Session, full_name: str, reg_number: str) -> s
 def admin_login(payload: AdminLoginRequest, db: Session = Depends(get_db)):
     """Authenticate administrator credentials and return an authorized session token."""
     username_clean = payload.username.strip()
-    admin = db.query(Administrator).filter(Administrator.username == username_clean).first()
+    admin = db.query(Administrator).filter(
+        (Administrator.username == username_clean) | (Administrator.email == username_clean)
+    ).first()
 
     if not admin or not admin.is_active:
         raise HTTPException(
@@ -460,6 +462,16 @@ def get_admin_overview(
     if total_preds == 0:
         total_preds = db.query(Assessment).filter(Assessment.predicted_class != None).count()
 
+    db_dialect = "PostgreSQL"
+    try:
+        from database import engine
+        if engine and engine.dialect.name == "sqlite":
+            db_dialect = "SQLite"
+        elif engine and engine.dialect.name == "postgresql":
+            db_dialect = "PostgreSQL"
+    except Exception:
+        pass
+
     return AdminOverviewResponse(
         total_doctors=total_docs,
         pending_doctors=pending_docs,
@@ -467,6 +479,7 @@ def get_admin_overview(
         rejected_doctors=rejected_docs,
         total_assessments=total_asms,
         total_predictions=total_preds,
+        database_engine=db_dialect,
     )
 
 
@@ -480,7 +493,7 @@ def get_recent_activity(
     db: Session = Depends(get_db),
 ):
     """
-    Returns actual recent platform events from SQL Server:
+    Returns actual recent platform events from the database:
     - Latest 5 registered doctors
     - Recently logged-in doctors
     - Recent doctor credential verifications (approved/rejected)

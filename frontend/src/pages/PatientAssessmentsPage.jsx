@@ -180,7 +180,7 @@ export default function PatientAssessmentsPage({ doctorUser, onNavigate, onSelec
         <div className="assessments-header-text">
           <div className="sql-readiness-pill">
             <span className="sql-status-dot" />
-            <span>SQL Server Integration: Assessments Table Schema Prepared</span>
+            <span>PostgreSQL Integration: Assessments Table Schema Connected</span>
           </div>
           <h2 className="assessments-page-title">Patient Assessments Directory</h2>
           <p className="assessments-page-desc">

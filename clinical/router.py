@@ -68,6 +68,13 @@ class AssessmentInput(BaseModel):
     sex: int = Field(..., ge=0, le=1, description="0 = Female, 1 = Male")
     smoking: int = Field(..., ge=0, le=1, description="0 = No, 1 = Yes")
 
+    # Optional initial model inference tracking
+    selected_model: Optional[str] = Field(None, max_length=64, description="Selected model name (e.g. Artificial Neural Network, Logistic Regression)")
+    predicted_class: Optional[int] = Field(None, ge=0, le=1, description="0 = No death event, 1 = Death event")
+    predicted_probability: Optional[float] = Field(None, ge=0.0, le=1.0, description="Inference probability [0.0 - 1.0]")
+    classification_threshold: Optional[float] = Field(0.50, ge=0.0, le=1.0, description="Decision threshold")
+    model_version: Optional[str] = Field("v1.0.0", max_length=32, description="Artifact version")
+
     @model_validator(mode="before")
     @classmethod
     def sync_patient_reference(cls, data):
@@ -294,11 +301,41 @@ def create_patient_assessment(
     if "assessment_code" in _cols:
         _asm_kwargs["assessment_code"] = f"ASM-{asm_id[:8].upper()}"
 
+    # Snapshot prediction attributes on Assessment if provided
+    if payload.selected_model:
+        _asm_kwargs["selected_model"] = payload.selected_model
+    if payload.predicted_class is not None:
+        _asm_kwargs["predicted_class"] = payload.predicted_class
+    if payload.predicted_probability is not None:
+        _asm_kwargs["predicted_probability"] = payload.predicted_probability
+        _asm_kwargs["prediction_timestamp"] = now
+
     assessment = Assessment(**_asm_kwargs)
 
     db.add(assessment)
     db.commit()
     db.refresh(assessment)
+
+    # Automatically persist Prediction record in Predictions table if inference details provided
+    if payload.selected_model and payload.predicted_class is not None and Prediction is not None:
+        try:
+            pred_id = str(uuid.uuid4())
+            pred_code = f"PRD-{uuid.uuid4().hex[:8].upper()}"
+            pred_record = Prediction(
+                id=pred_id,
+                prediction_code=pred_code,
+                assessment_id=getattr(assessment, "id", asm_id),
+                model_name=payload.selected_model,
+                predicted_class=payload.predicted_class,
+                predicted_probability=float(payload.predicted_probability or 0.0),
+                classification_threshold=float(payload.classification_threshold or 0.50),
+                model_version=payload.model_version or "v1.0.0",
+                created_at=now,
+            )
+            db.add(pred_record)
+            db.commit()
+        except Exception:
+            db.rollback()
 
     return _serialize_assessment(assessment)
 
@@ -466,6 +503,85 @@ def delete_patient_assessment(
         "message": f"Assessment {assessment_id} deleted successfully.",
         "assessment_id": assessment_id,
     }
+
+
+class RecordPredictionInput(BaseModel):
+    model_name: str = Field(..., max_length=64, description="Name of the model (e.g. Artificial Neural Network, Logistic Regression)")
+    predicted_class: int = Field(..., ge=0, le=1, description="Predicted class (0 or 1)")
+    predicted_probability: float = Field(..., ge=0.0, le=1.0, description="Predicted probability [0.0 - 1.0]")
+    classification_threshold: float = Field(0.50, ge=0.0, le=1.0, description="Decision threshold")
+    model_version: str = Field("v1.0.0", max_length=32, description="Model version")
+
+
+@router.post(
+    "/assessments/{assessment_id}/predictions",
+    response_model=PredictionOut,
+    status_code=status.HTTP_201_CREATED,
+    summary="Record an immutable ML prediction for an assessment",
+)
+def record_assessment_prediction(
+    assessment_id: str,
+    payload: RecordPredictionInput,
+    current_doctor: Doctor = Depends(get_current_doctor),
+    db: Session = Depends(get_db),
+):
+    """Record an immutable ML prediction (ANN or Logistic Regression) for a doctor's assessment."""
+    if Prediction is None:
+        raise HTTPException(status_code=500, detail="Prediction model not available.")
+
+    record = (
+        db.query(Assessment)
+        .filter(_assessment_pk_col() == assessment_id)
+        .first()
+    )
+
+    if not record or record.doctor_id != current_doctor.doctor_id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Assessment record not found or access denied.",
+        )
+
+    now = datetime.now(timezone.utc)
+    pred_id = str(uuid.uuid4())
+    pred_code = f"PRD-{uuid.uuid4().hex[:8].upper()}"
+
+    prediction = Prediction(
+        id=pred_id,
+        prediction_code=pred_code,
+        assessment_id=getattr(record, "id", assessment_id),
+        model_name=payload.model_name,
+        predicted_class=payload.predicted_class,
+        predicted_probability=float(payload.predicted_probability),
+        classification_threshold=float(payload.classification_threshold),
+        model_version=payload.model_version,
+        created_at=now,
+    )
+    db.add(prediction)
+
+    # Also update snapshot on Assessment
+    record.selected_model = payload.model_name
+    record.predicted_class = payload.predicted_class
+    record.predicted_probability = payload.predicted_probability
+    record.prediction_timestamp = now
+    if hasattr(record, "updated_at"):
+        record.updated_at = now
+
+    db.commit()
+    db.refresh(prediction)
+
+    return PredictionOut(
+        id=prediction.id,
+        prediction_code=prediction.prediction_code,
+        assessment_id=getattr(record, "id", assessment_id),
+        assessment_code=getattr(record, "assessment_code", None),
+        patient_reference_id=getattr(record, "patient_reference_id", None),
+        model_name=prediction.model_name,
+        predicted_class=prediction.predicted_class,
+        predicted_probability=float(prediction.predicted_probability),
+        classification_threshold=float(prediction.classification_threshold),
+        model_version=prediction.model_version,
+        created_at=prediction.created_at,
+    )
 
 
 # ---------------------------------------------------------------------------

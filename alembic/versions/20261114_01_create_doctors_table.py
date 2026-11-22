@@ -9,7 +9,6 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
-from sqlalchemy.dialects import mssql
 
 # revision identifiers, used by Alembic.
 revision: str = '20261114_01'
@@ -19,11 +18,30 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
+    bind = op.get_bind()
+    dialect = bind.dialect.name
+
     # 1. Create clinical schema if not exists
-    op.execute(
-        "IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = 'clinical') "
-        "EXEC('CREATE SCHEMA [clinical]')"
-    )
+    if dialect == "mssql":
+        op.execute(
+            "IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = 'clinical') "
+            "EXEC('CREATE SCHEMA [clinical]')"
+        )
+        dt_type = mssql.DATETIMEOFFSET()
+        now_def = sa.text('SYSDATETIMEOFFSET()')
+        b_false = sa.text('0')
+        b_true = sa.text('1')
+    elif dialect == "postgresql":
+        op.execute("CREATE SCHEMA IF NOT EXISTS clinical")
+        dt_type = sa.TIMESTAMP(timezone=True)
+        now_def = sa.text('CURRENT_TIMESTAMP')
+        b_false = sa.text('false')
+        b_true = sa.text('true')
+    else:
+        dt_type = sa.DateTime()
+        now_def = sa.text('CURRENT_TIMESTAMP')
+        b_false = sa.text('0')
+        b_true = sa.text('1')
 
     # 2. Create Doctors table
     op.create_table(
@@ -36,13 +54,13 @@ def upgrade() -> None:
         sa.Column('medical_degree', sa.String(length=128), nullable=False),
         sa.Column('registration_number', sa.String(length=64), nullable=False),
         sa.Column('registration_council', sa.String(length=128), nullable=False),
-        sa.Column('email_verified', sa.Boolean(), server_default=sa.text('0'), nullable=False),
+        sa.Column('email_verified', sa.Boolean(), server_default=b_false, nullable=False),
         sa.Column('verification_status', sa.String(length=32), server_default='PENDING', nullable=False),
-        sa.Column('is_active', sa.Boolean(), server_default=sa.text('1'), nullable=False),
-        sa.Column('created_at', mssql.DATETIMEOFFSET(), server_default=sa.text('SYSDATETIMEOFFSET()'), nullable=False),
+        sa.Column('is_active', sa.Boolean(), server_default=b_true, nullable=False),
+        sa.Column('created_at', dt_type, server_default=now_def, nullable=False),
         sa.Column('document_filename', sa.String(length=256), nullable=True),
         sa.Column('document_path', sa.String(length=512), nullable=True),
-        sa.Column('document_uploaded_at', mssql.DATETIMEOFFSET(), nullable=True),
+        sa.Column('document_uploaded_at', dt_type, nullable=True),
         sa.CheckConstraint("verification_status IN ('PENDING', 'APPROVED', 'REJECTED')", name='CK_Doctors_VerificationStatus'),
         sa.PrimaryKeyConstraint('doctor_id', name='PK_Doctors'),
         sa.UniqueConstraint('email', name='UQ_Doctors_Email'),

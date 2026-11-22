@@ -92,7 +92,7 @@ export default function PredictionHistoryPage({ doctorUser, onNavigate, onSelect
         <div className="history-header-text">
           <div className="sql-readiness-pill">
             <span className="sql-status-dot" />
-            <span>SQL Server Integration: Predictions Table Schema Prepared</span>
+            <span>PostgreSQL Integration: Predictions Table Schema Connected</span>
           </div>
           <h2 className="history-page-title">Prediction History</h2>
           <p className="history-page-desc">
