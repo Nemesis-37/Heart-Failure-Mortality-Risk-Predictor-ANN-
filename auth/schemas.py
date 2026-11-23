@@ -62,6 +62,7 @@ class DoctorSafeResponse(BaseModel):
     document_uploaded: bool
     username: Optional[str] = None
     last_login: Optional[datetime] = None
+    profile_photo_url: Optional[str] = None
 
     class Config:
         from_attributes = True

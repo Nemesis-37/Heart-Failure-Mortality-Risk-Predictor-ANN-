@@ -84,6 +84,59 @@ except ImportError:
 router = APIRouter(prefix="/admin", tags=["Administrator Portal"])
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+
+def _safe_has_document(doc_path: Optional[str]) -> bool:
+    """Safely verify whether supporting evidence document exists on disk without raising OSErrors."""
+    if not doc_path:
+        return False
+    try:
+        clean = str(doc_path).strip().replace("\\", "/")
+        p = Path(clean)
+        if p.is_absolute():
+            return p.exists()
+        return (BASE_DIR / clean.lstrip("/")).exists()
+    except Exception:
+        return False
+
+
+def _build_doctor_admin_view(doc: Doctor, db: Session) -> DoctorAdminView:
+    """Construct a DoctorAdminView with robust fallback defaults and safe document/assessment checks."""
+    try:
+        asm_count = db.query(Assessment).filter(Assessment.doctor_id == doc.doctor_id).count()
+        pred_count = db.query(Assessment).filter(
+            Assessment.doctor_id == doc.doctor_id,
+            Assessment.predicted_class.isnot(None),
+        ).count()
+    except Exception as count_err:
+        logger.warning(f"Error querying counts for doctor {getattr(doc, 'doctor_id', 'unknown')}: {count_err}")
+        asm_count = 0
+        pred_count = 0
+
+    return DoctorAdminView(
+        doctor_id=str(doc.doctor_id),
+        full_name=doc.full_name or "Unknown Doctor",
+        username=getattr(doc, "username", None),
+        email=getattr(doc, "email", None),
+        mobile=getattr(doc, "mobile", None),
+        medical_degree=getattr(doc, "medical_degree", None),
+        registration_number=getattr(doc, "registration_number", None),
+        registration_council=getattr(doc, "registration_council", None),
+        email_verified=bool(getattr(doc, "email_verified", False)),
+        verification_status=str(getattr(doc, "verification_status", "PENDING") or "PENDING"),
+        is_active=bool(getattr(doc, "is_active", True)) if getattr(doc, "is_active", None) is not None else True,
+        created_at=getattr(doc, "created_at", None),
+        last_login=getattr(doc, "last_login", None),
+        has_document=_safe_has_document(getattr(doc, "document_path", None)),
+        document_filename=getattr(doc, "document_filename", None),
+        document_uploaded_at=getattr(doc, "document_uploaded_at", None),
+        verified_at=getattr(doc, "verified_at", None),
+        approved_at=getattr(doc, "approved_at", None),
+        verified_by=getattr(doc, "verified_by", None),
+        rejection_reason=getattr(doc, "rejection_reason", None),
+        total_assessments=asm_count,
+        total_predictions=pred_count,
+    )
+
 # ---------------------------------------------------------------------------
 # In-memory store for Admin Password Reset via OTP
 # Structure: { username_lower: { otp_hash, expires_at, attempts, last_sent, is_verified, reset_token } }
@@ -558,41 +611,12 @@ def get_recent_activity(
     # 3. Recent approvals or rejections (latest 5)
     recent_verifs = (
         db.query(Doctor)
-        .filter(Doctor.verified_at != None)
+        .filter(Doctor.verified_at.isnot(None))
         .order_by(Doctor.verified_at.desc())
         .limit(5)
         .all()
     )
-    verif_views = []
-    for doc in recent_verifs:
-        asm_count = db.query(Assessment).filter(Assessment.doctor_id == doc.doctor_id).count()
-        pred_count = db.query(Assessment).filter(Assessment.doctor_id == doc.doctor_id, Assessment.predicted_class != None).count()
-        verif_views.append(
-            DoctorAdminView(
-                doctor_id=doc.doctor_id,
-                full_name=doc.full_name,
-                username=getattr(doc, "username", None),
-                email=doc.email,
-                mobile=doc.mobile,
-                medical_degree=doc.medical_degree,
-                registration_number=doc.registration_number,
-                registration_council=doc.registration_council,
-                email_verified=doc.email_verified,
-                verification_status=doc.verification_status,
-                is_active=doc.is_active,
-                created_at=doc.created_at,
-                last_login=getattr(doc, "last_login", None),
-                has_document=bool(doc.document_path and (BASE_DIR / doc.document_path).exists()),
-                document_filename=doc.document_filename,
-                document_uploaded_at=doc.document_uploaded_at,
-                verified_at=doc.verified_at,
-                approved_at=getattr(doc, "approved_at", None),
-                verified_by=doc.verified_by,
-                rejection_reason=doc.rejection_reason,
-                total_assessments=asm_count,
-                total_predictions=pred_count,
-            )
-        )
+    verif_views = [_build_doctor_admin_view(doc, db) for doc in recent_verifs]
 
     # 4. Weekly throughput (assessments and predictions performed in last 7 days)
     seven_days_ago = datetime.now(timezone.utc) - timedelta(days=7)
@@ -784,53 +808,29 @@ def list_doctors(
     if not isinstance(limit, int):
         limit = 100
 
-    query = db.query(Doctor)
+    try:
+        query = db.query(Doctor)
 
-    if status_filter and status_filter.upper() != "ALL":
-        query = query.filter(Doctor.verification_status == status_filter.upper())
+        if status_filter and status_filter.upper() != "ALL":
+            query = query.filter(Doctor.verification_status == status_filter.upper())
 
-    if search and search.strip():
-        term = f"%{search.strip().lower()}%"
-        query = query.filter(
-            func.lower(Doctor.full_name).like(term)
-            | func.lower(Doctor.email).like(term)
-            | func.lower(Doctor.registration_number).like(term)
-            | func.lower(func.coalesce(Doctor.username, "")).like(term)
-        )
-
-    doctors = query.order_by(Doctor.created_at.desc()).offset(skip).limit(limit).all()
-
-    results = []
-    for doc in doctors:
-        asm_count = db.query(Assessment).filter(Assessment.doctor_id == doc.doctor_id).count()
-        pred_count = db.query(Assessment).filter(Assessment.doctor_id == doc.doctor_id, Assessment.predicted_class != None).count()
-        results.append(
-            DoctorAdminView(
-                doctor_id=doc.doctor_id,
-                full_name=doc.full_name,
-                username=getattr(doc, "username", None),
-                email=doc.email,
-                mobile=doc.mobile,
-                medical_degree=doc.medical_degree,
-                registration_number=doc.registration_number,
-                registration_council=doc.registration_council,
-                email_verified=doc.email_verified,
-                verification_status=doc.verification_status,
-                is_active=doc.is_active,
-                created_at=doc.created_at,
-                last_login=getattr(doc, "last_login", None),
-                has_document=bool(doc.document_path and (BASE_DIR / doc.document_path).exists()),
-                document_filename=doc.document_filename,
-                document_uploaded_at=doc.document_uploaded_at,
-                verified_at=doc.verified_at,
-                approved_at=getattr(doc, "approved_at", None),
-                verified_by=doc.verified_by,
-                rejection_reason=doc.rejection_reason,
-                total_assessments=asm_count,
-                total_predictions=pred_count,
+        if search and search.strip():
+            term = f"%{search.strip().lower()}%"
+            query = query.filter(
+                func.lower(Doctor.full_name).like(term)
+                | func.lower(Doctor.email).like(term)
+                | func.lower(Doctor.registration_number).like(term)
+                | func.lower(func.coalesce(Doctor.username, "")).like(term)
             )
+
+        doctors = query.order_by(Doctor.created_at.desc().nullslast()).offset(skip).limit(limit).all()
+        return [_build_doctor_admin_view(doc, db) for doc in doctors]
+    except Exception as exc:
+        logger.error(f"Error listing doctors in admin directory: {exc}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to retrieve physician directory: {str(exc)}",
         )
-    return results
 
 
 @router.get(
@@ -863,34 +863,7 @@ def get_doctor_detail(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Doctor not found.",
         )
-
-    asm_count = db.query(Assessment).filter(Assessment.doctor_id == doctor.doctor_id).count()
-    pred_count = db.query(Assessment).filter(Assessment.doctor_id == doctor.doctor_id, Assessment.predicted_class != None).count()
-
-    return DoctorAdminView(
-        doctor_id=doctor.doctor_id,
-        full_name=doctor.full_name,
-        username=getattr(doctor, "username", None),
-        email=doctor.email,
-        mobile=doctor.mobile,
-        medical_degree=doctor.medical_degree,
-        registration_number=doctor.registration_number,
-        registration_council=doctor.registration_council,
-        email_verified=doctor.email_verified,
-        verification_status=doctor.verification_status,
-        is_active=doctor.is_active,
-        created_at=doctor.created_at,
-        last_login=getattr(doctor, "last_login", None),
-        has_document=bool(doctor.document_path and (BASE_DIR / doctor.document_path).exists()),
-        document_filename=doctor.document_filename,
-        document_uploaded_at=doctor.document_uploaded_at,
-        verified_at=doctor.verified_at,
-        approved_at=getattr(doctor, "approved_at", None),
-        verified_by=doctor.verified_by,
-        rejection_reason=doctor.rejection_reason,
-        total_assessments=asm_count,
-        total_predictions=pred_count,
-    )
+    return _build_doctor_admin_view(doctor, db)
 
 
 @router.get(

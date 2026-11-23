@@ -1,6 +1,6 @@
-import React, { useState, useId } from 'react'
-import ThemeToggle from './components/ThemeToggle.jsx'
+import React, { useState, useEffect, useId } from 'react'
 import { apiUrl } from './apiConfig.js'
+import './AuthPages.css'
 
 export default function DoctorRegister({ onNavigateToLogin, onRegisterSuccess }) {
   const [formData, setFormData] = useState({
@@ -33,18 +33,37 @@ export default function DoctorRegister({ onNavigateToLogin, onRegisterSuccess })
   const confirmPasswordId = useId()
   const fileUploadId = useId()
 
+  // Permanently force dark mode on Registration page
+  useEffect(() => {
+    const root = document.documentElement
+    const prevTheme = root.getAttribute('data-theme')
+    const hadDarkClass = root.classList.contains('dark')
+
+    root.classList.add('dark')
+    root.setAttribute('data-theme', 'dark')
+
+    return () => {
+      if (prevTheme === 'light') {
+        root.classList.remove('dark')
+        root.setAttribute('data-theme', 'light')
+      } else if (!hadDarkClass && prevTheme !== 'dark') {
+        root.classList.remove('dark')
+      }
+    }
+  }, [])
+
   const calculatePasswordStrength = (pwd) => {
     let score = 0
-    if (!pwd) return { score: 0, label: 'None', color: '#94a3b8' }
+    if (!pwd) return { score: 0, label: 'None', color: '#64748B' }
     if (pwd.length >= 8) score += 1
     if (/[A-Z]/.test(pwd)) score += 1
     if (/[a-z]/.test(pwd)) score += 1
     if (/\d/.test(pwd)) score += 1
     if (/[^A-Za-z0-9]/.test(pwd)) score += 1
 
-    if (score <= 2) return { score, label: 'Weak', color: '#ef4444' }
-    if (score === 3 || score === 4) return { score, label: 'Good', color: '#f59e0b' }
-    return { score, label: 'Strong', color: '#10b981' }
+    if (score <= 2) return { score, label: 'Weak', color: '#F87171' }
+    if (score === 3 || score === 4) return { score, label: 'Moderate', color: '#FBBF24' }
+    return { score, label: 'Strong', color: '#34D399' }
   }
 
   const passwordStrength = calculatePasswordStrength(formData.password)
@@ -66,7 +85,7 @@ export default function DoctorRegister({ onNavigateToLogin, onRegisterSuccess })
     if (!allowed.includes(file.type)) {
       setErrors((prev) => ({
         ...prev,
-        document: 'Invalid file format. Please upload a PDF, PNG, or JPEG file.',
+        document: 'Invalid file format. Please upload a PDF, PNG, or JPEG certificate.',
       }))
       return
     }
@@ -74,7 +93,7 @@ export default function DoctorRegister({ onNavigateToLogin, onRegisterSuccess })
     if (file.size > 10 * 1024 * 1024) {
       setErrors((prev) => ({
         ...prev,
-        document: 'Document size exceeds 10MB limit.',
+        document: 'Document size exceeds the 10MB limit.',
       }))
       return
     }
@@ -92,20 +111,20 @@ export default function DoctorRegister({ onNavigateToLogin, onRegisterSuccess })
 
     const emailTrim = formData.email.trim()
     if (!emailTrim) {
-      errs.email = 'Professional email address is required.'
+      errs.email = 'Professional institutional email is required.'
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrim)) {
-      errs.email = 'Please enter a valid institutional or personal email.'
+      errs.email = 'Please enter a valid institutional or professional email.'
     }
 
     const mobileTrim = formData.mobile.trim()
     if (!mobileTrim) {
       errs.mobile = 'Mobile contact number is required.'
     } else if (!/^[0-9+\-\s()]{7,20}$/.test(mobileTrim)) {
-      errs.mobile = 'Please enter a valid telephone number.'
+      errs.mobile = 'Please enter a valid contact phone number.'
     }
 
     if (!formData.medicalDegree.trim()) {
-      errs.medicalDegree = 'Medical qualification / degree is required (e.g. MBBS, MD, FACC).'
+      errs.medicalDegree = 'Medical qualification is required (e.g. MBBS, MD, FACC).'
     }
 
     if (!formData.registrationNumber.trim()) {
@@ -187,73 +206,74 @@ export default function DoctorRegister({ onNavigateToLogin, onRegisterSuccess })
   }
 
   return (
-    <div className="login-page">
-      {/* ───── LEFT PANEL: Clinical SaaS Brand & Trust ───── */}
-      <div className="register-left-panel">
-        <div className="left-panel-bg-layer" aria-hidden="true" />
-        <div className="left-panel-glow-1" aria-hidden="true" />
-        <div className="left-panel-glow-2" aria-hidden="true" />
+    <div className="auth-page-root">
+      <div className="auth-bg-grid" aria-hidden="true" />
+      <div className="auth-ambient-glow top-left" aria-hidden="true" />
+      <div className="auth-ambient-glow bottom-right" aria-hidden="true" />
 
-        <div className="register-left-content">
-          {/* Section 2: Branding Typography */}
-          <div className="reg-brand-header">
-            <div className="reg-brand-icon">
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-              </svg>
-            </div>
-            <div className="reg-brand-titles">
-              <span className="reg-brand-title">CardioPredict SaaS</span>
-              <span className="reg-brand-subtitle">Physician Credentialing System</span>
-            </div>
+      {/* ───── LEFT PANEL: Clinical SaaS Brand & Trust ───── */}
+      <div className="auth-left-panel">
+        <div className="auth-left-container">
+
+          <div className="auth-brand-badge">
+            <span className="auth-pulse-dot" aria-hidden="true" />
+            <span>Physician Credentialing Portal</span>
           </div>
 
-          <div className="reg-badge-tag">
-            <span className="badge-pulse-dot" aria-hidden="true" />
-            <span>Secure Medical Registration</span>
+          <div className="auth-brand-logo-row">
+            <div className="auth-brand-icon-box">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                <path d="M12 8v8" />
+                <path d="M8 12h8" />
+              </svg>
+            </div>
+            <div>
+              <div className="auth-brand-title">CardioPredict</div>
+              <div className="auth-brand-subtitle">Clinical Verification Module</div>
+            </div>
           </div>
 
           <div>
-            <h1 className="reg-left-headline">
-              Verified Clinical Access for Healthcare Providers
+            <h1 className="auth-hero-heading">
+              Physician Registration &amp; Credential Verification
             </h1>
-            <p className="reg-left-description">
-              Register your medical credentials to evaluate heart failure mortality risk
-              using dual-engine Artificial Neural Network and Logistic Regression clinical models.
+            <p className="auth-hero-desc" style={{ marginTop: '0.75rem' }}>
+              Register your medical qualifications to evaluate heart failure mortality risk using dual-engine Artificial Neural Network and calibrated Logistic Regression diagnostic models.
             </p>
           </div>
 
-          {/* 4 Feature Cards */}
-          <div className="reg-feature-cards">
-            <div className="reg-feature-card">
-              <div className="reg-feature-icon" style={{ background: '#DBEAFE', color: '#1565D8' }}>
+          {/* 4 Security & Verification Feature Cards */}
+          <div className="auth-features-list">
+            <div className="auth-feature-item">
+              <div className="auth-feature-icon-wrapper" style={{ background: 'rgba(14, 165, 233, 0.15)', color: '#38BDF8' }}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
                   <circle cx="8.5" cy="7.5" r="4" />
                   <polyline points="17 11 19 13 23 9" />
                 </svg>
               </div>
-              <div className="reg-feature-text">
-                <h3>Council Identity Verification</h3>
-                <p>Official registry validation against state and national medical boards.</p>
+              <div className="auth-feature-item-content">
+                <h3>Medical Council Verification</h3>
+                <p>Credential validation against official state and national medical licensing registers.</p>
               </div>
             </div>
 
-            <div className="reg-feature-card">
-              <div className="reg-feature-icon" style={{ background: '#ccfbf1', color: '#0f766e' }}>
+            <div className="auth-feature-item">
+              <div className="auth-feature-icon-wrapper" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#34D399' }}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
                   <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                 </svg>
               </div>
-              <div className="reg-feature-text">
+              <div className="auth-feature-item-content">
                 <h3>Argon2id Credential Protection</h3>
-                <p>OWASP-grade cryptographic protection and secure salted hash verification.</p>
+                <p>Military-grade salted hash protection preventing credential exposure and unauthorized access.</p>
               </div>
             </div>
 
-            <div className="reg-feature-card">
-              <div className="reg-feature-icon" style={{ background: '#f3e8ff', color: '#7e22ce' }}>
+            <div className="auth-feature-item">
+              <div className="auth-feature-icon-wrapper" style={{ background: 'rgba(168, 85, 247, 0.15)', color: '#C084FC' }}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                   <polyline points="14 2 14 8 20 8" />
@@ -261,351 +281,380 @@ export default function DoctorRegister({ onNavigateToLogin, onRegisterSuccess })
                   <line x1="16" y1="17" x2="8" y2="17" />
                 </svg>
               </div>
-              <div className="reg-feature-text">
+              <div className="auth-feature-item-content">
                 <h3>Encrypted Document Vault</h3>
-                <p>Secure credential and license certificate storage outside public directories.</p>
+                <p>Registration certificates and licensing proofs stored securely outside publicly accessible web trees.</p>
               </div>
             </div>
 
-            <div className="reg-feature-card">
-              <div className="reg-feature-icon" style={{ background: '#fef3c7', color: '#b45309' }}>
+            <div className="auth-feature-item">
+              <div className="auth-feature-icon-wrapper" style={{ background: 'rgba(245, 158, 11, 0.15)', color: '#FBBF24' }}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
                 </svg>
               </div>
-              <div className="reg-feature-text">
-                <h3>Secure Clinical Access</h3>
-                <p>Gated predictive cardiology platform with dual ANN &amp; Logistic Regression models.</p>
+              <div className="auth-feature-item-content">
+                <h3>Clinical Inference Platform</h3>
+                <p>Instant access to dual ANN and Logistic Regression cardiology evaluation tools once approved.</p>
               </div>
             </div>
           </div>
 
-          <div className="reg-left-footer">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0 }}>
+          <div className="auth-left-footer-note">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0 }}>
               <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
             </svg>
-            <span>Strict Verification Required &bull; Account Pending Review by Default</span>
+            <span>Strict Medical Audit Required &bull; Account Pending Review by Default</span>
           </div>
+
         </div>
       </div>
 
       {/* ───── RIGHT PANEL: Registration Form ───── */}
-      <div className="register-right-panel">
-        <div className="register-form-wrapper">
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '12px' }}>
-            <ThemeToggle />
-          </div>
-          <div className="register-card-box">
+      <div className="auth-right-panel">
+        <div className="auth-form-card register-wide">
 
-            {/* Registration Success Confirmation */}
-            {registrationComplete ? (
-              <div className="reg-success-card" style={{ textAlign: 'center', padding: '1rem 0' }}>
-                <div style={{
-                  width: '68px',
-                  height: '68px',
-                  borderRadius: '50%',
-                  background: 'linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%)',
-                  color: '#15803d',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  margin: '0 auto 1.5rem',
-                  boxShadow: '0 4px 14px rgba(22, 163, 74, 0.25)',
-                }}>
-                  <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <polyline points="20 6 9 17 4 12" />
+          {/* Registration Success Confirmation */}
+          {registrationComplete ? (
+            <div style={{ textAlign: 'center', padding: '1rem 0' }}>
+              <div style={{
+                width: '68px',
+                height: '68px',
+                borderRadius: '50%',
+                background: 'rgba(16, 185, 129, 0.15)',
+                border: '1px solid rgba(52, 211, 153, 0.4)',
+                color: '#34D399',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 1.5rem',
+                boxShadow: '0 4px 20px rgba(16, 185, 129, 0.25)',
+              }}>
+                <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </div>
+
+              <span className="auth-brand-badge" style={{ margin: '0 auto 0.75rem' }}>
+                Registration Submitted
+              </span>
+
+              <h2 className="auth-card-title" style={{ fontSize: '1.75rem', marginTop: '0.5rem' }}>
+                Credentials Received
+              </h2>
+
+              <p className="auth-hero-desc" style={{ maxWidth: '480px', margin: '0 auto 1.5rem', fontSize: '0.92rem' }}>
+                Thank you, <strong>{registeredDoctor?.full_name}</strong>. Your medical registration has been recorded with verification status{' '}
+                <span style={{ fontWeight: 700, color: '#FBBF24', background: 'rgba(245, 158, 11, 0.15)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
+                  PENDING
+                </span>.
+              </p>
+
+              <div style={{
+                background: 'rgba(13, 25, 48, 0.6)',
+                border: '1px solid rgba(56, 189, 248, 0.18)',
+                borderRadius: '12px',
+                padding: '1.25rem',
+                textAlign: 'left',
+                marginBottom: '1.75rem',
+                fontSize: '0.86rem',
+                color: '#CBD5E1',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.65rem', fontWeight: 700, color: '#38BDF8' }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                    <polyline points="22,6 12,13 2,6" />
                   </svg>
+                  <span>Next Step: Email Verification</span>
                 </div>
-
-                <span style={{
-                  fontSize: '0.75rem',
-                  fontWeight: 700,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.08em',
-                  color: '#0d9488',
-                  background: '#ccfbf1',
-                  padding: '4px 12px',
-                  borderRadius: '12px',
-                }}>
-                  Registration Submitted
-                </span>
-
-                <h2 className="reg-card-title" style={{
-                  fontSize: '1.65rem',
-                  fontWeight: 800,
-                  marginTop: '0.85rem',
-                  marginBottom: '0.5rem',
-                }}>
-                  Credentials Received
-                </h2>
-
-                <p className="reg-secondary-text" style={{ fontSize: '0.92rem', lineHeight: 1.6, maxWidth: '480px', margin: '0 auto 1.5rem' }}>
-                  Thank you, <strong>{registeredDoctor?.full_name}</strong>. Your account has been registered with status{' '}
-                  <span style={{ fontWeight: 700, color: '#d97706', background: '#fef3c7', padding: '2px 8px', borderRadius: '4px' }}>
-                    PENDING
-                  </span>.
+                <p style={{ margin: 0, lineHeight: 1.5 }}>
+                  A verification code has been queued for <strong>{registeredDoctor?.email}</strong>. Please check your medical institutional inbox to verify email ownership.
                 </p>
-
-                <div className="reg-next-step-box" style={{
-                  background: '#F3F7FC',
-                  border: '1px solid #DBEAFE',
-                  borderRadius: '12px',
-                  padding: '1.25rem',
-                  textAlign: 'left',
-                  marginBottom: '1.75rem',
-                  fontSize: '0.85rem',
-                  color: '#334155',
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.65rem', fontWeight: 700, color: '#1565D8' }}>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                      <polyline points="22,6 12,13 2,6" />
-                    </svg>
-                    <span>Next Step: Email Verification</span>
-                  </div>
-                  <p style={{ margin: 0, lineHeight: 1.5 }}>
-                    A verification link has been queued for <strong>{registeredDoctor?.email}</strong>. Please check your medical institutional inbox to verify email ownership.
-                  </p>
-                  <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px dashed #cbd5e1', fontSize: '0.78rem', color: '#64748b' }}>
-                    Registration Number: <strong>{registeredDoctor?.registration_number}</strong> &bull; Council: <strong>{registeredDoctor?.registration_council}</strong>
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  <button
-                    type="button"
-                    className="btn-login-primary"
-                    onClick={() => {
-                      if (onRegisterSuccess) {
-                        onRegisterSuccess(registeredDoctor)
-                      }
-                    }}
-                    style={{ width: '100%', height: '46px' }}
-                  >
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                      <polyline points="22,6 12,13 2,6" />
-                    </svg>
-                    <span>Enter 6-Digit Verification Code</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    className="btn-login-demo"
-                    onClick={onNavigateToLogin}
-                    style={{ width: '100%', justifyContent: 'center' }}
-                  >
-                    <span>Sign In Later</span>
-                  </button>
+                <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px dashed rgba(100, 116, 139, 0.3)', fontSize: '0.78rem', color: '#94A3B8' }}>
+                  Registration Number: <strong style={{ color: '#F1F5F9' }}>{registeredDoctor?.registration_number}</strong> &bull; Council: <strong style={{ color: '#F1F5F9' }}>{registeredDoctor?.registration_council}</strong>
                 </div>
               </div>
-            ) : (
-              <>
-                {/* Form Header */}
-                <div className="reg-card-header">
-                  <span className="reg-card-kicker">New Practitioner Onboarding</span>
-                  <h2 className="reg-card-title">Physician Registration</h2>
-                  <p className="reg-card-subtitle">
-                    Submit your clinical credentials for verification and access to the AI mortality predictor.
-                  </p>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <button
+                  type="button"
+                  className="auth-btn-primary"
+                  onClick={() => {
+                    if (onRegisterSuccess) {
+                      onRegisterSuccess(registeredDoctor)
+                    }
+                  }}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                    <polyline points="22,6 12,13 2,6" />
+                  </svg>
+                  <span>Enter 6-Digit Verification Code</span>
+                </button>
+
+                <button
+                  type="button"
+                  className="auth-btn-demo"
+                  onClick={onNavigateToLogin}
+                >
+                  <span>Sign In Later</span>
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Form Header */}
+              <div className="auth-card-header">
+                <span className="auth-card-kicker">New Practitioner Onboarding</span>
+                <h2 className="auth-card-title">Physician Registration</h2>
+                <p className="auth-card-subtitle">
+                  Submit your clinical credentials for medical council verification and diagnostic decision-support access.
+                </p>
+              </div>
+
+              {/* Server Error Alert */}
+              {serverError && (
+                <div className="auth-alert-error" role="alert">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0 }}>
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="8" x2="12" y2="12" />
+                    <line x1="12" y1="16" x2="12.01" y2="16" />
+                  </svg>
+                  <span>{serverError}</span>
                 </div>
+              )}
 
-                {/* Server Error Alert */}
-                {serverError && (
-                  <div style={{
-                    background: '#fef2f2',
-                    border: '1px solid #fecaca',
-                    borderRadius: '10px',
-                    padding: '0.85rem 1.15rem',
-                    marginBottom: '1.25rem',
-                    color: '#b91c1c',
-                    fontSize: '0.85rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.65rem',
-                  }}>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0 }}>
-                      <circle cx="12" cy="12" r="10" />
-                      <line x1="12" y1="8" x2="12" y2="12" />
-                      <line x1="12" y1="16" x2="12.01" y2="16" />
+              {/* Structured Registration Form */}
+              <form onSubmit={handleSubmit} noValidate className="auth-form">
+
+                {/* Section 1: Practitioner Identity */}
+                <div className="auth-form-section">
+                  <div className="auth-form-section-title">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                      <circle cx="12" cy="7" r="4" />
                     </svg>
-                    <span>{serverError}</span>
+                    <span>1. Practitioner Identity</span>
                   </div>
-                )}
 
-                {/* Registration Form: Two Column Desktop Grid */}
-                <form onSubmit={handleSubmit} noValidate>
-                  <div className="reg-grid">
-                    
+                  <div className="auth-grid-2col">
                     {/* Full Name */}
-                    <div className="reg-field-group">
-                      <label className="reg-field-label" htmlFor={fullNameId}>
-                        Full Legal Name <span className="reg-star">*</span>
+                    <div className="auth-field-group auth-grid-span-full">
+                      <label className="auth-field-label" htmlFor={fullNameId}>
+                        Full Legal Name <span className="auth-required-star">*</span>
                       </label>
-                      <div className="reg-input-box">
-                        <svg className="reg-input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                          <circle cx="12" cy="7" r="4" />
-                        </svg>
+                      <div className="auth-input-container">
+                        <span className="auth-input-icon" aria-hidden="true">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                            <circle cx="12" cy="7" r="4" />
+                          </svg>
+                        </span>
                         <input
                           id={fullNameId}
                           name="fullName"
                           type="text"
-                          className={`reg-input ${errors.fullName ? 'has-error' : ''}`}
+                          className={`auth-input has-left-icon ${errors.fullName ? 'has-error' : ''}`}
                           placeholder="Dr. Full Name"
                           value={formData.fullName}
                           onChange={handleChange}
                           disabled={isSubmitting}
+                          required
                         />
                       </div>
-                      {errors.fullName && <span className="reg-field-error">{errors.fullName}</span>}
+                      {errors.fullName && <span className="auth-field-error-text">{errors.fullName}</span>}
                     </div>
 
                     {/* Email */}
-                    <div className="reg-field-group">
-                      <label className="reg-field-label" htmlFor={emailId}>
-                        Professional Email <span className="reg-star">*</span>
+                    <div className="auth-field-group">
+                      <label className="auth-field-label" htmlFor={emailId}>
+                        Professional Email <span className="auth-required-star">*</span>
                       </label>
-                      <div className="reg-input-box">
-                        <svg className="reg-input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                          <polyline points="22,6 12,13 2,6" />
-                        </svg>
+                      <div className="auth-input-container">
+                        <span className="auth-input-icon" aria-hidden="true">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                            <polyline points="22,6 12,13 2,6" />
+                          </svg>
+                        </span>
                         <input
                           id={emailId}
                           name="email"
                           type="email"
-                          className={`reg-input ${errors.email ? 'has-error' : ''}`}
+                          className={`auth-input has-left-icon ${errors.email ? 'has-error' : ''}`}
                           placeholder="doctor@hospital.org"
                           value={formData.email}
                           onChange={handleChange}
                           disabled={isSubmitting}
+                          required
                         />
                       </div>
-                      {errors.email && <span className="reg-field-error">{errors.email}</span>}
+                      {errors.email && <span className="auth-field-error-text">{errors.email}</span>}
                     </div>
 
                     {/* Contact Number */}
-                    <div className="reg-field-group">
-                      <label className="reg-field-label" htmlFor={mobileId}>
-                        Contact Number <span className="reg-star">*</span>
+                    <div className="auth-field-group">
+                      <label className="auth-field-label" htmlFor={mobileId}>
+                        Contact Telephone <span className="auth-required-star">*</span>
                       </label>
-                      <div className="reg-input-box">
-                        <svg className="reg-input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-                        </svg>
+                      <div className="auth-input-container">
+                        <span className="auth-input-icon" aria-hidden="true">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                          </svg>
+                        </span>
                         <input
                           id={mobileId}
                           name="mobile"
                           type="tel"
-                          className={`reg-input ${errors.mobile ? 'has-error' : ''}`}
+                          className={`auth-input has-left-icon ${errors.mobile ? 'has-error' : ''}`}
                           placeholder="+1 (555) 000-0000"
                           value={formData.mobile}
                           onChange={handleChange}
                           disabled={isSubmitting}
+                          required
                         />
                       </div>
-                      {errors.mobile && <span className="reg-field-error">{errors.mobile}</span>}
+                      {errors.mobile && <span className="auth-field-error-text">{errors.mobile}</span>}
                     </div>
+                  </div>
+                </div>
 
+                {/* Section 2: Medical Licensing & Qualifications */}
+                <div className="auth-form-section">
+                  <div className="auth-form-section-title">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="8" r="7" />
+                      <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88" />
+                    </svg>
+                    <span>2. Medical Licensing &amp; Credentials</span>
+                  </div>
+
+                  <div className="auth-grid-2col">
                     {/* Medical Degree */}
-                    <div className="reg-field-group">
-                      <label className="reg-field-label" htmlFor={degreeId}>
-                        Medical Degree / Qualification <span className="reg-star">*</span>
+                    <div className="auth-field-group">
+                      <label className="auth-field-label" htmlFor={degreeId}>
+                        Degree / Qualification <span className="auth-required-star">*</span>
                       </label>
-                      <div className="reg-input-box">
-                        <svg className="reg-input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <circle cx="12" cy="8" r="7" />
-                          <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88" />
-                        </svg>
+                      <div className="auth-input-container">
+                        <span className="auth-input-icon" aria-hidden="true">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <circle cx="12" cy="8" r="7" />
+                            <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88" />
+                          </svg>
+                        </span>
                         <input
                           id={degreeId}
                           name="medicalDegree"
                           type="text"
-                          className={`reg-input ${errors.medicalDegree ? 'has-error' : ''}`}
+                          className={`auth-input has-left-icon ${errors.medicalDegree ? 'has-error' : ''}`}
                           placeholder="e.g. MBBS, MD, FACC"
                           value={formData.medicalDegree}
                           onChange={handleChange}
                           disabled={isSubmitting}
+                          required
                         />
                       </div>
-                      {errors.medicalDegree && <span className="reg-field-error">{errors.medicalDegree}</span>}
+                      {errors.medicalDegree && <span className="auth-field-error-text">{errors.medicalDegree}</span>}
                     </div>
 
                     {/* Registration Number */}
-                    <div className="reg-field-group">
-                      <label className="reg-field-label" htmlFor={regNumberId}>
-                        Medical Registration Number <span className="reg-star">*</span>
+                    <div className="auth-field-group">
+                      <label className="auth-field-label" htmlFor={regNumberId}>
+                        Medical Registration Number <span className="auth-required-star">*</span>
                       </label>
-                      <div className="reg-input-box">
-                        <svg className="reg-input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                          <line x1="16" y1="2" x2="16" y2="6" />
-                          <line x1="8" y1="2" x2="8" y2="6" />
-                          <line x1="3" y1="10" x2="21" y2="10" />
-                        </svg>
+                      <div className="auth-input-container">
+                        <span className="auth-input-icon" aria-hidden="true">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                            <line x1="16" y1="2" x2="16" y2="6" />
+                            <line x1="8" y1="2" x2="8" y2="6" />
+                            <line x1="3" y1="10" x2="21" y2="10" />
+                          </svg>
+                        </span>
                         <input
                           id={regNumberId}
                           name="registrationNumber"
                           type="text"
-                          className={`reg-input ${errors.registrationNumber ? 'has-error' : ''}`}
-                          placeholder="e.g. MCI-2024-88421"
+                          className={`auth-input has-left-icon ${errors.registrationNumber ? 'has-error' : ''}`}
+                          placeholder="e.g. REG-2024-88421"
                           value={formData.registrationNumber}
                           onChange={handleChange}
                           disabled={isSubmitting}
+                          required
                         />
                       </div>
-                      {errors.registrationNumber && <span className="reg-field-error">{errors.registrationNumber}</span>}
+                      {errors.registrationNumber && <span className="auth-field-error-text">{errors.registrationNumber}</span>}
                     </div>
 
                     {/* Registration Council */}
-                    <div className="reg-field-group">
-                      <label className="reg-field-label" htmlFor={councilId}>
-                        Registration Council <span className="reg-star">*</span>
+                    <div className="auth-field-group auth-grid-span-full">
+                      <label className="auth-field-label" htmlFor={councilId}>
+                        Issuing Medical Council <span className="auth-required-star">*</span>
                       </label>
-                      <div className="reg-input-box">
-                        <svg className="reg-input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M3 21h18M3 7v1a3 3 0 0 0 6 0V7m0 1a3 3 0 0 0 6 0V7m0 1a3 3 0 0 0 6 0V7H3l2-4h14l2 4M5 21V10.85M19 21V10.85M9 21v-4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v4" />
-                        </svg>
+                      <div className="auth-input-container">
+                        <span className="auth-input-icon" aria-hidden="true">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M3 21h18M3 7v1a3 3 0 0 0 6 0V7m0 1a3 3 0 0 0 6 0V7m0 1a3 3 0 0 0 6 0V7H3l2-4h14l2 4M5 21V10.85M19 21V10.85M9 21v-4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v4" />
+                          </svg>
+                        </span>
                         <input
                           id={councilId}
                           name="registrationCouncil"
                           type="text"
-                          className={`reg-input ${errors.registrationCouncil ? 'has-error' : ''}`}
-                          placeholder="e.g. State Medical Council"
+                          className={`auth-input has-left-icon ${errors.registrationCouncil ? 'has-error' : ''}`}
+                          placeholder="e.g. State Medical Council or National Medical Board"
                           value={formData.registrationCouncil}
                           onChange={handleChange}
                           disabled={isSubmitting}
+                          required
                         />
                       </div>
-                      {errors.registrationCouncil && <span className="reg-field-error">{errors.registrationCouncil}</span>}
+                      {errors.registrationCouncil && <span className="auth-field-error-text">{errors.registrationCouncil}</span>}
                     </div>
+                  </div>
+                </div>
 
+                {/* Section 3: Account Security */}
+                <div className="auth-form-section">
+                  <div className="auth-form-section-title">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                    </svg>
+                    <span>3. Account Security</span>
+                  </div>
+
+                  <div className="auth-grid-2col">
                     {/* Password */}
-                    <div className="reg-field-group">
-                      <label className="reg-field-label" htmlFor={passwordId}>
-                        Password <span className="reg-star">*</span>
+                    <div className="auth-field-group">
+                      <label className="auth-field-label" htmlFor={passwordId}>
+                        Password <span className="auth-required-star">*</span>
                       </label>
-                      <div className="reg-input-box">
-                        <svg className="reg-input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                          <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                        </svg>
+                      <div className="auth-input-container">
+                        <span className="auth-input-icon" aria-hidden="true">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                          </svg>
+                        </span>
                         <input
                           id={passwordId}
                           name="password"
                           type={showPassword ? 'text' : 'password'}
-                          className={`reg-input has-toggle ${errors.password ? 'has-error' : ''}`}
-                          placeholder="Minimum 8 characters"
+                          className={`auth-input has-left-icon has-right-toggle ${errors.password ? 'has-error' : ''}`}
+                          placeholder="Min. 8 characters"
                           value={formData.password}
                           onChange={handleChange}
                           disabled={isSubmitting}
+                          required
                         />
                         <button
                           type="button"
-                          className="reg-eye-btn"
+                          className="auth-toggle-pwd-btn"
                           onClick={() => setShowPassword(!showPassword)}
                           aria-label={showPassword ? 'Hide password' : 'Show password'}
+                          title={showPassword ? 'Hide password' : 'Show password'}
                         >
                           {showPassword ? (
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -620,34 +669,38 @@ export default function DoctorRegister({ onNavigateToLogin, onRegisterSuccess })
                           )}
                         </button>
                       </div>
-                      {errors.password && <span className="reg-field-error">{errors.password}</span>}
+                      {errors.password && <span className="auth-field-error-text">{errors.password}</span>}
                     </div>
 
                     {/* Confirm Password */}
-                    <div className="reg-field-group">
-                      <label className="reg-field-label" htmlFor={confirmPasswordId}>
-                        Confirm Password <span className="reg-star">*</span>
+                    <div className="auth-field-group">
+                      <label className="auth-field-label" htmlFor={confirmPasswordId}>
+                        Confirm Password <span className="auth-required-star">*</span>
                       </label>
-                      <div className="reg-input-box">
-                        <svg className="reg-input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                          <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                        </svg>
+                      <div className="auth-input-container">
+                        <span className="auth-input-icon" aria-hidden="true">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                          </svg>
+                        </span>
                         <input
                           id={confirmPasswordId}
                           name="confirmPassword"
                           type={showConfirmPassword ? 'text' : 'password'}
-                          className={`reg-input has-toggle ${errors.confirmPassword ? 'has-error' : ''}`}
+                          className={`auth-input has-left-icon has-right-toggle ${errors.confirmPassword ? 'has-error' : ''}`}
                           placeholder="Re-enter password"
                           value={formData.confirmPassword}
                           onChange={handleChange}
                           disabled={isSubmitting}
+                          required
                         />
                         <button
                           type="button"
-                          className="reg-eye-btn"
+                          className="auth-toggle-pwd-btn"
                           onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                           aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                          title={showConfirmPassword ? 'Hide password' : 'Show password'}
                         >
                           {showConfirmPassword ? (
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -662,140 +715,151 @@ export default function DoctorRegister({ onNavigateToLogin, onRegisterSuccess })
                           )}
                         </button>
                       </div>
-                      {errors.confirmPassword && <span className="reg-field-error">{errors.confirmPassword}</span>}
+                      {errors.confirmPassword && <span className="auth-field-error-text">{errors.confirmPassword}</span>}
                     </div>
 
-                    {/* Password Strength Meter (Span Full Width) */}
+                    {/* Live Password Strength Meter */}
                     {formData.password && (
-                      <div className="reg-col-full">
-                        <div className="reg-strength-box">
-                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
-                            <span className="reg-secondary-text">Password Strength:</span>
+                      <div className="auth-grid-span-full">
+                        <div className="auth-pwd-strength-container">
+                          <div className="auth-pwd-strength-header">
+                            <span>Password Strength:</span>
                             <strong style={{ color: passwordStrength.color }}>{passwordStrength.label}</strong>
                           </div>
-                          <div style={{ width: '100%', height: '5px', background: '#cbd5e1', borderRadius: '4px', overflow: 'hidden' }}>
-                            <div style={{
-                              height: '100%',
-                              width: `${(passwordStrength.score / 5) * 100}%`,
-                              background: passwordStrength.color,
-                              transition: 'width 250ms ease, background 250ms ease',
-                            }} />
+                          <div className="auth-pwd-strength-track">
+                            <div
+                              className="auth-pwd-strength-fill"
+                              style={{
+                                width: `${(passwordStrength.score / 5) * 100}%`,
+                                backgroundColor: passwordStrength.color,
+                              }}
+                            />
                           </div>
-                          <div style={{ display: 'flex', gap: '0.85rem', flexWrap: 'wrap', marginTop: '0.45rem', fontSize: '0.78rem' }}>
-                            <span style={{ color: formData.password.length >= 8 ? '#16a34a' : '#94a3b8' }}>
-                              {formData.password.length >= 8 ? '✓' : '•'} 8+ chars
+                          <div className="auth-pwd-requirements-row">
+                            <span className={`auth-pwd-req-item ${formData.password.length >= 8 ? 'met' : 'unmet'}`}>
+                              {formData.password.length >= 8 ? '✓' : '•'} 8+ characters
                             </span>
-                            <span style={{ color: /[A-Z]/.test(formData.password) ? '#16a34a' : '#94a3b8' }}>
-                              {/[A-Z]/.test(formData.password) ? '✓' : '•'} Uppercase
+                            <span className={`auth-pwd-req-item ${/[A-Z]/.test(formData.password) ? 'met' : 'unmet'}`}>
+                              {/[A-Z]/.test(formData.password) ? '✓' : '•'} Uppercase (A-Z)
                             </span>
-                            <span style={{ color: /[a-z]/.test(formData.password) ? '#16a34a' : '#94a3b8' }}>
-                              {/[a-z]/.test(formData.password) ? '✓' : '•'} Lowercase
+                            <span className={`auth-pwd-req-item ${/[a-z]/.test(formData.password) ? 'met' : 'unmet'}`}>
+                              {/[a-z]/.test(formData.password) ? '✓' : '•'} Lowercase (a-z)
                             </span>
-                            <span style={{ color: /\d/.test(formData.password) ? '#16a34a' : '#94a3b8' }}>
-                              {/\d/.test(formData.password) ? '✓' : '•'} Number
+                            <span className={`auth-pwd-req-item ${/\d/.test(formData.password) ? 'met' : 'unmet'}`}>
+                              {/\d/.test(formData.password) ? '✓' : '•'} Numeric digit (0-9)
                             </span>
                           </div>
                         </div>
                       </div>
                     )}
+                  </div>
+                </div>
 
-                    {/* Supporting Document Upload (Span Full Width) */}
-                    <div className="reg-col-full">
-                      <div className="reg-field-group">
-                        <label className="reg-field-label" htmlFor={fileUploadId}>
-                          Medical Registration Proof / Certificate <span className="reg-secondary-text" style={{ marginLeft: '0.35rem', fontWeight: 400 }}>(PDF, JPG, PNG - Max 10MB)</span>
-                        </label>
-                        <div className="reg-upload-zone">
-                          <input
-                            id={fileUploadId}
-                            type="file"
-                            accept=".pdf,.jpg,.jpeg,.png"
-                            onChange={handleFileChange}
-                            disabled={isSubmitting}
-                            style={{
-                              position: 'absolute',
-                              inset: 0,
-                              opacity: 0,
-                              cursor: 'pointer',
-                              width: '100%',
-                              height: '100%',
-                            }}
-                          />
-                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.35rem', pointerEvents: 'none' }}>
-                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#60A5FA" strokeWidth="2">
-                              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                              <polyline points="17 8 12 3 7 8" />
-                              <line x1="12" y1="3" x2="12" y2="15" />
-                            </svg>
-                            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#38BDF8' }}>
-                              {documentFile ? documentFile.name : 'Click or drag registration certificate to upload'}
-                            </span>
-                            <span className="reg-secondary-text" style={{ fontSize: '0.75rem' }}>
-                              {documentFile ? `${(documentFile.size / 1024 / 1024).toFixed(2)} MB uploaded` : 'Optional evidence for expedited manual credential approval'}
-                            </span>
-                          </div>
-                        </div>
-                        {errors.document && <span className="reg-field-error">{errors.document}</span>}
-                      </div>
-                    </div>
+                {/* Section 4: Verification Evidence (Document Upload) */}
+                <div className="auth-form-section">
+                  <div className="auth-form-section-title">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                      <polyline points="14 2 14 8 20 8" />
+                      <line x1="16" y1="13" x2="8" y2="13" />
+                      <line x1="16" y1="17" x2="8" y2="17" />
+                    </svg>
+                    <span>4. Verification Evidence (Optional Document)</span>
+                  </div>
 
-                    {/* Submit Registration Button (Span Full Width) */}
-                    <div className="reg-col-full" style={{ marginTop: '0.5rem' }}>
-                      <button
-                        type="submit"
-                        className="btn-login-primary"
+                  <div className="auth-field-group">
+                    <label className="auth-field-label" htmlFor={fileUploadId}>
+                      Medical Registration Proof / Certificate
+                    </label>
+
+                    <div className="auth-dropzone">
+                      <input
+                        id={fileUploadId}
+                        type="file"
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        onChange={handleFileChange}
                         disabled={isSubmitting}
-                        style={{ width: '100%', height: '46px' }}
-                      >
-                        {isSubmitting ? (
-                          <>
-                            <span className="login-spinner" aria-hidden="true" />
-                            <span>Submitting Medical Credentials&hellip;</span>
-                          </>
+                        className="auth-dropzone-input"
+                      />
+                      <div className="auth-dropzone-content">
+                        <div className="auth-dropzone-icon">
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="17 8 12 3 7 8" />
+                            <line x1="12" y1="3" x2="12" y2="15" />
+                          </svg>
+                        </div>
+
+                        {documentFile ? (
+                          <div className="auth-file-selected-badge">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                            <span>{documentFile.name} ({(documentFile.size / 1024 / 1024).toFixed(2)} MB)</span>
+                          </div>
                         ) : (
                           <>
-                            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-                              <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                              <circle cx="8.5" cy="7.5" r="4" />
-                              <polyline points="17 11 19 13 23 9" />
-                            </svg>
-                            <span>Register as Physician</span>
+                            <span className="auth-dropzone-label">
+                              Click or drag registration certificate to upload
+                            </span>
+                            <span className="auth-dropzone-meta">
+                              Accepted formats: PDF, PNG, JPG &bull; Maximum file size: 10 MB
+                            </span>
                           </>
                         )}
-                      </button>
+                      </div>
                     </div>
-
+                    {errors.document && <span className="auth-field-error-text">{errors.document}</span>}
                   </div>
-                </form>
+                </div>
 
-                {/* Switch to Login */}
-                <div style={{ textAlign: 'center', marginTop: '1.25rem', fontSize: '0.88rem' }}>
-                  <span className="reg-secondary-text">Already have a verified physician account? </span>
+                {/* Submit Button */}
+                <button
+                  type="submit"
+                  className="auth-btn-primary"
+                  disabled={isSubmitting}
+                  style={{ marginTop: '0.5rem' }}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <span className="auth-spinner" aria-hidden="true" />
+                      <span>Submitting Medical Credentials&hellip;</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                        <circle cx="8.5" cy="7.5" r="4" />
+                        <polyline points="17 11 19 13 23 9" />
+                      </svg>
+                      <span>Submit Physician Credentials</span>
+                    </>
+                  )}
+                </button>
+
+                {/* Navigation back to Sign In */}
+                <div style={{ textAlign: 'center', marginTop: '0.5rem', fontSize: '0.86rem', color: '#94A3B8' }}>
+                  Already have a verified physician account?{' '}
                   <button
                     type="button"
                     onClick={onNavigateToLogin}
-                    style={{
-                      background: 'transparent',
-                      border: 'none',
-                      color: '#60A5FA',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      textDecoration: 'underline',
-                      textUnderlineOffset: '3px',
-                    }}
+                    className="auth-inline-link"
+                    style={{ fontSize: '0.86rem' }}
                   >
                     Sign in to Portal
                   </button>
                 </div>
 
-                <div className="login-card-footer" style={{ marginTop: '1.5rem' }}>
-                  <p>
-                    Heart Failure Mortality Risk Predictor &bull; Doctor Registration &bull; Credential Verification Module
-                  </p>
-                </div>
-              </>
-            )}
-          </div>
+              </form>
+
+              <div className="auth-card-footer">
+                <p style={{ margin: 0 }}>
+                  Heart Failure Mortality Risk Predictor &bull; Doctor Registration &bull; Credential Verification Module
+                </p>
+              </div>
+            </>
+          )}
+
         </div>
       </div>
     </div>

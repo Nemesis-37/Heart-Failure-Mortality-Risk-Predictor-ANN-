@@ -369,8 +369,55 @@ def run_full_suite():
         # Restore environment
         os.environ["APP_ENV"] = "development"
 
+        # =====================================================================
+        # WORKFLOW F: DOCTOR PROFILE PHOTO PERSISTENCE & API RETRIEVAL
+        # =====================================================================
+        print("\n--- WORKFLOW F: Doctor Profile Photo Upload & Retrieval Persistence ---")
+        from auth.router import upload_profile_photo, get_profile_photo, get_current_physician_profile
+
+        png_bytes = (
+            b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15c4"
+            b"\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82"
+        )
+        class MockPhotoUpload:
+            def __init__(self, filename, content, content_type):
+                self.filename = filename
+                self._content = content
+                self.content_type = content_type
+            def read(self):
+                return self._content
+
+        photo_upload = MockPhotoUpload("avatar.png", png_bytes, "image/png")
+        upload_resp = upload_profile_photo(file=photo_upload, current_doctor=doc_in_db, db=db)
+        assert upload_resp["status"] == "success"
+        assert "profile_photo_url" in upload_resp
+        print(f"   ✓ Doctor profile photo uploaded successfully: {upload_resp['profile_photo_url']}")
+
+        # Verify /auth/me returns profile_photo_url
+        me_profile = get_current_physician_profile(current_doctor=doc_in_db)
+        assert me_profile.profile_photo_url is not None
+        assert me_profile.profile_photo_url.startswith(f"/auth/profile-photo/{doc_in_db.doctor_id}")
+        print(f"   ✓ Profile serialization includes photo URL: {me_profile.profile_photo_url}")
+
+        # Verify photo retrieval endpoint
+        photo_file_resp = get_profile_photo(doctor_id=str(doc_in_db.doctor_id), db=db)
+        assert os.path.exists(photo_file_resp.path)
+        assert photo_file_resp.media_type == "image/png"
+        print(f"   ✓ FileResponse verified on disk: {photo_file_resp.path} ({photo_file_resp.media_type})")
+
+        # Verify invalid format rejection
+        bad_photo = MockPhotoUpload("script.exe", b"MZbad", "application/x-msdownload")
+        bad_rejected = False
+        try:
+            upload_profile_photo(file=bad_photo, current_doctor=doc_in_db, db=db)
+        except HTTPException as exc:
+            assert exc.status_code == 400
+            bad_rejected = True
+            print(f"   ✓ Non-image upload correctly rejected (HTTP {exc.status_code}: {exc.detail})")
+        assert bad_rejected
+
         print("\n" + "=" * 70)
-        print("ALL 5 FULL-STACK WORKFLOWS (A, B, C, D, E) PASSED WITH 100% SUCCESS!")
+        print("ALL 6 FULL-STACK WORKFLOWS (A, B, C, D, E, F) PASSED WITH 100% SUCCESS!")
         print("=" * 70)
 
     finally:

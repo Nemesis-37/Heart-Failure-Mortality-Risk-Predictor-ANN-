@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { getPredictions, deletePrediction, fetchBackendPredictions } from '../services/assessmentStore.js'
+import PatientSupportCard from '../components/PatientSupportCard.jsx'
 
 export default function PredictionHistoryPage({ doctorUser, onNavigate, onSelectAssessment }) {
   const [predictions, setPredictions] = useState([])
@@ -554,7 +555,7 @@ export default function PredictionHistoryPage({ doctorUser, onNavigate, onSelect
               <div className="probability-metric-card">
                 <div className="metric-header-row">
                   <div>
-                    <span className="metric-heading">Calculated Mortality Probability</span>
+                    <span className="metric-heading">Predicted Event Probability (0.00–1.00)</span>
                     <p className="metric-subheading">Inference score from input biomarkers</p>
                   </div>
                   <span className={`metric-percentage ${selectedPrediction.predictedProbability >= 0.5 ? 'elevated' : 'baseline'}`}>
@@ -568,9 +569,9 @@ export default function PredictionHistoryPage({ doctorUser, onNavigate, onSelect
                   />
                 </div>
                 <div className="metric-scale-labels" aria-hidden="true">
-                  <span>0% (Baseline)</span>
-                  <span className="threshold-indicator">50% Decision Threshold</span>
-                  <span>100% (Maximum)</span>
+                  <span>0.00 — Minimum probability</span>
+                  <span className="threshold-indicator">0.50 — Classification threshold</span>
+                  <span>1.00 — Maximum probability</span>
                 </div>
               </div>
 
@@ -597,6 +598,9 @@ export default function PredictionHistoryPage({ doctorUser, onNavigate, onSelect
                   <span className="meta-value font-mono">{selectedPrediction.modelVersion || 'v1.0.0'}</span>
                 </div>
               </div>
+
+              {/* Patient Support & Guidance Section */}
+              <PatientSupportCard probability={selectedPrediction.predictedProbability} />
 
               {/* Clinical Distinctions Warning */}
               <div className="clean-disclaimer-box" role="note">

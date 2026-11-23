@@ -2999,20 +2999,22 @@ textarea {
 .sidebar-nav-item {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.65rem;
   width: 100%;
-  padding: 0.65rem 0.85rem;
+  min-height: 48px;
+  padding: 0.6rem 0.85rem;
   border-radius: var(--radius-md);
   border: 1px solid transparent;
   background: transparent;
   color: #9FB3C8;
-  font-size: 0.875rem;
+  font-size: 0.835rem;
   font-weight: 500;
   cursor: pointer;
   transition: all var(--transition-fast);
   text-align: left;
   position: relative;
-  white-space: nowrap;
+  white-space: normal;
+  box-sizing: border-box;
 }
 
 .sidebar-nav-item:hover {
@@ -3043,26 +3045,31 @@ textarea {
 
 .nav-item-label {
   flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  min-width: 0;
+  white-space: normal;
+  word-break: normal;
+  line-height: 1.25;
+  font-size: 0.835rem;
 }
 
 .nav-item-badge {
-  font-size: 0.65rem;
+  flex-shrink: 0;
+  font-size: 0.62rem;
   font-weight: 700;
-  padding: 2px 7px;
+  padding: 2px 6px;
   border-radius: 12px;
   background: rgba(33, 150, 243, 0.2);
   color: #93C5FD;
   border: 1px solid rgba(56, 189, 248, 0.4);
   letter-spacing: 0.02em;
+  white-space: nowrap;
 }
 
 .active-indicator {
   position: absolute;
   left: 0;
-  top: 8px;
-  bottom: 8px;
+  top: 6px;
+  bottom: 6px;
   width: 3.5px;
   border-radius: 0 4px 4px 0;
   background: #38BDF8;
@@ -3381,6 +3388,37 @@ textarea {
 .header-doctor-role {
   font-size: 0.68rem;
   color: var(--text-muted);
+}
+
+/* Avatar Photo Image & Clickable Modals */
+.doctor-avatar img,
+.doctor-avatar-small img,
+.doctor-avatar-collapsed img,
+.header-doctor-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+}
+
+.clickable-pill,
+.clickable-card {
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  user-select: none;
+}
+
+.clickable-pill:hover,
+.clickable-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(21, 101, 216, 0.15);
+  border-color: rgba(56, 189, 248, 0.5) !important;
+}
+
+.clickable-pill:active,
+.clickable-card:active {
+  transform: translateY(0);
 }
 
 /* App Content Area */
@@ -8800,8 +8838,15 @@ html.dark .counselling-cat-btn.active {
   color: #EAF2FF !important;
   box-shadow: 0 0 14px rgba(56, 189, 248, 0.25) !important;
 }
-html.dark .counselling-cat-btn div div:last-child {
+html.dark .counselling-cat-btn div div:last-child,
+html.dark .counselling-cat-btn .counselling-cat-btn-title {
   color: #EAF2FF !important;
+}
+html.dark .counselling-cat-btn .counselling-cat-btn-code {
+  color: #94A3B8 !important;
+}
+html.dark .counselling-cat-btn.active .counselling-cat-btn-code {
+  color: #38BDF8 !important;
 }
 html.dark .counselling-card {
   background: var(--bg-card) !important;
@@ -9916,3 +9961,75 @@ html.dark .clean-safety-disclaimer {
   border: 1px solid #24466D !important;
   color: #A9BED8 !important;
 }
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   HEART HEALTH COUNSELLING & EDUCATION GUIDE — RESPONSIVE CATEGORY NAVIGATION
+══════════════════════════════════════════════════════════════════════════════ */
+.counselling-cat-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 10px;
+  margin-bottom: 2rem;
+  width: 100%;
+}
+
+@media (max-width: 1180px) {
+  .counselling-cat-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+}
+
+@media (max-width: 768px) {
+  .counselling-cat-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .counselling-cat-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+}
+
+.counselling-cat-btn {
+  min-height: 74px;
+  box-sizing: border-box;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+}
+
+.counselling-cat-btn-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.counselling-cat-btn-code {
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 2px;
+}
+
+.counselling-cat-btn-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1.25;
+  white-space: normal;
+  word-break: normal;
+  overflow-wrap: break-word;
+}
+

@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { generateCounsellingGuidePdf } from '../utils/generateCounsellingPdf.js'
 
 export default function HeartHealthCounsellingPage({ onNavigate }) {
   const [activeCategory, setActiveCategory] = useState('nutrition')
@@ -6,6 +7,10 @@ export default function HeartHealthCounsellingPage({ onNavigate }) {
 
   const toggleCheck = (id) => {
     setCheckedPoints((prev) => ({ ...prev, [id]: !prev[id] }))
+  }
+
+  const handleDownloadPdf = () => {
+    generateCounsellingGuidePdf(categories)
   }
 
   const categories = [
@@ -295,7 +300,35 @@ export default function HeartHealthCounsellingPage({ onNavigate }) {
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+          <button
+            type="button"
+            onClick={handleDownloadPdf}
+            style={{
+              background: '#FFFFFF',
+              color: '#0B1F3A',
+              border: 'none',
+              padding: '12px 20px',
+              borderRadius: '10px',
+              fontWeight: 700,
+              fontSize: '0.9rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              boxShadow: '0 4px 14px rgba(0, 0, 0, 0.15)',
+              transition: 'all 0.15s ease',
+            }}
+            title="Download complete 6-domain counselling guide as a formatted PDF"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            <span>Download PDF</span>
+          </button>
+
           <button
             type="button"
             onClick={() => onNavigate('prediction')}
@@ -320,33 +353,25 @@ export default function HeartHealthCounsellingPage({ onNavigate }) {
         </div>
       </section>
 
-      {/* 2. Regulatory & Educational Notice Banner */}
-      <div className="counselling-notice-banner" style={{
-        background: '#EFF6FF',
-        border: '1.5px solid #BFDBFE',
-        borderRadius: '12px',
-        padding: '1rem 1.5rem',
-        marginBottom: '2rem',
-        color: '#1E40AF',
-        fontSize: '0.86rem',
-        lineHeight: '1.55',
+      {/* Category Interaction Disclaimer */}
+      <div style={{
         display: 'flex',
-        alignItems: 'flex-start',
-        gap: '12px',
+        alignItems: 'center',
+        gap: '8px',
+        fontSize: '0.82rem',
+        color: '#64748B',
+        marginBottom: '1rem',
+        padding: '0 4px',
+        lineHeight: '1.45',
       }}>
-        <span style={{ fontSize: '1.25rem', lineHeight: 1 }}>ℹ️</span>
-        <div>
-          <strong>Educational Reference Standard:</strong> This section provides general health education guidelines for physician-patient communication. In strict accordance with medical decision support governance, these points do not constitute automated treatment plans or personalized pharmacological recommendations derived from ANN or Logistic Regression model inferences. Clinical management remains the exclusive responsibility of the treating physician.
-        </div>
+        <span style={{ fontSize: '1rem', lineHeight: 1 }} aria-hidden="true">💡</span>
+        <span>
+          Selecting a category only changes the content displayed on this page. It does not download a PDF. Use the <strong>Download PDF</strong> button to download the complete counselling guide.
+        </span>
       </div>
 
-      {/* 3. Category Navigation Tabs (A through F) */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-        gap: '10px',
-        marginBottom: '2rem',
-      }}>
+      {/* 2. Category Navigation Tabs (A through F) */}
+      <div className="counselling-cat-grid">
         {categories.map((cat) => {
           const isActive = cat.id === activeCategory
           return (
@@ -359,15 +384,7 @@ export default function HeartHealthCounsellingPage({ onNavigate }) {
                 background: isActive ? '#0B1F3A' : '#FFFFFF',
                 color: isActive ? '#FFFFFF' : '#334155',
                 border: isActive ? '2px solid #0B1F3A' : '1px solid #DBEAFE',
-                borderRadius: '12px',
-                padding: '14px 16px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                cursor: 'pointer',
-                textAlign: 'left',
                 boxShadow: isActive ? '0 4px 14px rgba(11, 31, 58, 0.15)' : '0 2px 6px rgba(11, 31, 58, 0.03)',
-                transition: 'all 0.15s ease',
               }}
             >
               <span style={{
@@ -384,11 +401,17 @@ export default function HeartHealthCounsellingPage({ onNavigate }) {
               }}>
                 {cat.icon}
               </span>
-              <div>
-                <div style={{ fontSize: '0.72rem', fontWeight: 800, color: isActive ? '#38BDF8' : '#64748B', textTransform: 'uppercase' }}>
+              <div className="counselling-cat-btn-content">
+                <div
+                  className="counselling-cat-btn-code"
+                  style={{ color: isActive ? '#38BDF8' : '#64748B' }}
+                >
                   Category {cat.code}
                 </div>
-                <div style={{ fontSize: '0.9rem', fontWeight: 700, color: isActive ? '#FFFFFF' : '#0B1F3A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <div
+                  className="counselling-cat-btn-title"
+                  style={{ color: isActive ? '#FFFFFF' : '#0B1F3A' }}
+                >
                   {cat.title}
                 </div>
               </div>

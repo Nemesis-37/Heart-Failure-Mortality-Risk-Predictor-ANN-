@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import UnifiedLogin from './UnifiedLogin.jsx'
 import DoctorRegister from './DoctorRegister.jsx'
 import DoctorOtpVerification from './DoctorOtpVerification.jsx'
@@ -33,6 +33,48 @@ export default function App() {
     sessionStorage.getItem('cardiopredict_admin_token') ? 'admin' : 'login',
   )
   const [pendingDoctor, setPendingDoctor] = useState(null)
+
+  // Sync latest doctor profile (including profile photo) on mount if logged in
+  useEffect(() => {
+    const token = localStorage.getItem('cardiopredict_access_token')
+    if (token && doctorUser) {
+      fetch(apiUrl('/auth/me'), {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data) {
+            handleUpdateDoctorUser({
+              name: data.full_name,
+              email: data.email,
+              role: data.role || 'Attending Physician',
+              licenseNumber: data.license_number,
+              specialty: data.specialty,
+              profilePhotoUrl: data.profile_photo_url || null,
+              profile_photo_url: data.profile_photo_url || null,
+            })
+          }
+        })
+        .catch(() => {})
+    }
+  }, [])
+
+  const handleUpdateDoctorUser = (updatedFields) => {
+    setDoctorUser((prev) => {
+      if (!prev) return null
+      const merged = { ...prev, ...updatedFields }
+      try {
+        if (localStorage.getItem(DOCTOR_AUTH_KEY)) {
+          localStorage.setItem(DOCTOR_AUTH_KEY, JSON.stringify(merged))
+        } else if (sessionStorage.getItem(DOCTOR_AUTH_KEY)) {
+          sessionStorage.setItem(DOCTOR_AUTH_KEY, JSON.stringify(merged))
+        }
+      } catch {
+        // Storage fallback
+      }
+      return merged
+    })
+  }
 
   const handleLogin = (role, profile, authResponse, rememberMe) => {
     if (role === 'ADMIN') {
@@ -153,6 +195,7 @@ export default function App() {
         }
         setActivePage(page)
       }}
+      onUpdateDoctorUser={handleUpdateDoctorUser}
     >
       {activePage === 'dashboard' && (
         <DashboardHome doctorUser={doctorUser} onNavigate={setActivePage} />
@@ -165,6 +208,7 @@ export default function App() {
           onLogout={handleLogout}
           embedded={true}
           initialRecord={selectedRecordForPrediction}
+          onUpdateDoctorUser={handleUpdateDoctorUser}
         />
       )}
 

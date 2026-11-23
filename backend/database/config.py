@@ -105,6 +105,11 @@ if _pg_url:
         with _probe_engine.connect() as _probe_conn:
             _probe_conn.execute(text("CREATE SCHEMA IF NOT EXISTS clinical"))
             _probe_conn.commit()
+            try:
+                _probe_conn.execute(text('ALTER TABLE clinical."Doctors" ADD COLUMN IF NOT EXISTS profile_photo_path VARCHAR(512)'))
+                _probe_conn.commit()
+            except Exception:
+                pass
             _probe_conn.execute(text("SELECT 1"))
         _probe_engine.dispose()
 
@@ -153,6 +158,10 @@ if engine is None:
         cursor = dbapi_connection.cursor()
         cursor.execute("PRAGMA journal_mode=WAL")
         cursor.execute("PRAGMA busy_timeout=5000")
+        try:
+            cursor.execute("ALTER TABLE Doctors ADD COLUMN profile_photo_path VARCHAR(512)")
+        except Exception:
+            pass
         cursor.close()
 
     # In SQLite, strip 'clinical' schema prefix

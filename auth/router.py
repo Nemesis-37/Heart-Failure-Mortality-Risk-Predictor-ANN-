@@ -10,12 +10,14 @@ Endpoints:
 
 import os
 import re
+import time
 import uuid
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Optional
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from fastapi.responses import FileResponse
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
@@ -72,8 +74,22 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 STORAGE_DIR = BASE_DIR / "storage" / "medical_documents"
 STORAGE_DIR.mkdir(parents=True, exist_ok=True)
 
+# Storage directory for physician profile photos
+PROFILE_PHOTO_DIR = BASE_DIR / "storage" / "profile_photos"
+PROFILE_PHOTO_DIR.mkdir(parents=True, exist_ok=True)
+
 ALLOWED_EXTENSIONS = {".pdf", ".jpg", ".jpeg", ".png"}
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
+
+ALLOWED_PHOTO_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
+ALLOWED_PHOTO_MIME_TYPES = {"image/jpeg", "image/png", "image/webp"}
+MAX_PHOTO_SIZE = 5 * 1024 * 1024  # 5 MB
+
+
+def _get_profile_photo_url(doctor: Optional[Doctor]) -> Optional[str]:
+    if doctor and getattr(doctor, "profile_photo_path", None):
+        return f"/auth/profile-photo/{doctor.doctor_id}"
+    return None
 
 
 def _validate_doctor_fields(
@@ -804,6 +820,7 @@ def doctor_login(
             document_uploaded=bool(doctor.document_path),
             username=getattr(doctor, "username", None),
             last_login=doctor.last_login,
+            profile_photo_url=_get_profile_photo_url(doctor),
         ),
     )
 
@@ -842,6 +859,9 @@ def refresh_session_endpoint(payload: RefreshRequest, db: Session = Depends(get_
             is_active=doctor.is_active,
             created_at=doctor.created_at,
             document_uploaded=bool(doctor.document_path),
+            username=getattr(doctor, "username", None),
+            last_login=doctor.last_login,
+            profile_photo_url=_get_profile_photo_url(doctor),
         ),
     )
 
@@ -882,4 +902,114 @@ def get_current_physician_profile(
         is_active=current_doctor.is_active,
         created_at=current_doctor.created_at,
         document_uploaded=bool(current_doctor.document_path),
+        username=getattr(current_doctor, "username", None),
+        last_login=getattr(current_doctor, "last_login", None),
+        profile_photo_url=_get_profile_photo_url(current_doctor),
+    )
+
+
+@router.post(
+    "/profile-photo",
+    summary="Upload authenticated doctor profile photo",
+)
+def upload_profile_photo(
+    file: UploadFile = File(...),
+    current_doctor: Doctor = Depends(get_current_doctor),
+    db: Session = Depends(get_db),
+):
+    """
+    Securely upload and store profile photo for the authenticated doctor.
+    Enforces format, file size, magic byte verification, and ownership boundaries.
+    """
+    if not file or not file.filename:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No file provided.",
+        )
+
+    ext = Path(file.filename).suffix.lower()
+    if ext not in ALLOWED_PHOTO_EXTENSIONS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid image format '{ext}'. Allowed formats: JPEG, PNG, WebP.",
+        )
+
+    content_type = file.content_type or ""
+    if content_type.lower() not in ALLOWED_PHOTO_MIME_TYPES and not content_type.startswith("image/"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid MIME type '{content_type}'. Must be a valid image file.",
+        )
+
+    raw_file = getattr(file, "file", file)
+    content = raw_file.read() if hasattr(raw_file, "read") else b""
+    if len(content) > MAX_PHOTO_SIZE:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Image file size exceeds the 5 MB limit.",
+        )
+
+    # Magic byte header validation to guarantee genuine image binary
+    is_jpeg = content.startswith(b"\xff\xd8\xff")
+    is_png = content.startswith(b"\x89PNG\r\n\x1a\n")
+    is_webp = len(content) > 12 and content[:4] == b"RIFF" and content[8:12] == b"WEBP"
+    if not (is_jpeg or is_png or is_webp):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Uploaded file content does not match a valid image format (JPEG, PNG, WebP).",
+        )
+
+    # Unique sanitized storage filename scoped strictly to authenticated doctor
+    clean_filename = f"{current_doctor.doctor_id}_{int(time.time())}{ext}"
+    dest_path = PROFILE_PHOTO_DIR / clean_filename
+    with open(dest_path, "wb") as f:
+        f.write(content)
+
+    rel_path = f"storage/profile_photos/{clean_filename}"
+    current_doctor.profile_photo_path = rel_path
+    db.commit()
+    db.refresh(current_doctor)
+
+    photo_url = f"/auth/profile-photo/{current_doctor.doctor_id}?t={int(time.time())}"
+    return {
+        "status": "success",
+        "message": "Profile photo updated successfully.",
+        "profile_photo_url": photo_url,
+    }
+
+
+@router.get(
+    "/profile-photo/{doctor_id}",
+    summary="Serve physician profile photo",
+)
+def get_profile_photo(
+    doctor_id: str,
+    db: Session = Depends(get_db),
+):
+    """Serve publicly displayable doctor profile photo from disk."""
+    doctor = db.query(Doctor).filter(Doctor.doctor_id == doctor_id).first()
+    if not doctor or not getattr(doctor, "profile_photo_path", None):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Profile photo not found.",
+        )
+
+    file_path = BASE_DIR / doctor.profile_photo_path
+    if not file_path.exists():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Profile photo file not found on disk.",
+        )
+
+    ext = file_path.suffix.lower()
+    media_type = "image/png"
+    if ext in (".jpg", ".jpeg"):
+        media_type = "image/jpeg"
+    elif ext == ".webp":
+        media_type = "image/webp"
+
+    return FileResponse(
+        path=str(file_path),
+        media_type=media_type,
+        headers={"Cache-Control": "public, max-age=86400"},
     )

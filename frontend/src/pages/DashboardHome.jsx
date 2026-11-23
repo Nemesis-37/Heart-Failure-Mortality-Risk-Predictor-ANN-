@@ -109,12 +109,14 @@ export default function DashboardHome({ doctorUser, onNavigate }) {
             <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#38BDF8', boxShadow: '0 0 8px #38BDF8' }} />
             <span>Cardiology Service &bull; Shift Active &bull; {todayFormatted}</span>
           </div>
-          <h2 style={{ margin: '0 0 8px', fontSize: '1.75rem', fontWeight: 800, color: '#FFFFFF' }}>
-            Welcome back, {cleanDoctorName}
+          <h2 style={{ margin: '0 0 6px', fontSize: '1.85rem', fontWeight: 800, color: '#FFFFFF', letterSpacing: '-0.02em' }}>
+            Your Clinical Workspace
           </h2>
-          <p style={{ margin: 0, fontSize: '0.92rem', color: '#DBEAFE', lineHeight: '1.6', opacity: 0.95 }}>
-            Clinical Decision Support Workspace for 30-day heart failure mortality risk evaluation.
-            Review patient biomarkers, execute dual-model predictions, and access evidence-based lifestyle counselling guidelines.
+          <p style={{ margin: '0 0 8px', fontSize: '1rem', fontWeight: 600, color: '#93C5FD' }}>
+            Welcome back, {cleanDoctorName}
+          </p>
+          <p style={{ margin: 0, fontSize: '0.93rem', color: '#DBEAFE', lineHeight: '1.6', opacity: 0.95 }}>
+            Manage patient assessments, review model-generated risk estimates, compare ANN and Logistic Regression outputs, and explore patient education resources from one place.
           </p>
         </div>
 
@@ -163,15 +165,103 @@ export default function DashboardHome({ doctorUser, onNavigate }) {
         </div>
       </section>
 
-      {/* 2. Doctor Dashboard Statistics (Actual Records Belonging Strictly to Logged-in Doctor) */}
+      {/* 2. Platform Clinical Workflow Guidance */}
+      <section aria-label="Using This Platform Guide" style={{ marginBottom: '2rem' }}>
+        <div style={{
+          background: 'var(--surface-card, #FFFFFF)',
+          border: '1px solid var(--surface-border, #E2E8F0)',
+          borderRadius: '16px',
+          padding: '1.75rem 2rem',
+          boxShadow: '0 4px 16px rgba(11, 31, 58, 0.04)',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '0.5rem' }}>
+            <div style={{
+              width: '36px',
+              height: '36px',
+              borderRadius: '10px',
+              background: 'rgba(21, 101, 216, 0.1)',
+              color: '#1565D8',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '1.1rem',
+              fontWeight: 800,
+            }}>
+              🧭
+            </div>
+            <div>
+              <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary, #0B1F3A)' }}>
+                Using This Platform
+              </h3>
+              <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted, #64748B)' }}>
+                Step-by-step clinical workflow for patient mortality risk evaluation and guidance
+              </p>
+            </div>
+          </div>
+
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+            gap: '0.85rem',
+            marginTop: '1.25rem',
+          }}>
+            {[
+              { step: '1', title: 'Enter Clinical Biomarkers', desc: 'Enter clinical values in the Clinical Parameters input form' },
+              { step: '2', title: 'Execute Risk Models', desc: 'Click Run Mortality Risk Evaluation to execute the prediction models' },
+              { step: '3', title: 'Evaluate Risk Estimates', desc: 'Review the predicted mortality risk percentage, risk category, and contributing risk factors' },
+              { step: '4', title: 'Compare Dual Models', desc: 'Use the model comparison to review outputs from both Logistic Regression and Artificial Neural Network models' },
+              { step: '5', title: 'Patient Support & Guidance', desc: 'Check the Patient Support & Guidance section for tailored, non-fatalistic communication points' },
+              { step: '6', title: 'Clinical Reference Library', desc: 'Access the Clinical Parameters Guide or Heart Health Counselling resources for reference' },
+              { step: '7', title: 'Session History Audit', desc: 'All assessments are recorded in your clinical session history for reference' },
+            ].map((item) => (
+              <div
+                key={item.step}
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '12px',
+                  padding: '0.85rem 1rem',
+                  borderRadius: '10px',
+                  background: 'var(--surface-card-subtle, rgba(241, 245, 249, 0.6))',
+                  border: '1px solid var(--surface-border-subtle, rgba(226, 232, 240, 0.8))',
+                }}
+              >
+                <div style={{
+                  flexShrink: 0,
+                  width: '26px',
+                  height: '26px',
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #1565D8 0%, #0284C7 100%)',
+                  color: '#FFFFFF',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '0.8rem',
+                  fontWeight: 800,
+                  boxShadow: '0 2px 6px rgba(21, 101, 216, 0.3)',
+                }}>
+                  {item.step}
+                </div>
+                <div>
+                  <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary, #0F172A)', marginBottom: '2px' }}>
+                    {item.title}
+                  </div>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary, #475569)', lineHeight: 1.45 }}>
+                    {item.desc}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 3. Doctor Dashboard Statistics (Actual Records Belonging Strictly to Logged-in Doctor) */}
       <section aria-label="Clinical Metrics Overview" style={{ marginBottom: '2rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
           <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: '#0B1F3A' }}>
             Clinical Activity Statistics
           </h3>
-          <span style={{ fontSize: '0.8rem', color: '#64748B' }}>
-            Confined to Dr. {cleanDoctorName.replace(/^Dr\.\s*/i, '')} &bull; Real-time Database Records
-          </span>
         </div>
 
         <div style={{

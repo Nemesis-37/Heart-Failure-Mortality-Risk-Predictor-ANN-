@@ -116,6 +116,9 @@ class Doctor(Base):
         TIMESTAMPTZ, nullable=True
     )
 
+    # Physician profile photo metadata (stored securely on disk)
+    profile_photo_path: Mapped[str | None] = mapped_column(String(512), nullable=True)
+
     # Relationships
     assessments: Mapped[list["Assessment"]] = relationship(
         "Assessment",

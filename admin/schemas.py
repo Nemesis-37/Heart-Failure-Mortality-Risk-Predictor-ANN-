@@ -41,17 +41,17 @@ class DoctorAdminView(BaseModel):
     doctor_id: str
     full_name: str
     username: Optional[str] = None
-    email: str
-    mobile: str
-    medical_degree: str
-    registration_number: str
-    registration_council: str
-    email_verified: bool
-    verification_status: str
-    is_active: bool
+    email: Optional[str] = None
+    mobile: Optional[str] = None
+    medical_degree: Optional[str] = None
+    registration_number: Optional[str] = None
+    registration_council: Optional[str] = None
+    email_verified: bool = False
+    verification_status: str = "PENDING"
+    is_active: bool = True
     created_at: Optional[datetime] = None
     last_login: Optional[datetime] = None
-    has_document: bool
+    has_document: bool = False
     document_filename: Optional[str] = None
     document_uploaded_at: Optional[datetime] = None
     verified_at: Optional[datetime] = None
@@ -149,14 +149,14 @@ class DoctorActivityView(BaseModel):
     doctor_id: str
     full_name: str
     username: Optional[str] = None
-    email: str
-    medical_degree: str
-    registration_number: str
-    verification_status: str
-    is_active: bool
+    email: Optional[str] = None
+    medical_degree: Optional[str] = None
+    registration_number: Optional[str] = None
+    verification_status: str = "PENDING"
+    is_active: bool = True
     last_login: Optional[datetime] = None
-    total_assessments: int
-    total_predictions: int
+    total_assessments: int = 0
+    total_predictions: int = 0
 
 
 class RecentDoctorRegistration(BaseModel):

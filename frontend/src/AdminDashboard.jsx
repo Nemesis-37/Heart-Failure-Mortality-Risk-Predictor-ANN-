@@ -530,9 +530,7 @@ export default function AdminDashboard({ onExitAdmin }) {
                 background: '#10B981',
                 boxShadow: '0 0 6px #10B981',
               }} />
-              <span>Session: <strong>{adminProfile?.username || 'admin'}</strong></span>
-              <span style={{ color: '#94A3B8' }}>|</span>
-              <span style={{ color: '#0D9488', fontWeight: 600 }}>{overviewStats?.database_engine || 'PostgreSQL'}</span>
+              <span>Session: <strong>admin</strong></span>
             </div>
 
             {onExitAdmin && (

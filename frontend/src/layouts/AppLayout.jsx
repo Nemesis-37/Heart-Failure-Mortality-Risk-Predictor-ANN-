@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import ThemeToggle from '../components/ThemeToggle.jsx'
+import DoctorProfilePhotoModal from '../components/DoctorProfilePhotoModal.jsx'
 import { apiUrl } from '../apiConfig.js'
 
 export default function AppLayout({
@@ -7,11 +8,13 @@ export default function AppLayout({
   onLogout,
   activePage,
   onNavigate,
+  onUpdateDoctorUser,
   children,
 }) {
   const [collapsed, setCollapsed] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [backendStatus, setBackendStatus] = useState('checking')
+  const [showPhotoModal, setShowPhotoModal] = useState(false)
 
   // Clean doctor name to prevent duplicate "Dr. Dr" prefixes
   const cleanDoctorName = (doctorUser?.name || 'Doctor')
@@ -264,9 +267,29 @@ export default function AppLayout({
         {/* Sidebar Footer / Physician Profile & Logout */}
         <div className="sidebar-footer">
           {!collapsed ? (
-            <div className="sidebar-doctor-card">
+            <div
+              className="sidebar-doctor-card clickable-card"
+              title={`${cleanDoctorName} (${cleanRole}) — Click to change photo`}
+              onClick={() => setShowPhotoModal(true)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setShowPhotoModal(true) }}
+            >
               <div className="doctor-avatar-small" aria-hidden="true">
-                {avatarInitials}
+                {(doctorUser?.profilePhotoUrl || doctorUser?.profile_photo_url) ? (
+                  <img
+                    src={apiUrl(doctorUser.profilePhotoUrl || doctorUser.profile_photo_url)}
+                    alt={cleanDoctorName}
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none'
+                      if (e.currentTarget.parentElement) {
+                        e.currentTarget.parentElement.textContent = avatarInitials
+                      }
+                    }}
+                  />
+                ) : (
+                  avatarInitials
+                )}
               </div>
               <div className="sidebar-doctor-meta">
                 <span className="doctor-display-name" title={cleanDoctorName}>
@@ -276,8 +299,29 @@ export default function AppLayout({
               </div>
             </div>
           ) : (
-            <div className="doctor-avatar-collapsed" title={`${cleanDoctorName} (${cleanRole})`} aria-hidden="true">
-              {avatarInitials}
+            <div
+              className="doctor-avatar-collapsed clickable-card"
+              title={`${cleanDoctorName} (${cleanRole}) — Click to change photo`}
+              onClick={() => setShowPhotoModal(true)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setShowPhotoModal(true) }}
+              aria-hidden="true"
+            >
+              {(doctorUser?.profilePhotoUrl || doctorUser?.profile_photo_url) ? (
+                <img
+                  src={apiUrl(doctorUser.profilePhotoUrl || doctorUser.profile_photo_url)}
+                  alt={cleanDoctorName}
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none'
+                    if (e.currentTarget.parentElement) {
+                      e.currentTarget.parentElement.textContent = avatarInitials
+                    }
+                  }}
+                />
+              ) : (
+                avatarInitials
+              )}
             </div>
           )}
 
@@ -347,9 +391,29 @@ export default function AppLayout({
             <ThemeToggle className="header-theme-toggle" />
 
             {/* Doctor Profile Header Pill */}
-            <div className="header-doctor-pill" title={`${cleanDoctorName} — ${cleanRole}`}>
+            <div
+              className="header-doctor-pill clickable-pill"
+              title={`${cleanDoctorName} — ${cleanRole} (Click to change photo)`}
+              onClick={() => setShowPhotoModal(true)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setShowPhotoModal(true) }}
+            >
               <div className="header-doctor-avatar" aria-hidden="true">
-                {avatarInitials}
+                {(doctorUser?.profilePhotoUrl || doctorUser?.profile_photo_url) ? (
+                  <img
+                    src={apiUrl(doctorUser.profilePhotoUrl || doctorUser.profile_photo_url)}
+                    alt={cleanDoctorName}
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none'
+                      if (e.currentTarget.parentElement) {
+                        e.currentTarget.parentElement.textContent = avatarInitials
+                      }
+                    }}
+                  />
+                ) : (
+                  avatarInitials
+                )}
               </div>
               <div className="header-doctor-info">
                 <span className="header-doctor-name">{cleanDoctorName}</span>
@@ -371,6 +435,18 @@ export default function AppLayout({
           </p>
         </footer>
       </div>
+
+      {/* Doctor Profile Photo Upload Modal */}
+      <DoctorProfilePhotoModal
+        isOpen={showPhotoModal}
+        onClose={() => setShowPhotoModal(false)}
+        currentPhotoUrl={doctorUser?.profilePhotoUrl || doctorUser?.profile_photo_url}
+        onPhotoUpdated={(newPhotoUrl) => {
+          if (onUpdateDoctorUser) {
+            onUpdateDoctorUser({ profilePhotoUrl: newPhotoUrl, profile_photo_url: newPhotoUrl })
+          }
+        }}
+      />
     </div>
   )
 }

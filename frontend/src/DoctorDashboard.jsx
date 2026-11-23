@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import { saveAssessment, savePrediction } from './services/assessmentStore.js'
 import ThemeToggle from './components/ThemeToggle.jsx'
+import PatientSupportCard from './components/PatientSupportCard.jsx'
+import DoctorProfilePhotoModal from './components/DoctorProfilePhotoModal.jsx'
 import { apiUrl } from './apiConfig.js'
 
 const INITIAL_STATE = {
@@ -71,6 +73,7 @@ export default function DoctorDashboard({
   onLogout,
   embedded = false,
   initialRecord = null,
+  onUpdateDoctorUser,
 }) {
   const [formData, setFormData] = useState(() => {
     if (initialRecord) {
@@ -97,6 +100,7 @@ export default function DoctorDashboard({
   const [backendStatus, setBackendStatus] = useState('checking')
   const [selectedModelId, setSelectedModelId] = useState('lr')
   const [patientRef, setPatientRef] = useState(() => initialRecord?.patientReferenceId || '')
+  const [showPhotoModal, setShowPhotoModal] = useState(false)
 
   // Clean doctor name to prevent any duplicated title like "Dr. Dr Carter"
   const cleanDoctorName = (doctorUser?.name || 'Doctor')
@@ -365,9 +369,29 @@ export default function DoctorDashboard({
               <ThemeToggle className="topbar-theme-toggle" />
 
               {/* Doctor Profile Pill */}
-              <div className="doctor-profile-pill" title={`${cleanDoctorName} — ${cleanRole}`}>
+              <div
+                className="doctor-profile-pill clickable-pill"
+                title={`${cleanDoctorName} — ${cleanRole} (Click to change photo)`}
+                onClick={() => setShowPhotoModal(true)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setShowPhotoModal(true) }}
+              >
                 <div className="doctor-avatar" aria-hidden="true">
-                  {avatarInitials}
+                  {(doctorUser?.profilePhotoUrl || doctorUser?.profile_photo_url) ? (
+                    <img
+                      src={apiUrl(doctorUser.profilePhotoUrl || doctorUser.profile_photo_url)}
+                      alt={cleanDoctorName}
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none'
+                        if (e.currentTarget.parentElement) {
+                          e.currentTarget.parentElement.textContent = avatarInitials
+                        }
+                      }}
+                    />
+                  ) : (
+                    avatarInitials
+                  )}
                 </div>
                 <div className="doctor-info">
                   <span className="doctor-name">{cleanDoctorName}</span>
@@ -1139,7 +1163,7 @@ export default function DoctorDashboard({
                   <div className="probability-metric-card">
                     <div className="metric-header-row">
                       <div>
-                        <span className="metric-heading">Estimated Death-Event Probability</span>
+                        <span className="metric-heading">Predicted Event Probability (0.00–1.00)</span>
                         <p className="metric-subheading">Calculated risk score from input biomarkers</p>
                       </div>
                       <span className={`metric-percentage ${result.predicted_probability >= 0.5 ? 'elevated' : 'baseline'}`}>
@@ -1162,9 +1186,9 @@ export default function DoctorDashboard({
                     </div>
 
                     <div className="metric-scale-labels" aria-hidden="true">
-                      <span>0% (Baseline)</span>
-                      <span className="threshold-indicator">50% Decision Threshold</span>
-                      <span>100% (Maximum)</span>
+                      <span>0.00 — Minimum probability</span>
+                      <span className="threshold-indicator">0.50 — Classification threshold</span>
+                      <span>1.00 — Maximum probability</span>
                     </div>
                   </div>
 
@@ -1192,13 +1216,10 @@ export default function DoctorDashboard({
                         <span className="meta-value font-mono">{result.timestamp}</span>
                       </div>
                     )}
-                    {result.notice && (
-                      <div className="meta-row notice-row">
-                        <span className="meta-label">Backend Notice</span>
-                        <span className="meta-value">{result.notice}</span>
-                      </div>
-                    )}
                   </div>
+
+                  {/* Patient Support & Guidance Section */}
+                  <PatientSupportCard probability={result.predicted_probability} />
 
                   {/* Educational Disclaimer */}
                   <div className="clean-disclaimer-box" role="note">
@@ -1217,6 +1238,18 @@ export default function DoctorDashboard({
           </aside>
         </div>
       </main>
+
+        {/* Doctor Profile Photo Upload Modal */}
+        <DoctorProfilePhotoModal
+          isOpen={showPhotoModal}
+          onClose={() => setShowPhotoModal(false)}
+          currentPhotoUrl={doctorUser?.profilePhotoUrl || doctorUser?.profile_photo_url}
+          onPhotoUpdated={(newPhotoUrl) => {
+            if (onUpdateDoctorUser) {
+              onUpdateDoctorUser({ profilePhotoUrl: newPhotoUrl, profile_photo_url: newPhotoUrl })
+            }
+          }}
+        />
 
         {/* Global Footer */}
         {!embedded && (
