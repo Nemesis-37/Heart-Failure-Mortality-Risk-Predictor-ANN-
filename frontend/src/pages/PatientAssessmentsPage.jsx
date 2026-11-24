@@ -182,9 +182,9 @@ export default function PatientAssessmentsPage({ doctorUser, onNavigate, onSelec
             <span className="sql-status-dot" />
             <span>PostgreSQL Integration: Assessments Table Schema Connected</span>
           </div>
-          <h2 className="assessments-page-title">Patient Assessments Directory</h2>
+          <h2 className="assessments-page-title">Patient Assessment Records</h2>
           <p className="assessments-page-desc">
-            Browse, search, and audit patient clinical parameter records. Each assessment stores all 11 required biomarkers, patient reference codes, and associated model prediction history.
+            Review, search, and audit saved patient clinical parameter records and linked risk estimates. Each assessment stores all 11 required biomarkers, patient reference codes, and associated model prediction history.
           </p>
         </div>
         <div className="assessments-top-actions">

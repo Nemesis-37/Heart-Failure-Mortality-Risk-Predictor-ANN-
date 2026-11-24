@@ -97,7 +97,7 @@ export default function PredictionHistoryPage({ doctorUser, onNavigate, onSelect
           </div>
           <h2 className="history-page-title">Prediction History</h2>
           <p className="history-page-desc">
-            Review previous assessments and model-generated prediction results. Audit mathematical death-event probabilities, compare Logistic Regression and ANN inferences, and inspect associated patient parameters.
+            Review previous model-generated risk estimates and their associated assessment records.
           </p>
         </div>
         <div className="history-top-actions">
@@ -357,6 +357,7 @@ export default function PredictionHistoryPage({ doctorUser, onNavigate, onSelect
                   <th>Model Architecture</th>
                   <th>Predicted Class</th>
                   <th>Probability</th>
+                  <th>Threshold</th>
                   <th className="th-actions">Actions</th>
                 </tr>
               </thead>
@@ -413,6 +414,20 @@ export default function PredictionHistoryPage({ doctorUser, onNavigate, onSelect
                           />
                         </div>
                       </div>
+                    </td>
+                    <td className="cell-threshold">
+                      <span style={{
+                        display: 'inline-block',
+                        padding: '2px 8px',
+                        borderRadius: '6px',
+                        fontSize: '0.78rem',
+                        fontWeight: 600,
+                        backgroundColor: '#1E293B',
+                        color: '#94A3B8',
+                        border: '1px solid #334155'
+                      }}>
+                        0.50
+                      </span>
                     </td>
                     <td className="cell-actions">
                       <button

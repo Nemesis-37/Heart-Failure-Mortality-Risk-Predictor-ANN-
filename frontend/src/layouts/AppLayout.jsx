@@ -281,6 +281,11 @@ export default function AppLayout({
                     src={apiUrl(doctorUser.profilePhotoUrl || doctorUser.profile_photo_url)}
                     alt={cleanDoctorName}
                     onError={(e) => {
+                      const photoPath = doctorUser?.profilePhotoUrl || doctorUser?.profile_photo_url
+                      if (photoPath && !e.currentTarget.src.includes(':8000')) {
+                        e.currentTarget.src = `http://127.0.0.1:8000${photoPath.startsWith('/') ? photoPath : `/${photoPath}`}`
+                        return
+                      }
                       e.currentTarget.style.display = 'none'
                       if (e.currentTarget.parentElement) {
                         e.currentTarget.parentElement.textContent = avatarInitials
@@ -313,6 +318,11 @@ export default function AppLayout({
                   src={apiUrl(doctorUser.profilePhotoUrl || doctorUser.profile_photo_url)}
                   alt={cleanDoctorName}
                   onError={(e) => {
+                    const photoPath = doctorUser?.profilePhotoUrl || doctorUser?.profile_photo_url
+                    if (photoPath && !e.currentTarget.src.includes(':8000')) {
+                      e.currentTarget.src = `http://127.0.0.1:8000${photoPath.startsWith('/') ? photoPath : `/${photoPath}`}`
+                      return
+                    }
                     e.currentTarget.style.display = 'none'
                     if (e.currentTarget.parentElement) {
                       e.currentTarget.parentElement.textContent = avatarInitials
@@ -405,6 +415,11 @@ export default function AppLayout({
                     src={apiUrl(doctorUser.profilePhotoUrl || doctorUser.profile_photo_url)}
                     alt={cleanDoctorName}
                     onError={(e) => {
+                      const photoPath = doctorUser?.profilePhotoUrl || doctorUser?.profile_photo_url
+                      if (photoPath && !e.currentTarget.src.includes(':8000')) {
+                        e.currentTarget.src = `http://127.0.0.1:8000${photoPath.startsWith('/') ? photoPath : `/${photoPath}`}`
+                        return
+                      }
                       e.currentTarget.style.display = 'none'
                       if (e.currentTarget.parentElement) {
                         e.currentTarget.parentElement.textContent = avatarInitials
@@ -440,6 +455,7 @@ export default function AppLayout({
       <DoctorProfilePhotoModal
         isOpen={showPhotoModal}
         onClose={() => setShowPhotoModal(false)}
+        doctorUser={doctorUser}
         currentPhotoUrl={doctorUser?.profilePhotoUrl || doctorUser?.profile_photo_url}
         onPhotoUpdated={(newPhotoUrl) => {
           if (onUpdateDoctorUser) {

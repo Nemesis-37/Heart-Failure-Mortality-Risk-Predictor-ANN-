@@ -41,6 +41,14 @@ export default defineConfig({
         target: 'http://127.0.0.1:8000',
         changeOrigin: true,
       },
+      '/dashboard': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+      },
+      '/assessments': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+      },
     }
   },
   preview: {
@@ -73,6 +81,14 @@ export default defineConfig({
         changeOrigin: true,
       },
       '/db-health': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+      },
+      '/dashboard': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+      },
+      '/assessments': {
         target: 'http://127.0.0.1:8000',
         changeOrigin: true,
       },

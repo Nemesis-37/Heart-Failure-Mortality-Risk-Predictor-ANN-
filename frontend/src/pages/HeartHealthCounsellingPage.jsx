@@ -10,7 +10,46 @@ export default function HeartHealthCounsellingPage({ onNavigate }) {
   }
 
   const handleDownloadPdf = () => {
-    generateCounsellingGuidePdf(categories)
+    // Exclude checked points from the generated PDF export
+    const filteredCategories = categories
+      .map((cat) => ({
+        ...cat,
+        counsellingPoints: cat.counsellingPoints.filter((point) => !checkedPoints[point.id]),
+      }))
+      .filter((cat) => cat.counsellingPoints.length > 0)
+
+    if (filteredCategories.length === 0) {
+      alert('All topics are currently excluded. Please uncheck at least one topic to download the PDF guide.')
+      return
+    }
+
+    generateCounsellingGuidePdf(filteredCategories)
+  }
+
+  const handleIncludeAll = () => {
+    setCheckedPoints({})
+  }
+
+  const handleExcludeCategory = () => {
+    const currentPoints = categories.find((c) => c.id === activeCategory)?.counsellingPoints || []
+    setCheckedPoints((prev) => {
+      const updated = { ...prev }
+      currentPoints.forEach((pt) => {
+        updated[pt.id] = true
+      })
+      return updated
+    })
+  }
+
+  const handleIncludeCategory = () => {
+    const currentPoints = categories.find((c) => c.id === activeCategory)?.counsellingPoints || []
+    setCheckedPoints((prev) => {
+      const updated = { ...prev }
+      currentPoints.forEach((pt) => {
+        delete updated[pt.id]
+      })
+      return updated
+    })
   }
 
   const categories = [
@@ -319,14 +358,16 @@ export default function HeartHealthCounsellingPage({ onNavigate }) {
               boxShadow: '0 4px 14px rgba(0, 0, 0, 0.15)',
               transition: 'all 0.15s ease',
             }}
-            title="Download complete 6-domain counselling guide as a formatted PDF"
+            title="Download personalized counselling guide as a formatted PDF (omitting checked items)"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
               <polyline points="7 10 12 15 17 10" />
               <line x1="12" y1="15" x2="12" y2="3" />
             </svg>
-            <span>Download PDF</span>
+            <span>
+              Download PDF {Object.values(checkedPoints).filter(Boolean).length > 0 ? `(${categories.reduce((sum, c) => sum + c.counsellingPoints.length, 0) - Object.values(checkedPoints).filter(Boolean).length} Included)` : ''}
+            </span>
           </button>
 
           <button
@@ -353,21 +394,82 @@ export default function HeartHealthCounsellingPage({ onNavigate }) {
         </div>
       </section>
 
-      {/* Category Interaction Disclaimer */}
+      {/* PDF Exclude Filter Guidance & Toolbar */}
       <div style={{
         display: 'flex',
+        justifyContent: 'space-between',
         alignItems: 'center',
-        gap: '8px',
-        fontSize: '0.82rem',
-        color: '#64748B',
-        marginBottom: '1rem',
-        padding: '0 4px',
-        lineHeight: '1.45',
+        flexWrap: 'wrap',
+        gap: '12px',
+        background: 'rgba(21, 101, 216, 0.1)',
+        border: '1px solid rgba(56, 189, 248, 0.25)',
+        borderRadius: '12px',
+        padding: '0.9rem 1.25rem',
+        marginBottom: '1.25rem',
+        fontSize: '0.84rem',
+        color: '#DBEAFE',
       }}>
-        <span style={{ fontSize: '1rem', lineHeight: 1 }} aria-hidden="true">💡</span>
-        <span>
-          Selecting a category only changes the content displayed on this page. It does not download a PDF. Use the <strong>Download PDF</strong> button to download the complete counselling guide.
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <span style={{ fontSize: '1.2rem' }}>☑️</span>
+          <span>
+            <strong>Customize PDF Export:</strong> Click on the checkbox of any guidance point to <strong>remove/exclude it from the downloaded PDF</strong> ({Object.values(checkedPoints).filter(Boolean).length} excluded, {categories.reduce((sum, c) => sum + c.counsellingPoints.length, 0) - Object.values(checkedPoints).filter(Boolean).length} included).
+          </span>
+        </div>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          {Object.values(checkedPoints).filter(Boolean).length > 0 && (
+            <button
+              type="button"
+              onClick={handleIncludeAll}
+              style={{
+                background: 'rgba(255, 255, 255, 0.15)',
+                color: '#FFFFFF',
+                border: '1px solid rgba(255, 255, 255, 0.3)',
+                borderRadius: '8px',
+                padding: '5px 12px',
+                fontSize: '0.78rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              Reset (Include All)
+            </button>
+          )}
+          {activeData.counsellingPoints.filter((pt) => checkedPoints[pt.id]).length < activeData.counsellingPoints.length ? (
+            <button
+              type="button"
+              onClick={handleExcludeCategory}
+              style={{
+                background: 'rgba(239, 68, 68, 0.18)',
+                color: '#FECACA',
+                border: '1px solid rgba(239, 68, 68, 0.4)',
+                borderRadius: '8px',
+                padding: '5px 12px',
+                fontSize: '0.78rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              Exclude All in Category {activeData.code}
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleIncludeCategory}
+              style={{
+                background: 'rgba(16, 185, 129, 0.18)',
+                color: '#A7F3D0',
+                border: '1px solid rgba(16, 185, 129, 0.4)',
+                borderRadius: '8px',
+                padding: '5px 12px',
+                fontSize: '0.78rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              Include All in Category {activeData.code}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* 2. Category Navigation Tabs (A through F) */}
@@ -471,55 +573,78 @@ export default function HeartHealthCounsellingPage({ onNavigate }) {
           gap: '1.5rem',
         }}>
           {activeData.counsellingPoints.map((point) => {
-            const isChecked = !!checkedPoints[point.id]
+            const isExcluded = !!checkedPoints[point.id]
             return (
               <div
                 key={point.id}
-                className={`counselling-point-card ${isChecked ? 'checked' : ''}`}
+                className={`counselling-point-card ${isExcluded ? 'checked' : ''}`}
                 onClick={() => toggleCheck(point.id)}
                 style={{
-                  border: isChecked ? '1.5px solid #93C5FD' : '1px solid #E2E8F0',
+                  border: isExcluded ? '1.5px dashed #FCA5A5' : '1px solid #E2E8F0',
                   borderRadius: '14px',
                   padding: '1.5rem',
-                  background: isChecked ? '#F8FAFC' : '#FFFFFF',
+                  background: isExcluded ? '#FFF8F8' : '#FFFFFF',
                   cursor: 'pointer',
                   transition: 'all 0.15s ease',
-                  boxShadow: '0 2px 8px rgba(11, 31, 58, 0.03)',
+                  boxShadow: isExcluded ? 'none' : '0 2px 8px rgba(11, 31, 58, 0.03)',
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
+                  opacity: isExcluded ? 0.75 : 1,
                 }}
               >
                 <div>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '10px' }}>
-                    <input
-                      type="checkbox"
-                      checked={isChecked}
-                      onChange={() => {}}
-                      style={{
-                        width: '20px',
-                        height: '20px',
-                        accentColor: activeData.accent,
-                        cursor: 'pointer',
-                        marginTop: '2px',
-                        flexShrink: 0,
-                      }}
-                    />
-                    <h3 style={{
-                      margin: 0,
-                      fontSize: '1.05rem',
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px', marginBottom: '10px' }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', flex: 1 }}>
+                      <input
+                        type="checkbox"
+                        checked={isExcluded}
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={() => toggleCheck(point.id)}
+                        aria-label={`Exclude ${point.title} from PDF`}
+                        title={isExcluded ? 'Topic excluded from PDF download. Click to include.' : 'Check to exclude this topic from PDF download.'}
+                        style={{
+                          width: '20px',
+                          height: '20px',
+                          accentColor: '#DC2626',
+                          cursor: 'pointer',
+                          marginTop: '2px',
+                          flexShrink: 0,
+                        }}
+                      />
+                      <h3 style={{
+                        margin: 0,
+                        fontSize: '1.05rem',
+                        fontWeight: 700,
+                        color: isExcluded ? '#94A3B8' : '#0B1F3A',
+                        textDecoration: isExcluded ? 'line-through' : 'none',
+                      }}>
+                        {point.title}
+                      </h3>
+                    </div>
+
+                    {/* Exclude / Include Status Pill */}
+                    <span style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      padding: '3px 8px',
+                      borderRadius: '9999px',
+                      fontSize: '0.72rem',
                       fontWeight: 700,
-                      color: isChecked ? '#64748B' : '#0B1F3A',
-                      textDecoration: isChecked ? 'line-through' : 'none',
+                      flexShrink: 0,
+                      backgroundColor: isExcluded ? '#FEE2E2' : '#EFF6FF',
+                      color: isExcluded ? '#B91C1C' : '#1D4ED8',
+                      border: `1px solid ${isExcluded ? '#FCA5A5' : '#BFDBFE'}`,
                     }}>
-                      {point.title}
-                    </h3>
+                      {isExcluded ? '✕ Excluded from PDF' : '✓ Included in PDF'}
+                    </span>
                   </div>
 
                   <p style={{
                     margin: '0 0 1rem',
                     fontSize: '0.86rem',
-                    color: '#475569',
+                    color: isExcluded ? '#64748B' : '#475569',
                     lineHeight: '1.6',
                   }}>
                     {point.explanation}
@@ -528,15 +653,15 @@ export default function HeartHealthCounsellingPage({ onNavigate }) {
 
                 {/* Practical Counselling Tip Box */}
                 <div className="counselling-tip-box" style={{
-                  background: '#F8FAFC',
-                  borderLeft: `4px solid ${activeData.accent}`,
+                  background: isExcluded ? '#F1F5F9' : '#F8FAFC',
+                  borderLeft: `4px solid ${isExcluded ? '#94A3B8' : activeData.accent}`,
                   borderRadius: '0 8px 8px 0',
                   padding: '10px 14px',
                   fontSize: '0.82rem',
-                  color: '#334155',
+                  color: isExcluded ? '#64748B' : '#334155',
                   lineHeight: '1.5',
                 }}>
-                  <strong style={{ color: activeData.accent, display: 'block', marginBottom: '2px', fontSize: '0.76rem', textTransform: 'uppercase' }}>
+                  <strong style={{ color: isExcluded ? '#64748B' : activeData.accent, display: 'block', marginBottom: '2px', fontSize: '0.76rem', textTransform: 'uppercase' }}>
                     💡 Clinical Conversation Tip:
                   </strong>
                   {point.counsellingTip}

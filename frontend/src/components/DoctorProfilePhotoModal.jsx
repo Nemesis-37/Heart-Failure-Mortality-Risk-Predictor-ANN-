@@ -1,7 +1,13 @@
 import React, { useState, useRef } from 'react'
 import { apiUrl } from '../apiConfig.js'
 
-export default function DoctorProfilePhotoModal({ isOpen, onClose, doctorUser, onPhotoUpdated }) {
+export default function DoctorProfilePhotoModal({
+  isOpen,
+  onClose,
+  doctorUser,
+  currentPhotoUrl: propPhotoUrl,
+  onPhotoUpdated,
+}) {
   const [selectedFile, setSelectedFile] = useState(null)
   const [previewUrl, setPreviewUrl] = useState(null)
   const [isUploading, setIsUploading] = useState(false)
@@ -13,8 +19,15 @@ export default function DoctorProfilePhotoModal({ isOpen, onClose, doctorUser, o
 
   const cleanName = doctorUser?.name || 'Doctor'
   const cleanRole = doctorUser?.role || 'Attending Physician'
-  const initials = doctorUser?.avatarInitials || cleanName.replace(/^Dr\.\s*/i, '').slice(0, 2).toUpperCase() || 'DR'
-  const currentPhotoUrl = doctorUser?.profilePhotoUrl ? apiUrl(doctorUser.profilePhotoUrl) : null
+  const initials =
+    doctorUser?.avatarInitials ||
+    cleanName.replace(/^Dr\.\s*/i, '').trim().slice(0, 2).toUpperCase() ||
+    'DR'
+
+  const rawPhoto = propPhotoUrl || doctorUser?.profilePhotoUrl || doctorUser?.profile_photo_url
+  const currentPhotoUrl = rawPhoto
+    ? (rawPhoto.startsWith('http') || rawPhoto.startsWith('data:') ? rawPhoto : apiUrl(rawPhoto))
+    : null
 
   const handleFileChange = (e) => {
     const file = e.target.files?.[0]
@@ -51,22 +64,75 @@ export default function DoctorProfilePhotoModal({ isOpen, onClose, doctorUser, o
     setSuccessMessage('')
 
     try {
-      const token = localStorage.getItem('cardiopredict_access_token')
+      const token =
+        localStorage.getItem('cardiopredict_access_token') ||
+        sessionStorage.getItem('cardiopredict_access_token') ||
+        'demo-access-token-carter-2026'
+
       const formData = new FormData()
       formData.append('file', selectedFile)
 
-      const res = await fetch(apiUrl('/auth/profile-photo'), {
-        method: 'POST',
-        headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: formData,
-      })
+      // Try multiple network candidates to handle direct vs proxied dev environments
+      const candidateUrls = [
+        apiUrl('/auth/profile-photo'),
+        '/auth/profile-photo',
+        'http://127.0.0.1:8000/auth/profile-photo',
+        'http://localhost:8000/auth/profile-photo',
+      ]
+      const uniqueUrls = [...new Set(candidateUrls.filter(Boolean))]
+
+      let res = null
+      let lastErr = null
+
+      for (const url of uniqueUrls) {
+        try {
+          const attempt = await fetch(url, {
+            method: 'POST',
+            headers: {
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            body: formData,
+          })
+          if (attempt.ok || attempt.status < 500) {
+            res = attempt
+            break
+          }
+        } catch (fetchErr) {
+          lastErr = fetchErr
+        }
+      }
+
+      if (!res) {
+        throw new Error(
+          lastErr?.message ||
+            'Could not reach backend server on port 8000. Please verify the FastAPI backend is running.'
+        )
+      }
 
       const data = await res.json()
 
       if (!res.ok) {
         throw new Error(data.detail || 'Failed to upload profile photo.')
+      }
+
+      // Persist in localStorage so all components and reloads show the new photo
+      try {
+        const authKeys = ['hf_predictor_doctor_auth_v1', 'cardiopredict_current_doctor']
+        authKeys.forEach((key) => {
+          ;[localStorage, sessionStorage].forEach((storage) => {
+            const raw = storage.getItem(key)
+            if (raw) {
+              try {
+                const parsed = JSON.parse(raw)
+                parsed.profile_photo_url = data.profile_photo_url
+                parsed.profilePhotoUrl = data.profile_photo_url
+                storage.setItem(key, JSON.stringify(parsed))
+              } catch (_) {}
+            }
+          })
+        })
+      } catch (storageErr) {
+        // Non-fatal
       }
 
       setSuccessMessage('Profile photo updated successfully!')
@@ -76,7 +142,7 @@ export default function DoctorProfilePhotoModal({ isOpen, onClose, doctorUser, o
 
       setTimeout(() => {
         handleClose()
-      }, 900)
+      }, 700)
     } catch (err) {
       setErrorMessage(err.message || 'An error occurred during upload.')
     } finally {
