@@ -19,6 +19,7 @@ from sklearn.metrics import (
     recall_score,
     f1_score,
     roc_auc_score,
+    brier_score_loss,
     confusion_matrix,
 )
 
@@ -39,12 +40,6 @@ PATIENCE = 10
 BATCH_SIZE = 32
 WEIGHT_DECAY = 0.0001
 
-CONFIGS = [
-    {"name": "ANN_32_16_lr001", "layers": [32, 16], "lr": 0.001},
-    {"name": "ANN_64_32_lr001", "layers": [64, 32], "lr": 0.001},
-    {"name": "ANN_32_lr0001", "layers": [32], "lr": 0.0001},
-]
-
 
 def set_seed(seed):
     random.seed(seed)
@@ -53,7 +48,7 @@ def set_seed(seed):
 
 
 # --------------------------------------------------
-# 2. ANN architecture
+# 2. ANN architecture (Numerically Stable Logits)
 # --------------------------------------------------
 
 class TunableANN(nn.Module):
@@ -73,13 +68,17 @@ class TunableANN(nn.Module):
 
         layers.extend([
             nn.Linear(previous_size, 1),
-            nn.Sigmoid(),
         ])
 
         self.network = nn.Sequential(*layers)
 
     def forward(self, x):
+        """Returns raw unconstrained logits for BCEWithLogitsLoss."""
         return self.network(x)
+
+    def predict_proba(self, x):
+        """Convert logits to calibrated probabilities."""
+        return torch.sigmoid(self.forward(x))
 
 
 # --------------------------------------------------
@@ -94,9 +93,12 @@ def to_tensors(X, y):
 
 
 def train_with_early_stopping(
-    X_train, y_train, X_stop, y_stop, config, seed
+    X_train, y_train, X_stop, y_stop, config, seed, pos_weight=None
 ):
-    """Use an inner validation split only to select the epoch."""
+    """
+    Use an inner validation split to select the optimal training stopping point.
+    Returns best_epoch, total optimizer update steps, and inner batch metrics.
+    """
     set_seed(seed)
 
     scaler = StandardScaler()
@@ -123,25 +125,32 @@ def train_with_early_stopping(
         lr=config["lr"],
         weight_decay=WEIGHT_DECAY,
     )
-    loss_fn = nn.BCELoss()
+    
+    if pos_weight is not None:
+        loss_fn = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
+    else:
+        loss_fn = nn.BCEWithLogitsLoss()
 
     best_loss = float("inf")
     best_state = None
     best_epoch = 1
     patience_count = 0
+    inner_batches_per_epoch = len(loader)
 
     for epoch in range(1, MAX_EPOCHS + 1):
         model.train()
 
         for batch_X, batch_y in loader:
             optimizer.zero_grad()
-            loss = loss_fn(model(batch_X), batch_y)
+            logits = model(batch_X)
+            loss = loss_fn(logits, batch_y)
             loss.backward()
             optimizer.step()
 
         model.eval()
         with torch.inference_mode():
-            val_loss = loss_fn(model(stop_X), stop_y).item()
+            val_logits = model(stop_X)
+            val_loss = loss_fn(val_logits, stop_y).item()
 
         if val_loss < best_loss:
             best_loss = val_loss
@@ -154,11 +163,27 @@ def train_with_early_stopping(
         if patience_count >= PATIENCE:
             break
 
-    return best_epoch
+    total_inner_steps = best_epoch * inner_batches_per_epoch
+
+    return {
+        "best_epoch": best_epoch,
+        "best_val_loss": best_loss,
+        "total_inner_steps": total_inner_steps,
+        "inner_batches_per_epoch": inner_batches_per_epoch,
+    }
 
 
-def fit_final_fold_model(X_train, y_train, config, epochs, seed):
-    """Refit using all outer training data for the selected epoch count."""
+def fit_final_fold_model(
+    X_train, y_train, config, seed,
+    target_steps=None,
+    epochs=None,
+    pos_weight=None,
+):
+    """
+    Refit using all outer training data.
+    If target_steps is provided, stops when optimizer update count matches the inner budget.
+    If epochs is provided, trains for a fixed epoch count.
+    """
     set_seed(seed)
 
     scaler = StandardScaler()
@@ -181,17 +206,42 @@ def fit_final_fold_model(X_train, y_train, config, epochs, seed):
         lr=config["lr"],
         weight_decay=WEIGHT_DECAY,
     )
-    loss_fn = nn.BCELoss()
+    if pos_weight is not None:
+        loss_fn = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
+    else:
+        loss_fn = nn.BCEWithLogitsLoss()
 
-    for _ in range(epochs):
-        model.train()
-        for batch_X, batch_y in loader:
-            optimizer.zero_grad()
-            loss = loss_fn(model(batch_X), batch_y)
-            loss.backward()
-            optimizer.step()
+    outer_batches_per_epoch = len(loader)
+    steps_run = 0
 
-    return model, scaler
+    if target_steps is not None:
+        # Step-adjusted refitting to ensure total optimizer updates match early stopping
+        while steps_run < target_steps:
+            model.train()
+            for batch_X, batch_y in loader:
+                optimizer.zero_grad()
+                logits = model(batch_X)
+                loss = loss_fn(logits, batch_y)
+                loss.backward()
+                optimizer.step()
+                steps_run += 1
+                if steps_run >= target_steps:
+                    break
+    elif epochs is not None:
+        # Traditional fixed epoch refit (unadjusted step count)
+        for _ in range(epochs):
+            model.train()
+            for batch_X, batch_y in loader:
+                optimizer.zero_grad()
+                logits = model(batch_X)
+                loss = loss_fn(logits, batch_y)
+                loss.backward()
+                optimizer.step()
+                steps_run += 1
+    else:
+        raise ValueError("Must specify either target_steps or epochs.")
+
+    return model, scaler, steps_run, outer_batches_per_epoch
 
 
 def calculate_metrics(y_true, probabilities):
@@ -213,6 +263,8 @@ def calculate_metrics(y_true, probabilities):
             y_true, predictions, zero_division=0
         ),
         "AUROC": roc_auc_score(y_true, probabilities),
+        "Brier_Score": brier_score_loss(y_true, probabilities),
+        "Mean_Probability": float(np.mean(probabilities)),
     }
 
 
@@ -265,17 +317,53 @@ for fold, (train_idx, val_idx) in enumerate(splits, start=1):
 
 
 # --------------------------------------------------
-# 6. Evaluate each ANN configuration
+# 6. Evaluate Controlled ANN Configurations (Phase 1)
 # --------------------------------------------------
 
-for config_index, config in enumerate(CONFIGS):
+EXPERIMENTS = [
+    {
+        "name": "ANN_32_16_BCEWithLogits_StepAdjusted_Unweighted",
+        "layers": [32, 16],
+        "lr": 0.001,
+        "step_adjusted": True,
+        "weighted": False,
+    },
+    {
+        "name": "ANN_32_16_BCEWithLogits_StepAdjusted_Weighted",
+        "layers": [32, 16],
+        "lr": 0.001,
+        "step_adjusted": True,
+        "weighted": True,
+    },
+    {
+        "name": "ANN_32_16_BCEWithLogits_UnadjustedRefit_Unweighted",
+        "layers": [32, 16],
+        "lr": 0.001,
+        "step_adjusted": False,
+        "weighted": False,
+    },
+    {
+        "name": "ANN_32_16_BCEWithLogits_UnadjustedRefit_Weighted",
+        "layers": [32, 16],
+        "lr": 0.001,
+        "step_adjusted": False,
+        "weighted": True,
+    },
+]
+
+print("\n" + "=" * 65)
+print("ANN PHASE 1 CONTROLLED EXPERIMENTS — 5-FOLD STRATIFIED CV")
+print("=" * 65)
+
+for exp_index, exp in enumerate(EXPERIMENTS):
+    print(f"\n>>> Running Experiment: {exp['name']} <<<")
     for fold, (train_idx, val_idx) in enumerate(splits, start=1):
         X_outer_train = X.iloc[train_idx]
         X_outer_val = X.iloc[val_idx]
         y_outer_train = y.iloc[train_idx]
         y_outer_val = y.iloc[val_idx]
 
-        # Inner split: early stopping only, not final evaluation.
+        # Inner split: early stopping only (untouched outer test fold isolated)
         inner_train_idx, stop_idx = train_test_split(
             np.arange(len(X_outer_train)),
             test_size=0.2,
@@ -288,52 +376,89 @@ for config_index, config in enumerate(CONFIGS):
         X_stop = X_outer_train.iloc[stop_idx]
         y_stop = y_outer_train.iloc[stop_idx]
 
-        best_epoch = train_with_early_stopping(
+        # Compute fold-specific class weights using training labels only
+        if exp["weighted"]:
+            y_inner_arr = y_inner.to_numpy()
+            inner_pos = int(np.sum(y_inner_arr == 1))
+            inner_neg = int(np.sum(y_inner_arr == 0))
+            inner_pw = torch.tensor([inner_neg / inner_pos], dtype=torch.float32)
+
+            y_outer_arr = y_outer_train.to_numpy()
+            outer_pos = int(np.sum(y_outer_arr == 1))
+            outer_neg = int(np.sum(y_outer_arr == 0))
+            outer_pw = torch.tensor([outer_neg / outer_pos], dtype=torch.float32)
+        else:
+            inner_pw = None
+            outer_pw = None
+
+        seed_value = SEED + fold + exp_index * 100
+
+        # Run inner early stopping
+        es_result = train_with_early_stopping(
             X_inner,
             y_inner,
             X_stop,
             y_stop,
-            config,
-            seed=SEED + fold + config_index * 100,
+            exp,
+            seed=seed_value,
+            pos_weight=inner_pw,
         )
 
-        # Retrain on the complete outer training fold.
-        model, scaler = fit_final_fold_model(
-            X_outer_train,
-            y_outer_train,
-            config,
-            epochs=best_epoch,
-            seed=SEED + fold + config_index * 100,
-        )
+        best_epoch = es_result["best_epoch"]
+        target_steps = es_result["total_inner_steps"]
+        inner_batches = es_result["inner_batches_per_epoch"]
 
-        # Evaluate once on the untouched outer validation fold.
+        # Refit model on the complete outer training fold
+        if exp["step_adjusted"]:
+            model, scaler, steps_run, outer_batches = fit_final_fold_model(
+                X_outer_train,
+                y_outer_train,
+                exp,
+                seed=seed_value,
+                target_steps=target_steps,
+                pos_weight=outer_pw,
+            )
+        else:
+            model, scaler, steps_run, outer_batches = fit_final_fold_model(
+                X_outer_train,
+                y_outer_train,
+                exp,
+                seed=seed_value,
+                epochs=best_epoch,
+                pos_weight=outer_pw,
+            )
+
+        # Evaluate on the untouched outer validation fold
         X_val_scaled = scaler.transform(X_outer_val)
-        val_tensor = torch.tensor(
-            X_val_scaled, dtype=torch.float32
-        )
+        val_tensor = torch.tensor(X_val_scaled, dtype=torch.float32)
 
         model.eval()
         with torch.inference_mode():
-            probabilities = (
-                model(val_tensor).numpy().ravel()
-            )
+            logits = model(val_tensor)
+            probabilities = torch.sigmoid(logits).numpy().ravel()
 
-        metrics = calculate_metrics(
-            y_outer_val.to_numpy(), probabilities
-        )
+        metrics = calculate_metrics(y_outer_val.to_numpy(), probabilities)
+
+        equiv_outer_epochs = steps_run / outer_batches
 
         all_results.append({
-            "Model": config["name"],
+            "Model": exp["name"],
             "Fold": fold,
-            "Best_Epoch": best_epoch,
+            "Inner_Best_Epoch": best_epoch,
+            "Inner_Batches_Per_Epoch": inner_batches,
+            "Target_Steps": target_steps,
+            "Outer_Batches_Per_Epoch": outer_batches,
+            "Outer_Steps_Run": steps_run,
+            "Equivalent_Outer_Epochs": round(equiv_outer_epochs, 2),
+            "Pos_Weight": float(outer_pw.item()) if outer_pw is not None else 1.0,
             **metrics,
         })
 
         print(
-            f"{config['name']} | Fold {fold} | "
-            f"Epoch={best_epoch} | "
-            f"Accuracy={metrics['Accuracy']:.3f} | "
-            f"AUROC={metrics['AUROC']:.3f}"
+            f"Fold {fold} | Inner Best Epoch={best_epoch:2d} (Steps={target_steps:3d}) | "
+            f"Outer Steps Run={steps_run:3d} (~{equiv_outer_epochs:.1f} eps) | "
+            f"AUROC={metrics['AUROC']:.4f} | Sens={metrics['Sensitivity']:.4f} | "
+            f"Spec={metrics['Specificity']:.4f} | Brier={metrics['Brier_Score']:.4f}"
         )
 
 
@@ -343,7 +468,9 @@ for config_index, config in enumerate(CONFIGS):
 
 results_df = pd.DataFrame(all_results)
 results_path = RESULTS_DIR / "ann_tuning_fold_results.csv"
+phase1_results_path = RESULTS_DIR / "ann_phase1_experiments_fold_results.csv"
 results_df.to_csv(results_path, index=False)
+results_df.to_csv(phase1_results_path, index=False)
 
 metric_names = [
     "Accuracy",
@@ -352,6 +479,8 @@ metric_names = [
     "Specificity",
     "F1_Score",
     "AUROC",
+    "Brier_Score",
+    "Mean_Probability",
 ]
 
 summary_rows = []
@@ -367,9 +496,13 @@ for model_name, group in results_df.groupby("Model", sort=False):
 
 summary_df = pd.DataFrame(summary_rows)
 summary_path = RESULTS_DIR / "ann_tuning_summary.csv"
+phase1_summary_path = RESULTS_DIR / "ann_phase1_experiments_summary.csv"
 summary_df.to_csv(summary_path, index=False)
+summary_df.to_csv(phase1_summary_path, index=False)
 
-print("\nMODEL COMPARISON: FIVE-FOLD CV")
+print("\n" + "=" * 65)
+print("ANN PHASE 1 EXPERIMENTAL SUMMARY (5-FOLD STRATIFIED CV)")
+print("=" * 65)
 print(summary_df.to_string(index=False))
 print(f"\nFold results: {results_path}")
 print(f"Summary:      {summary_path}")

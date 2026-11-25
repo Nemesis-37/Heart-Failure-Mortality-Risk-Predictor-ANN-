@@ -1,0 +1,5 @@
+model_id,optimizer,use_log,auroc_mean,auroc_std,brier_mean,brier_std,log_loss_mean,log_loss_std,sensitivity_mean,specificity_mean,cal_slope_mean,mean_best_epoch,mean_final_val_loss
+WD_Adam_Standard,adam,False,0.753037,0.069278,0.187176,0.029568,0.571761,0.084895,0.428947,0.852317,0.850375,148.4,0.511452
+WD_Adam_Log1p,adam,True,0.761928,0.076877,0.181653,0.030506,0.553932,0.080944,0.46,0.881951,0.930806,142.6,0.502844
+WD_LBFGS_Standard,lbfgs,False,0.767094,0.062858,0.179124,0.027455,0.548625,0.080393,0.47,0.867073,0.894856,17.2,0.526008
+WD_LBFGS_Log1p,lbfgs,True,0.765885,0.074547,0.180369,0.030333,0.542759,0.075394,0.450526,0.857317,0.926896,14.4,0.516066

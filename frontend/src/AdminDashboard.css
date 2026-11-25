@@ -989,8 +989,19 @@ html:not(.dark) {
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
-   11. Responsive Breakpoints
+   11. Responsive Breakpoints & Accessibility
    ────────────────────────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .admin-dashboard-root *,
+  .admin-dashboard-root *::before,
+  .admin-dashboard-root *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 @media (max-width: 900px) {
   .admin-sidebar {
     position: fixed;

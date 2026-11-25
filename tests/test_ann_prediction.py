@@ -67,7 +67,8 @@ def main():
 
     # Predict using the trained model
     with torch.inference_mode():
-        probability = model(input_tensor).item()
+        logits = model(input_tensor)
+        probability = float(torch.sigmoid(logits).item())
 
     predicted_class = int(probability >= 0.5)
 

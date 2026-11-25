@@ -160,7 +160,7 @@ for fold, (outer_train_idx, test_idx) in enumerate(
 
     model = HeartFailureANN()
 
-    loss_function = nn.BCELoss()
+    loss_function = nn.BCEWithLogitsLoss()
 
     optimizer = torch.optim.Adam(
         model.parameters(),
@@ -227,8 +227,9 @@ for fold, (outer_train_idx, test_idx) in enumerate(
     model.eval()
 
     with torch.no_grad():
+        test_logits = model(X_test_tensor)
         test_probabilities = (
-            model(X_test_tensor).cpu().numpy().ravel()
+            torch.sigmoid(test_logits).cpu().numpy().ravel()
         )
 
     test_predictions = (

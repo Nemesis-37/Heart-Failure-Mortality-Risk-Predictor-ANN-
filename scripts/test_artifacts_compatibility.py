@@ -65,7 +65,7 @@ print(f"✓ LR Prediction: class={lr_pred}, prob={lr_prob:.4f}")
 # Test ANN
 scaled = ann_scaler.transform(sample_data)
 with torch.inference_mode():
-    ann_prob = float(ann_model(torch.tensor(scaled, dtype=torch.float32)).item())
+    ann_prob = float(torch.sigmoid(ann_model(torch.tensor(scaled, dtype=torch.float32))).item())
 ann_pred = int(ann_prob >= 0.5)
 print(f"✓ ANN Prediction: class={ann_pred}, prob={ann_prob:.4f}")
 

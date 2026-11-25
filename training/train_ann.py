@@ -134,7 +134,7 @@ for fold, (train_idx, val_idx) in enumerate(
 
     # Fresh model and optimizer for every fold
     model = HeartFailureANN()
-    loss_function = nn.BCELoss()
+    loss_function = nn.BCEWithLogitsLoss()
     optimizer = torch.optim.Adam(
         model.parameters(),
         lr=LEARNING_RATE,
@@ -207,8 +207,9 @@ for fold, (train_idx, val_idx) in enumerate(
     # --------------------------------------------------
 
     with torch.inference_mode():
+        logits = model(X_val_tensor)
         probabilities = (
-            model(X_val_tensor).cpu().numpy().ravel()
+            torch.sigmoid(logits).cpu().numpy().ravel()
         )
 
     predictions = (probabilities >= 0.5).astype(int)

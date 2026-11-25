@@ -19,7 +19,16 @@ export default function App() {
     try {
       const stored = localStorage.getItem(DOCTOR_AUTH_KEY) || sessionStorage.getItem(DOCTOR_AUTH_KEY)
       if (stored) {
-        return JSON.parse(stored)
+        const parsed = JSON.parse(stored)
+        const localSavedPhoto =
+          localStorage.getItem('cardiopredict_doctor_profile_photo') ||
+          localStorage.getItem('cardiopredict_doctor_profile_photo_base64') ||
+          (parsed?.email ? localStorage.getItem(`cardiopredict_photo_${parsed.email}`) : null)
+        if (localSavedPhoto) {
+          parsed.profilePhotoUrl = parsed.profilePhotoUrl || localSavedPhoto
+          parsed.profile_photo_url = parsed.profile_photo_url || localSavedPhoto
+        }
+        return parsed
       }
     } catch {
       // Ignore storage parse errors
@@ -44,14 +53,24 @@ export default function App() {
         .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
           if (data) {
+            const localSavedPhoto =
+              localStorage.getItem('cardiopredict_doctor_profile_photo') ||
+              localStorage.getItem('cardiopredict_doctor_profile_photo_base64') ||
+              localStorage.getItem(`cardiopredict_photo_${data.email}`)
+            const finalPhoto =
+              data.profile_photo_url ||
+              localSavedPhoto ||
+              doctorUser?.profilePhotoUrl ||
+              doctorUser?.profile_photo_url ||
+              null
             handleUpdateDoctorUser({
               name: data.full_name,
               email: data.email,
               role: data.role || 'Attending Physician',
               licenseNumber: data.license_number,
               specialty: data.specialty,
-              profilePhotoUrl: data.profile_photo_url || null,
-              profile_photo_url: data.profile_photo_url || null,
+              profilePhotoUrl: finalPhoto,
+              profile_photo_url: finalPhoto,
             })
           }
         })
@@ -90,16 +109,25 @@ export default function App() {
       return
     }
 
-    setDoctorUser(profile)
+    const localSavedPhoto =
+      localStorage.getItem('cardiopredict_doctor_profile_photo') ||
+      (profile?.email ? localStorage.getItem(`cardiopredict_photo_${profile.email}`) : null)
+    const effectiveProfile = {
+      ...profile,
+      profilePhotoUrl: profile?.profilePhotoUrl || profile?.profile_photo_url || localSavedPhoto || null,
+      profile_photo_url: profile?.profile_photo_url || profile?.profilePhotoUrl || localSavedPhoto || null,
+    }
+
+    setDoctorUser(effectiveProfile)
     setActivePage('dashboard')
     try {
       sessionStorage.removeItem('cardiopredict_admin_token')
       sessionStorage.removeItem('cardiopredict_admin_profile')
       if (rememberMe) {
-        localStorage.setItem(DOCTOR_AUTH_KEY, JSON.stringify(profile))
+        localStorage.setItem(DOCTOR_AUTH_KEY, JSON.stringify(effectiveProfile))
         sessionStorage.removeItem(DOCTOR_AUTH_KEY)
       } else {
-        sessionStorage.setItem(DOCTOR_AUTH_KEY, JSON.stringify(profile))
+        sessionStorage.setItem(DOCTOR_AUTH_KEY, JSON.stringify(effectiveProfile))
         localStorage.removeItem(DOCTOR_AUTH_KEY)
       }
     } catch {

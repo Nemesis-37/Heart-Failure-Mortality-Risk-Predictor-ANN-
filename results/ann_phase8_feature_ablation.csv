@@ -1,0 +1,6 @@
+model_id,label,n_features,removed,auroc_mean,auroc_std,brier_mean,brier_std,log_loss_mean,log_loss_std,sensitivity_mean,specificity_mean,cal_slope_mean
+Ablation_All11,All 11 features,11,[],0.765885,0.074547,0.180369,0.030333,0.542759,0.075394,0.450526,0.857317,0.926896
+Ablation_NoDiabetes,Without diabetes,10,['diabetes'],0.766737,0.08235,0.178304,0.033659,0.541064,0.08836,0.45,0.891707,1.004401
+Ablation_NoSex,Without sex,10,['sex'],0.7637,0.075292,0.179955,0.031863,0.550531,0.080727,0.471053,0.881829,0.866592
+Ablation_NoSmoking,Without smoking,10,['smoking'],0.769248,0.074232,0.178909,0.035284,0.543821,0.089473,0.513158,0.871951,0.93141
+Ablation_NoNoise,Without all 3 noise features,8,"['diabetes', 'sex', 'smoking']",0.776832,0.07172,0.175795,0.03044,0.531995,0.072753,0.461053,0.871951,0.945677

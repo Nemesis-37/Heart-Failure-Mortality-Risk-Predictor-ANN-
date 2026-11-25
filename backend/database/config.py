@@ -95,41 +95,63 @@ DB_SERVER = "PostgreSQL"
 
 _pg_url = _build_pg_url()
 
-if _pg_url:
+def _is_pg_port_reachable(pg_url: str, timeout_sec: float = 0.5) -> bool:
+    """Fast socket-level probe to prevent 2-minute OS TCP timeout hangs on Windows when PostgreSQL is offline."""
     try:
-        # Fast probe with short timeout to detect reachability
-        _probe_engine = create_engine(
-            _pg_url,
-            connect_args={"connect_timeout": 3},
-        )
-        with _probe_engine.connect() as _probe_conn:
-            _probe_conn.execute(text("CREATE SCHEMA IF NOT EXISTS clinical"))
-            _probe_conn.commit()
-            try:
-                _probe_conn.execute(text('ALTER TABLE clinical."Doctors" ADD COLUMN IF NOT EXISTS profile_photo_path VARCHAR(512)'))
-                _probe_conn.commit()
-            except Exception:
-                pass
-            _probe_conn.execute(text("SELECT 1"))
-        _probe_engine.dispose()
+        import socket
+        from urllib.parse import urlparse
+        clean_url = pg_url.replace("postgresql+psycopg2://", "http://").replace("postgresql://", "http://")
+        parsed = urlparse(clean_url)
+        host = parsed.hostname or "127.0.0.1"
+        port = parsed.port or 5432
+        if host in ("localhost", "::1"):
+            host = "127.0.0.1"
+        with socket.create_connection((host, int(port)), timeout=timeout_sec):
+            return True
+    except Exception:
+        return False
 
-        # Connect full engine with search_path set to clinical,public
-        engine = create_engine(
-            _pg_url,
-            connect_args={"options": "-c search_path=clinical,public"},
-            pool_size=DB_POOL_SIZE,
-            max_overflow=DB_MAX_OVERFLOW,
-            pool_timeout=DB_POOL_TIMEOUT,
-            pool_recycle=DB_POOL_RECYCLE,
-            pool_pre_ping=True,
-        )
-        DATABASE_URL = _pg_url
-        logger.info(f"Connected successfully to PostgreSQL database ({_pg_url.split('@')[-1] if '@' in _pg_url else 'local'})")
-    except Exception as _pg_err:
-        logger.error(f"PostgreSQL connection failed: {_pg_err}")
-        if is_prod:
-            raise RuntimeError(f"FATAL: Production requires PostgreSQL DATABASE_URL. Connection failed: {_pg_err}") from _pg_err
+
+if _pg_url:
+    # In development, skip long psycopg2 socket hangs if the target database port is closed/unreachable
+    if not is_prod and not _is_pg_port_reachable(_pg_url):
+        logger.warning("PostgreSQL server is unreachable on local port; immediately switching to offline SQLite fallback.")
         engine = None
+    else:
+        try:
+            # Fast probe with short timeout to detect reachability
+            _probe_engine = create_engine(
+                _pg_url,
+                connect_args={"connect_timeout": 3},
+            )
+            with _probe_engine.connect() as _probe_conn:
+                _probe_conn.execute(text("CREATE SCHEMA IF NOT EXISTS clinical"))
+                _probe_conn.commit()
+                try:
+                    _probe_conn.execute(text('ALTER TABLE clinical."Doctors" ADD COLUMN IF NOT EXISTS profile_photo_path VARCHAR(512)'))
+                    _probe_conn.commit()
+                except Exception:
+                    pass
+                _probe_conn.execute(text("SELECT 1"))
+            _probe_engine.dispose()
+
+            # Connect full engine with search_path set to clinical,public
+            engine = create_engine(
+                _pg_url,
+                connect_args={"options": "-c search_path=clinical,public"},
+                pool_size=DB_POOL_SIZE,
+                max_overflow=DB_MAX_OVERFLOW,
+                pool_timeout=DB_POOL_TIMEOUT,
+                pool_recycle=DB_POOL_RECYCLE,
+                pool_pre_ping=True,
+            )
+            DATABASE_URL = _pg_url
+            logger.info(f"Connected successfully to PostgreSQL database ({_pg_url.split('@')[-1] if '@' in _pg_url else 'local'})")
+        except Exception as _pg_err:
+            logger.error(f"PostgreSQL connection failed: {_pg_err}")
+            if is_prod:
+                raise RuntimeError(f"FATAL: Production requires PostgreSQL DATABASE_URL. Connection failed: {_pg_err}") from _pg_err
+            engine = None
 
 if engine is None:
     if is_prod:

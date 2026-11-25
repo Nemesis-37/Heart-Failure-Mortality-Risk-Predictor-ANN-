@@ -250,7 +250,8 @@ export function generateCounsellingGuidePdf(categories) {
         size: 7.5,
         color: [0.4, 0.45, 0.55],
       })
-      drawText('Complete Categories A through F', leftMargin + contentWidth - 135, topMargin - 14, {
+      const includedCodes = categories.map((c) => c.code).join(', ')
+      drawText(`Clinical Domains: Categories ${includedCodes}`, leftMargin + contentWidth - 145, topMargin - 14, {
         font: 'F1',
         size: 7.5,
         color: [0.55, 0.6, 0.7],

@@ -880,3 +880,535 @@
     transition: none !important;
   }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   14. Medical AI Telemetry & Neural Network Visualizer (Phase 11)
+   Rich cardiac telemetry, ECG wave tracing, floating biomarkers & carousel
+   ══════════════════════════════════════════════════════════════════════════════ */
+.med-ai-visualizer-card {
+  position: relative;
+  width: 100%;
+  margin: 1.5rem 0;
+  padding: 1.25rem 1.35rem;
+  border-radius: 14px;
+  background: rgba(11, 22, 42, 0.78);
+  border: 1px solid rgba(56, 189, 248, 0.22);
+  box-shadow:
+    0 12px 32px -8px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(56, 189, 248, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  overflow: hidden;
+  box-sizing: border-box;
+  animation: authFadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.med-ai-glow {
+  position: absolute;
+  top: -40px;
+  right: -40px;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(14, 165, 233, 0.18) 0%, transparent 70%);
+  filter: blur(40px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.med-ai-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(to right, rgba(56, 189, 248, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(56, 189, 248, 0.03) 1px, transparent 1px);
+  background-size: 20px 20px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Header & Telemetry */
+.med-ai-header {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 0.85rem;
+}
+
+.med-ai-pulse-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.med-ai-heart-indicator {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(239, 68, 68, 0.14);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.med-ai-heart-icon {
+  color: #EF4444;
+  animation: medAiHeartbeat 0.833s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+  transform-origin: center;
+}
+
+@keyframes medAiHeartbeat {
+  0% { transform: scale(1); }
+  14% { transform: scale(1.22); }
+  28% { transform: scale(1); }
+  42% { transform: scale(1.15); }
+  70% { transform: scale(1); }
+  100% { transform: scale(1); }
+}
+
+.med-ai-pulse-ring {
+  position: absolute;
+  inset: -3px;
+  border-radius: 10px;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  animation: medAiRipple 1.666s cubic-bezier(0, 0.2, 0.8, 1) infinite;
+  pointer-events: none;
+}
+
+@keyframes medAiRipple {
+  0% { transform: scale(0.9); opacity: 0.8; }
+  100% { transform: scale(1.4); opacity: 0; }
+}
+
+.med-ai-status-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #38BDF8;
+  text-transform: uppercase;
+}
+
+.med-ai-live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #34D399;
+  box-shadow: 0 0 6px rgba(52, 211, 153, 0.8);
+  animation: medAiDotBlink 1.2s ease-in-out infinite;
+}
+
+@keyframes medAiDotBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+.med-ai-rhythm-text {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #F1F5F9;
+  line-height: 1.2;
+}
+
+.med-ai-telemetry-stats {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.med-ai-stat-box {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+}
+
+.med-ai-stat-value {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #38BDF8;
+}
+
+.med-ai-stat-unit {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: #94A3B8;
+}
+
+.med-ai-model-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 9999px;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(52, 211, 153, 0.35);
+  color: #34D399;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.med-ai-pill-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: #34D399;
+}
+
+/* Oscilloscope & ECG Wave */
+.med-ai-ecg-container {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 84px;
+  margin-bottom: 0.9rem;
+  background: rgba(4, 8, 16, 0.85);
+  border-radius: 10px;
+  border: 1px solid rgba(56, 189, 248, 0.16);
+  overflow: hidden;
+}
+
+.med-ai-oscilloscope-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(to right, rgba(56, 189, 248, 0.045) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(56, 189, 248, 0.045) 1px, transparent 1px);
+  background-size: 15px 15px;
+  pointer-events: none;
+}
+
+.med-ai-ecg-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.med-ai-ecg-trace {
+  stroke-dasharray: 600;
+  stroke-dashoffset: 600;
+  animation: medAiEcgDraw 2.4s linear infinite;
+}
+
+@keyframes medAiEcgDraw {
+  0% { stroke-dashoffset: 600; }
+  100% { stroke-dashoffset: 0; }
+}
+
+.med-ai-sweep-head {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(180deg, transparent 0%, #38BDF8 40%, #34D399 60%, transparent 100%);
+  box-shadow: 0 0 10px 2px rgba(56, 189, 248, 0.8);
+  animation: medAiSweep 2.4s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes medAiSweep {
+  0% { left: 0%; opacity: 0; }
+  4% { opacity: 1; }
+  96% { opacity: 1; }
+  100% { left: 100%; opacity: 0; }
+}
+
+/* Neural Network Topology Mini-Graph */
+.med-ai-synapse-row {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 0.5rem 0.65rem;
+  background: rgba(15, 23, 42, 0.5);
+  border-radius: 8px;
+  border: 1px solid rgba(56, 189, 248, 0.1);
+  margin-bottom: 0.9rem;
+}
+
+.med-ai-nn-diagram {
+  width: 100%;
+}
+
+.med-ai-synapse-pulse {
+  animation: medAiSynapseFlow 1.8s linear infinite;
+}
+
+.med-ai-synapse-pulse.delay-1 {
+  animation-delay: 0.6s;
+}
+
+.med-ai-synapse-pulse.delay-2 {
+  animation-delay: 1.2s;
+}
+
+@keyframes medAiSynapseFlow {
+  0% { stroke-dashoffset: 20; }
+  100% { stroke-dashoffset: 0; }
+}
+
+.med-ai-node-glow {
+  animation: medAiGlowNode 2s ease-in-out infinite alternate;
+}
+
+@keyframes medAiGlowNode {
+  from { filter: drop-shadow(0 0 2px rgba(52, 211, 153, 0.4)); }
+  to { filter: drop-shadow(0 0 6px rgba(52, 211, 153, 0.9)); }
+}
+
+.med-ai-node-pulse {
+  animation: medAiPulseOutput 1.5s ease-in-out infinite alternate;
+}
+
+@keyframes medAiPulseOutput {
+  from { filter: drop-shadow(0 0 2px rgba(192, 132, 252, 0.4)); }
+  to { filter: drop-shadow(0 0 7px rgba(192, 132, 252, 0.95)); }
+}
+
+.med-ai-nn-labels {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 0.5rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.med-ai-arrow {
+  color: #64748B;
+  font-weight: 400;
+}
+
+/* Floating Biomarkers Grid */
+.med-ai-biomarkers-grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-bottom: 0.9rem;
+}
+
+.med-ai-biomarker-pill {
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(56, 189, 248, 0.14);
+  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+  animation: medAiFloat 4s ease-in-out infinite;
+}
+
+.med-ai-biomarker-pill:hover {
+  border-color: rgba(56, 189, 248, 0.35);
+  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.15);
+  transform: translateY(-2px);
+}
+
+@keyframes medAiFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+.med-ai-pill-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.med-ai-biomarker-name {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #E2E8F0;
+}
+
+.med-ai-biomarker-val {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #38BDF8;
+}
+
+.med-ai-biomarker-desc {
+  font-size: 0.64rem;
+  color: #94A3B8;
+  margin-top: 2px;
+}
+
+/* Clinical Presentation Carousel */
+.med-ai-carousel-section {
+  position: relative;
+  z-index: 1;
+  padding: 0.75rem 0.85rem;
+  border-radius: 8px;
+  background: rgba(6, 11, 20, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.med-ai-carousel-indicator-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.med-ai-carousel-badge {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 2px 7px;
+  border-radius: 4px;
+  border: 1px solid currentColor;
+  text-transform: uppercase;
+}
+
+.med-ai-carousel-dots {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.med-ai-dot {
+  width: 7px;
+  height: 7px;
+  padding: 0;
+  border-radius: 50%;
+  background: rgba(148, 163, 184, 0.3);
+  border: none;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.med-ai-dot.active {
+  width: 18px;
+  border-radius: 4px;
+  background: #38BDF8;
+  box-shadow: 0 0 6px rgba(56, 189, 248, 0.6);
+}
+
+.med-ai-carousel-content {
+  animation: medAiFadeSlide 0.35s ease-out;
+}
+
+@keyframes medAiFadeSlide {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.med-ai-carousel-title {
+  margin: 0 0 2px 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #F8FAFC;
+}
+
+.med-ai-carousel-sub {
+  margin: 0;
+  font-size: 0.7rem;
+  color: #94A3B8;
+  line-height: 1.35;
+}
+
+/* Reduced Motion Override */
+@media (prefers-reduced-motion: reduce) {
+  .med-ai-visualizer-card,
+  .med-ai-heart-icon,
+  .med-ai-pulse-ring,
+  .med-ai-live-dot,
+  .med-ai-ecg-trace,
+  .med-ai-sweep-head,
+  .med-ai-synapse-pulse,
+  .med-ai-node-glow,
+  .med-ai-node-pulse,
+  .med-ai-biomarker-pill,
+  .med-ai-carousel-content {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .med-ai-ecg-trace {
+    stroke-dashoffset: 0 !important;
+  }
+
+  .med-ai-sweep-head {
+    display: none !important;
+  }
+}
+
+@media (max-width: 991px) {
+  .med-ai-visualizer-card {
+    margin: 1.25rem 0;
+  }
+  .med-ai-biomarkers-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.med-ai-biomarkers-header {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  padding: 0 2px;
+}
+
+.med-ai-biomarkers-title {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: #94A3B8;
+  text-transform: uppercase;
+}
+
+.med-ai-biomarkers-subtitle {
+  font-size: 0.62rem;
+  color: #64748B;
+  font-style: italic;
+}
+
+.med-ai-safety-notice {
+  position: relative;
+  z-index: 1;
+  margin-top: 0.85rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 6px;
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  color: #CBD5E1;
+  font-size: 0.68rem;
+  line-height: 1.4;
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+}
+
+.med-ai-safety-notice svg {
+  color: #FBBF24;
+}
+
+.med-ai-safety-notice strong {
+  color: #FBBF24;
+}
+
+

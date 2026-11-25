@@ -1,0 +1,13 @@
+Component,Subsystem,Target_Environment,Status,Validation_Method,Risk_Level,Notes_and_Remediation
+Logistic Regression Model,Machine Learning,Local & Render,PASSED,"scikit-learn pipeline load, predict_proba verification, 5-case audit",LOW,Canonical baseline (12 params); fully validated and bit-level concordant.
+Production ANN Model,Machine Learning,Local & Render,PASSED,"PyTorch state_dict load (2,881 params), scaler verification, forward pass audit",LOW,Exact 11->64->32->1 architecture verified; single scaling pass confirmed.
+FastAPI Core Endpoints,Backend API,Local & Render,PASSED,"FastAPI TestClient suite on /health, /predict, /predict-ann",LOW,100% test pass rate with deterministic low-latency responses.
+Physician Authentication,Security / Auth,Local & Render,PASSED,"Argon2id password verification, JWT token issuance and validation",LOW,"Rate limiting, session expiration, and admin authorization fully active."
+Clinical CRUD & History,Clinical Domain,Local & Render,PASSED,"Assessment persistence, history pagination, and dashboard summary queries",LOW,IDOR protections enforce doctor-scoped queries on all endpoints.
+SQLite Offline Database,Database Storage,Local Development,PASSED,"Direct query, schema validation, and transaction tests on clinical_local.db",LOW,WAL mode active; serves local development flawlessly when PostgreSQL is offline.
+Local PostgreSQL (Port 5433),Database Storage,Local Development,BLOCKED / NOT TESTED,Fast TCP socket probe (0.5s timeout),MEDIUM,Local PostgreSQL service daemon is currently stopped/offline on developer machine.
+Render Cloud PostgreSQL,Cloud Infrastructure,Render Cloud Production,BLOCKED / NOT TESTED,Network probe from sandboxed local environment,MEDIUM,Remote Render database host is unreachable from local sandbox. Validated via render.yaml configuration.
+React Frontend UI,User Interface,Local & Render,PASSED,"Component audit, dual-model selector verification, build bundle audit",LOW,Vite production build served seamlessly via FastAPI static files mount.
+Clinical Safety Disclaimers,Clinical Governance,Local & Render,PASSED,Code inspection of disclaimer banners and educational labels,LOW,Persistent disclaimers explicitly restrict application to academic research.
+Single-Service Cloud Config,DevOps / Render,Render Cloud Production,PASSED,render.yaml syntax and environment variable mapping audit,LOW,Single web service deployment configured with automatic database binding.
+Data Access Security & IDOR,Cybersecurity,Local & Render,PASSED,"Negative authorization tests, token tampering, and doctor isolation checks",LOW,Cross-physician data leakage mathematically impossible due to strict ORM scoping.

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import ThemeToggle from '../components/ThemeToggle.jsx'
 import DoctorProfilePhotoModal from '../components/DoctorProfilePhotoModal.jsx'
+import DoctorAvatar from '../components/DoctorAvatar.jsx'
 import { apiUrl } from '../apiConfig.js'
 
 export default function AppLayout({
@@ -276,25 +277,12 @@ export default function AppLayout({
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setShowPhotoModal(true) }}
             >
               <div className="doctor-avatar-small" aria-hidden="true">
-                {(doctorUser?.profilePhotoUrl || doctorUser?.profile_photo_url) ? (
-                  <img
-                    src={apiUrl(doctorUser.profilePhotoUrl || doctorUser.profile_photo_url)}
-                    alt={cleanDoctorName}
-                    onError={(e) => {
-                      const photoPath = doctorUser?.profilePhotoUrl || doctorUser?.profile_photo_url
-                      if (photoPath && !e.currentTarget.src.includes(':8000')) {
-                        e.currentTarget.src = `http://127.0.0.1:8000${photoPath.startsWith('/') ? photoPath : `/${photoPath}`}`
-                        return
-                      }
-                      e.currentTarget.style.display = 'none'
-                      if (e.currentTarget.parentElement) {
-                        e.currentTarget.parentElement.textContent = avatarInitials
-                      }
-                    }}
-                  />
-                ) : (
-                  avatarInitials
-                )}
+                <DoctorAvatar
+                  photoUrl={doctorUser?.profilePhotoUrl || doctorUser?.profile_photo_url}
+                  initials={avatarInitials}
+                  alt={cleanDoctorName}
+                  email={doctorUser?.email}
+                />
               </div>
               <div className="sidebar-doctor-meta">
                 <span className="doctor-display-name" title={cleanDoctorName}>
@@ -313,25 +301,12 @@ export default function AppLayout({
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setShowPhotoModal(true) }}
               aria-hidden="true"
             >
-              {(doctorUser?.profilePhotoUrl || doctorUser?.profile_photo_url) ? (
-                <img
-                  src={apiUrl(doctorUser.profilePhotoUrl || doctorUser.profile_photo_url)}
-                  alt={cleanDoctorName}
-                  onError={(e) => {
-                    const photoPath = doctorUser?.profilePhotoUrl || doctorUser?.profile_photo_url
-                    if (photoPath && !e.currentTarget.src.includes(':8000')) {
-                      e.currentTarget.src = `http://127.0.0.1:8000${photoPath.startsWith('/') ? photoPath : `/${photoPath}`}`
-                      return
-                    }
-                    e.currentTarget.style.display = 'none'
-                    if (e.currentTarget.parentElement) {
-                      e.currentTarget.parentElement.textContent = avatarInitials
-                    }
-                  }}
-                />
-              ) : (
-                avatarInitials
-              )}
+              <DoctorAvatar
+                photoUrl={doctorUser?.profilePhotoUrl || doctorUser?.profile_photo_url}
+                initials={avatarInitials}
+                alt={cleanDoctorName}
+                email={doctorUser?.email}
+              />
             </div>
           )}
 
@@ -410,25 +385,12 @@ export default function AppLayout({
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setShowPhotoModal(true) }}
             >
               <div className="header-doctor-avatar" aria-hidden="true">
-                {(doctorUser?.profilePhotoUrl || doctorUser?.profile_photo_url) ? (
-                  <img
-                    src={apiUrl(doctorUser.profilePhotoUrl || doctorUser.profile_photo_url)}
-                    alt={cleanDoctorName}
-                    onError={(e) => {
-                      const photoPath = doctorUser?.profilePhotoUrl || doctorUser?.profile_photo_url
-                      if (photoPath && !e.currentTarget.src.includes(':8000')) {
-                        e.currentTarget.src = `http://127.0.0.1:8000${photoPath.startsWith('/') ? photoPath : `/${photoPath}`}`
-                        return
-                      }
-                      e.currentTarget.style.display = 'none'
-                      if (e.currentTarget.parentElement) {
-                        e.currentTarget.parentElement.textContent = avatarInitials
-                      }
-                    }}
-                  />
-                ) : (
-                  avatarInitials
-                )}
+                <DoctorAvatar
+                  photoUrl={doctorUser?.profilePhotoUrl || doctorUser?.profile_photo_url}
+                  initials={avatarInitials}
+                  alt={cleanDoctorName}
+                  email={doctorUser?.email}
+                />
               </div>
               <div className="header-doctor-info">
                 <span className="header-doctor-name">{cleanDoctorName}</span>

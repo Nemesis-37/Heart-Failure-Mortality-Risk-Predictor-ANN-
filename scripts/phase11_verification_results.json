@@ -1,0 +1,149 @@
+{
+  "health_checks": [
+    {
+      "name": "GET /health",
+      "passed": true,
+      "details": "status=200, data={'status': 'healthy', 'logistic_regression_loaded': True, 'ann_loaded': True, 'feature_count': 11}"
+    },
+    {
+      "name": "GET /api/health",
+      "passed": true,
+      "details": "status=200, data={'status': 'healthy', 'logistic_regression_loaded': True, 'ann_loaded': True, 'feature_count': 11}"
+    },
+    {
+      "name": "GET /db-health",
+      "passed": true,
+      "details": "status=200, data={'status': 'connected', 'database': 'clinical_local.db', 'dialect': 'sqlite', 'message': 'Offline fallback SQLite database active (clinical_local.db)'}"
+    },
+    {
+      "name": "GET /api/db-health",
+      "passed": true,
+      "details": "status=200, data={'status': 'connected', 'database': 'clinical_local.db', 'dialect': 'sqlite', 'message': 'Offline fallback SQLite database active (clinical_local.db)'}"
+    }
+  ],
+  "inference_checks": [
+    {
+      "name": "POST /predict",
+      "passed": true,
+      "details": "model=Logistic Regression, prob=0.4182, class=0"
+    },
+    {
+      "name": "POST /api/predict",
+      "passed": true,
+      "details": "model=Logistic Regression, prob=0.4182, class=0"
+    },
+    {
+      "name": "POST /predict-ann",
+      "passed": true,
+      "details": "model=Artificial Neural Network, prob=0.4710, class=0"
+    },
+    {
+      "name": "POST /api/predict-ann",
+      "passed": true,
+      "details": "model=Artificial Neural Network, prob=0.4710, class=0"
+    }
+  ],
+  "validation_checks": [
+    {
+      "name": "Missing ejection_fraction rejection",
+      "passed": true,
+      "details": "status=422"
+    },
+    {
+      "name": "Negative age rejection",
+      "passed": true,
+      "details": "status=422"
+    },
+    {
+      "name": "Extreme clinical boundary acceptance",
+      "passed": true,
+      "details": "status=200"
+    }
+  ],
+  "registration_checks": [
+    {
+      "name": "Valid registration via /auth/register",
+      "passed": true,
+      "details": "status=201"
+    },
+    {
+      "name": "Duplicate registration_number rejection",
+      "passed": true,
+      "details": "status=400, text={\"detail\":\"A doctor with this medical registration number is already registered in the system.\"}"
+    },
+    {
+      "name": "Duplicate email rejection",
+      "passed": true,
+      "details": "status=400, text={\"detail\":\"An account with this email address already exists. Please log in or use another email.\"}"
+    },
+    {
+      "name": "Valid registration with PDF document via /api/auth/register",
+      "passed": true,
+      "details": "status=201"
+    },
+    {
+      "name": "Invalid short password rejection",
+      "passed": true,
+      "details": "status=400"
+    }
+  ],
+  "cors_checks": [
+    {
+      "name": "CORS Preflight from https://heart-failure-mortality-risk-predictor.onrender.com",
+      "passed": true,
+      "details": "status=200, allowed=True, expected=True"
+    },
+    {
+      "name": "CORS Preflight from https://preview-branch-123.onrender.com",
+      "passed": true,
+      "details": "status=400, allowed=False, expected=False"
+    },
+    {
+      "name": "CORS Preflight from http://localhost:5173",
+      "passed": true,
+      "details": "status=200, allowed=True, expected=True"
+    },
+    {
+      "name": "CORS Preflight from http://127.0.0.1:5173",
+      "passed": true,
+      "details": "status=200, allowed=True, expected=True"
+    },
+    {
+      "name": "CORS Preflight from https://unauthorized-malicious-domain.com",
+      "passed": true,
+      "details": "status=400, allowed=False, expected=False"
+    }
+  ],
+  "frontend_build_checks": [
+    {
+      "name": "dist/index.html exists",
+      "passed": true,
+      "details": "C:\\Users\\DELL\\OneDrive\\Desktop\\Heart Failure Mortality Risk Predictor\\frontend\\dist\\index.html"
+    },
+    {
+      "name": "CSS bundle exists",
+      "passed": true,
+      "details": "Found: ['index-_g1zc1Gj.css']"
+    },
+    {
+      "name": "JS bundle exists",
+      "passed": true,
+      "details": "Found: ['index-BPuzUNOl.js']"
+    },
+    {
+      "name": "CSS has .med-ai-visualizer-card",
+      "passed": true,
+      "details": "Medical AI card class found"
+    },
+    {
+      "name": "CSS has medAiEcgDraw keyframe",
+      "passed": true,
+      "details": "ECG waveform animation found"
+    },
+    {
+      "name": "CSS has prefers-reduced-motion support",
+      "passed": true,
+      "details": "Reduced motion accessibility rule found"
+    }
+  ]
+}

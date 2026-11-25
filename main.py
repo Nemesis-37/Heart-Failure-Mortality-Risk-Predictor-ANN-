@@ -302,14 +302,25 @@ app = FastAPI(
 
 is_prod_env = os.getenv("APP_ENV", "development").lower() == "production" or bool(os.getenv("RENDER"))
 raw_origins = os.getenv("ALLOWED_ORIGINS", "").strip()
-if raw_origins:
-    allowed_origins = [o.strip() for o in raw_origins.split(",") if o.strip()]
-elif is_prod_env:
-    allowed_origins = [
-        "https://heart-failure-mortality-risk-predictor.onrender.com",
-    ]
+frontend_url = os.getenv("FRONTEND_URL", "").strip().rstrip("/")
+
+# Explicit canonical production domain
+TRUSTED_PROD_ORIGIN = "https://heart-failure-mortality-risk-predictor.onrender.com"
+
+# Build hardened origin allowlist
+if is_prod_env:
+    # In production: strictly allow configured trusted production origins only; do NOT allow localhost or arbitrary *.onrender.com subdomains
+    prod_origins = [TRUSTED_PROD_ORIGIN]
+    if frontend_url:
+        prod_origins.append(frontend_url)
+    if raw_origins:
+        prod_origins.extend([o.strip().rstrip("/") for o in raw_origins.split(",") if o.strip()])
+    allowed_origins = list(dict.fromkeys(prod_origins))
+    cors_origin_regex = None  # No wildcard regex in production; strictly adhere to trusted allowlist
 else:
-    allowed_origins = [
+    # In development: allow local developer loopback ports and trusted test origins
+    dev_origins = [
+        TRUSTED_PROD_ORIGIN,
         "http://localhost:5173",
         "http://127.0.0.1:5173",
         "http://localhost:3000",
@@ -319,33 +330,44 @@ else:
         "http://localhost:8000",
         "http://127.0.0.1:8000",
     ]
-
-dev_origin_regex = (
-    r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$"
-    if not is_prod_env
-    else None
-)
+    if frontend_url:
+        dev_origins.append(frontend_url)
+    if raw_origins:
+        dev_origins.extend([o.strip().rstrip("/") for o in raw_origins.split(",") if o.strip()])
+    allowed_origins = list(dict.fromkeys(dev_origins))
+    # In dev, regex is restricted to localhost / 127.0.0.1 on any port only
+    cors_origin_regex = r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$"
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
-    allow_origin_regex=dev_origin_regex,
+    allow_origin_regex=cors_origin_regex,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    allow_headers=[
+        "Authorization",
+        "Content-Type",
+        "Accept",
+        "Origin",
+        "X-Requested-With",
+        "Access-Control-Request-Method",
+        "Access-Control-Request-Headers",
+    ],
 )
 
-# Mount Doctor Authentication Router
+# Mount Doctor Authentication Router (both root /auth and /api/auth)
 try:
     from auth.router import router as auth_router
     app.include_router(auth_router)
+    app.include_router(auth_router, prefix="/api")
 except Exception as _auth_err:
     logger.warning(f"Auth router deferred: {_auth_err}")
 
-# Mount Administrator Verification Router
+# Mount Administrator Verification Router (both root /admin and /api/admin)
 try:
     from admin.router import router as admin_router
     app.include_router(admin_router)
+    app.include_router(admin_router, prefix="/api")
 except Exception as _admin_err:
     logger.warning(f"Admin router deferred: {_admin_err}")
 
@@ -456,6 +478,7 @@ def home():
 
 
 @app.get("/health")
+@app.get("/api/health")
 def health():
     return {
         "status": "healthy",
@@ -466,6 +489,7 @@ def health():
 
 
 @app.get("/db-health")
+@app.get("/api/db-health")
 def db_health():
     """
     Test database connectivity and return live status.
@@ -580,9 +604,8 @@ def predict_ann(patient: PatientData, current_doctor = Depends(get_auth_doctor))
 
         # Run inference with the saved trained weights
         with torch.inference_mode():
-            probability = float(
-                ann_model(input_tensor).item()
-            )
+            raw_output = ann_model(input_tensor)
+            probability = float(torch.sigmoid(raw_output).item())
 
         prediction = int(probability >= 0.5)
 

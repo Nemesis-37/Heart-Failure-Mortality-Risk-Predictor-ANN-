@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useId } from 'react'
-import { apiUrl } from './apiConfig.js'
+import { getAuthCandidateUrls } from './apiConfig.js'
+import { safeParseResponse, parseApiError } from './utils/apiErrorHelper.js'
+import MedicalAiVisualizer from './components/MedicalAiVisualizer.jsx'
 import './AuthPages.css'
 
 export default function DoctorRegister({ onNavigateToLogin, onRegisterSuccess }) {
@@ -159,6 +161,7 @@ export default function DoctorRegister({ onNavigateToLogin, onRegisterSuccess })
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    if (isSubmitting) return
     if (!validate()) return
 
     setIsSubmitting(true)
@@ -179,27 +182,63 @@ export default function DoctorRegister({ onNavigateToLogin, onRegisterSuccess })
         data.append('document', documentFile)
       }
 
-      const res = await fetch(apiUrl('/auth/register'), {
-        method: 'POST',
-        body: data,
-      })
+      const candidateUrls = getAuthCandidateUrls('/auth/register')
+      let successfulData = null
+      let lastParsedError = null
 
-      const json = await res.json()
+      for (const endpoint of candidateUrls) {
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 20000)
 
-      if (!res.ok) {
-        throw new Error(json.detail || 'Registration failed. Please review your entries.')
+        try {
+          const res = await fetch(endpoint, {
+            method: 'POST',
+            body: data,
+            signal: controller.signal,
+          })
+          clearTimeout(timeoutId)
+
+          const parsedBody = await safeParseResponse(res)
+
+          if (res.ok && parsedBody) {
+            successfulData = parsedBody
+            break
+          } else {
+            lastParsedError = parseApiError(null, res, parsedBody)
+            // If the server answered with 400 (e.g. duplicate or validation), don't spam fallbacks
+            if (res.status >= 400 && res.status < 500) {
+              break
+            }
+          }
+        } catch (fetchErr) {
+          clearTimeout(timeoutId)
+          lastParsedError = parseApiError(fetchErr)
+        }
       }
 
-      setRegisteredDoctor(json.doctor || {
-        full_name: formData.fullName,
-        email: formData.email,
-        registration_number: formData.registrationNumber,
-        registration_council: formData.registrationCouncil,
-      })
+      if (!successfulData) {
+        const errorMsg =
+          lastParsedError?.message ||
+          'Unable to connect to registration server. Please ensure the backend is running.'
+        setServerError(errorMsg)
+        if (lastParsedError?.fieldErrors && Object.keys(lastParsedError.fieldErrors).length > 0) {
+          setErrors((prev) => ({ ...prev, ...lastParsedError.fieldErrors }))
+        }
+        return
+      }
+
+      setRegisteredDoctor(
+        successfulData.doctor || {
+          full_name: formData.fullName,
+          email: formData.email,
+          registration_number: formData.registrationNumber,
+          registration_council: formData.registrationCouncil,
+        }
+      )
       setRegistrationComplete(true)
-      if (onRegisterSuccess) onRegisterSuccess(json.doctor)
+      if (onRegisterSuccess) onRegisterSuccess(successfulData.doctor)
     } catch (err) {
-      setServerError(err.message || 'Unable to connect to server. Ensure FastAPI backend is running.')
+      setServerError(err.message || 'An unexpected error occurred during physician registration.')
     } finally {
       setIsSubmitting(false)
     }
@@ -242,6 +281,9 @@ export default function DoctorRegister({ onNavigateToLogin, onRegisterSuccess })
               Register your medical qualifications to evaluate heart failure mortality risk using dual-engine Artificial Neural Network and calibrated Logistic Regression diagnostic models.
             </p>
           </div>
+
+          {/* Animated Medical AI Telemetry, ECG & Neural Network Visualizer */}
+          <MedicalAiVisualizer />
 
           {/* 4 Security & Verification Feature Cards */}
           <div className="auth-features-list">

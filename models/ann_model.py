@@ -21,11 +21,15 @@ class HeartFailureANN(nn.Module):
             nn.Dropout(0.2),
 
             nn.Linear(32, 1),
-            nn.Sigmoid()
         )
 
     def forward(self, x):
+        """Returns raw unconstrained logits for numerical stability with BCEWithLogitsLoss."""
         return self.network(x)
+
+    def predict_proba(self, x):
+        """Convert raw logits to calibrated probabilities in [0, 1]."""
+        return torch.sigmoid(self.forward(x))
 
 
 if __name__ == "__main__":
@@ -41,17 +45,19 @@ if __name__ == "__main__":
     # One sample with 11 input features
     sample_input = torch.randn(1, 11)
 
-    # Generate output
+    # Generate output logits and probability
     with torch.no_grad():
-        output_probability = model(sample_input)
+        output_logits = model(sample_input)
+        output_probability = torch.sigmoid(output_logits)
 
     print("=" * 50)
-    print("ANN FORWARD PASS TEST")
+    print("ANN FORWARD PASS TEST (NUMERICALLY STABLE LOGITS)")
     print("=" * 50)
 
     print("Input shape:", sample_input.shape)
-    print("Output shape:", output_probability.shape)
-    print("Output probability:", output_probability.item())
+    print("Output logits shape:", output_logits.shape)
+    print("Output raw logit:", output_logits.item())
+    print("Output probability via sigmoid:", output_probability.item())
 
     print("\nForward pass completed successfully.")
 

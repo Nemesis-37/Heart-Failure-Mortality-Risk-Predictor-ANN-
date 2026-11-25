@@ -4,22 +4,41 @@ import { generateCounsellingGuidePdf } from '../utils/generateCounsellingPdf.js'
 export default function HeartHealthCounsellingPage({ onNavigate }) {
   const [activeCategory, setActiveCategory] = useState('nutrition')
   const [checkedPoints, setCheckedPoints] = useState({})
+  const [pdfFilterMode, setPdfFilterMode] = useState('exclude_checked') // 'exclude_checked' | 'include_checked'
 
   const toggleCheck = (id) => {
     setCheckedPoints((prev) => ({ ...prev, [id]: !prev[id] }))
   }
 
+  const isPointIncludedInPdf = (pointId) => {
+    if (pdfFilterMode === 'exclude_checked') {
+      return !checkedPoints[pointId]
+    } else {
+      return !!checkedPoints[pointId]
+    }
+  }
+
+  const totalPoints = categories.reduce((sum, c) => sum + c.counsellingPoints.length, 0)
+  const includedPointsCount = categories.reduce(
+    (sum, c) => sum + c.counsellingPoints.filter((pt) => isPointIncludedInPdf(pt.id)).length,
+    0
+  )
+  const excludedPointsCount = totalPoints - includedPointsCount
+
   const handleDownloadPdf = () => {
-    // Exclude checked points from the generated PDF export
     const filteredCategories = categories
       .map((cat) => ({
         ...cat,
-        counsellingPoints: cat.counsellingPoints.filter((point) => !checkedPoints[point.id]),
+        counsellingPoints: cat.counsellingPoints.filter((point) => isPointIncludedInPdf(point.id)),
       }))
       .filter((cat) => cat.counsellingPoints.length > 0)
 
     if (filteredCategories.length === 0) {
-      alert('All topics are currently excluded. Please uncheck at least one topic to download the PDF guide.')
+      alert(
+        pdfFilterMode === 'exclude_checked'
+          ? 'All topics are currently excluded. Please uncheck at least one topic to download the PDF guide.'
+          : 'No topics are currently selected. Please check at least one topic to download the PDF guide.'
+      )
       return
     }
 
@@ -27,7 +46,17 @@ export default function HeartHealthCounsellingPage({ onNavigate }) {
   }
 
   const handleIncludeAll = () => {
-    setCheckedPoints({})
+    if (pdfFilterMode === 'exclude_checked') {
+      setCheckedPoints({})
+    } else {
+      const allSelected = {}
+      categories.forEach((cat) => {
+        cat.counsellingPoints.forEach((pt) => {
+          allSelected[pt.id] = true
+        })
+      })
+      setCheckedPoints(allSelected)
+    }
   }
 
   const handleExcludeCategory = () => {
@@ -35,7 +64,11 @@ export default function HeartHealthCounsellingPage({ onNavigate }) {
     setCheckedPoints((prev) => {
       const updated = { ...prev }
       currentPoints.forEach((pt) => {
-        updated[pt.id] = true
+        if (pdfFilterMode === 'exclude_checked') {
+          updated[pt.id] = true
+        } else {
+          delete updated[pt.id]
+        }
       })
       return updated
     })
@@ -46,7 +79,11 @@ export default function HeartHealthCounsellingPage({ onNavigate }) {
     setCheckedPoints((prev) => {
       const updated = { ...prev }
       currentPoints.forEach((pt) => {
-        delete updated[pt.id]
+        if (pdfFilterMode === 'exclude_checked') {
+          delete updated[pt.id]
+        } else {
+          updated[pt.id] = true
+        }
       })
       return updated
     })
@@ -358,7 +395,7 @@ export default function HeartHealthCounsellingPage({ onNavigate }) {
               boxShadow: '0 4px 14px rgba(0, 0, 0, 0.15)',
               transition: 'all 0.15s ease',
             }}
-            title="Download personalized counselling guide as a formatted PDF (omitting checked items)"
+            title={`Download personalized counselling guide as a formatted PDF (${includedPointsCount} of ${totalPoints} topics included)`}
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -366,7 +403,7 @@ export default function HeartHealthCounsellingPage({ onNavigate }) {
               <line x1="12" y1="15" x2="12" y2="3" />
             </svg>
             <span>
-              Download PDF {Object.values(checkedPoints).filter(Boolean).length > 0 ? `(${categories.reduce((sum, c) => sum + c.counsellingPoints.length, 0) - Object.values(checkedPoints).filter(Boolean).length} Included)` : ''}
+              Download PDF {`(${includedPointsCount} of ${totalPoints} Included)`}
             </span>
           </button>
 
@@ -394,81 +431,201 @@ export default function HeartHealthCounsellingPage({ onNavigate }) {
         </div>
       </section>
 
-      {/* PDF Exclude Filter Guidance & Toolbar */}
+      {/* Category Interaction Disclaimer */}
       <div style={{
         display: 'flex',
-        justifyContent: 'space-between',
         alignItems: 'center',
-        flexWrap: 'wrap',
-        gap: '12px',
-        background: 'rgba(21, 101, 216, 0.1)',
-        border: '1px solid rgba(56, 189, 248, 0.25)',
-        borderRadius: '12px',
-        padding: '0.9rem 1.25rem',
-        marginBottom: '1.25rem',
-        fontSize: '0.84rem',
-        color: '#DBEAFE',
+        gap: '8px',
+        fontSize: '0.82rem',
+        color: '#64748B',
+        marginBottom: '1rem',
+        padding: '0 4px',
+        lineHeight: '1.45',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span style={{ fontSize: '1.2rem' }}>☑️</span>
-          <span>
-            <strong>Customize PDF Export:</strong> Click on the checkbox of any guidance point to <strong>remove/exclude it from the downloaded PDF</strong> ({Object.values(checkedPoints).filter(Boolean).length} excluded, {categories.reduce((sum, c) => sum + c.counsellingPoints.length, 0) - Object.values(checkedPoints).filter(Boolean).length} included).
-          </span>
+        <span style={{ fontSize: '1rem', lineHeight: 1 }} aria-hidden="true">💡</span>
+        <span>
+          Selecting a category only changes the content displayed on this page. It does not download a PDF. Use the <strong>Download PDF</strong> button to download the complete counselling guide.
+        </span>
+      </div>
+
+      {/* PDF Exclude Filter Option & Customization Toolbar */}
+      <div style={{
+        background: '#0B1F3A',
+        border: '1px solid rgba(56, 189, 248, 0.3)',
+        borderRadius: '14px',
+        padding: '1rem 1.4rem',
+        marginBottom: '1.5rem',
+        color: '#DBEAFE',
+        boxShadow: '0 4px 16px rgba(11, 31, 58, 0.15)',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '12px',
+      }}>
+        {/* Top Row: Option Selector & Live Counts */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '12px',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+          paddingBottom: '10px',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '1.25rem' }}>📄</span>
+            <div>
+              <strong style={{ color: '#FFFFFF', fontSize: '0.92rem' }}>PDF Export Customization Option:</strong>
+              <span style={{ fontSize: '0.82rem', color: '#94A3B8', marginLeft: '6px' }}>
+                Select how checkboxes interact with the downloaded PDF
+              </span>
+            </div>
+          </div>
+
+          {/* Mode Option Selector */}
+          <div style={{ display: 'flex', gap: '8px', background: 'rgba(255,255,255,0.06)', padding: '4px', borderRadius: '10px' }}>
+            <button
+              type="button"
+              onClick={() => setPdfFilterMode('exclude_checked')}
+              style={{
+                background: pdfFilterMode === 'exclude_checked' ? '#1565D8' : 'transparent',
+                color: pdfFilterMode === 'exclude_checked' ? '#FFFFFF' : '#94A3B8',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '6px 14px',
+                fontSize: '0.78rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+              }}
+            >
+              <span>{pdfFilterMode === 'exclude_checked' ? '☑️' : '⚪'}</span>
+              <span>Check to Remove from PDF (Default)</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setPdfFilterMode('include_checked')}
+              style={{
+                background: pdfFilterMode === 'include_checked' ? '#1565D8' : 'transparent',
+                color: pdfFilterMode === 'include_checked' ? '#FFFFFF' : '#94A3B8',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '6px 14px',
+                fontSize: '0.78rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+              }}
+            >
+              <span>{pdfFilterMode === 'include_checked' ? '☑️' : '⚪'}</span>
+              <span>Check to Include in PDF</span>
+            </button>
+          </div>
         </div>
-        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          {Object.values(checkedPoints).filter(Boolean).length > 0 && (
+
+        {/* Bottom Row: Status Indicator & Quick Batch Controls */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '12px',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.82rem', flexWrap: 'wrap' }}>
+            <span style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '5px',
+              padding: '3px 10px',
+              borderRadius: '20px',
+              background: 'rgba(16, 185, 129, 0.15)',
+              color: '#34D399',
+              border: '1px solid rgba(16, 185, 129, 0.3)',
+              fontWeight: 700,
+            }}>
+              ✓ {includedPointsCount} Topics in PDF
+            </span>
+            <span style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '5px',
+              padding: '3px 10px',
+              borderRadius: '20px',
+              background: excludedPointsCount > 0 ? 'rgba(239, 68, 68, 0.15)' : 'rgba(255, 255, 255, 0.05)',
+              color: excludedPointsCount > 0 ? '#F87171' : '#94A3B8',
+              border: `1px solid ${excludedPointsCount > 0 ? 'rgba(239, 68, 68, 0.3)' : 'rgba(255, 255, 255, 0.1)'}`,
+              fontWeight: 700,
+            }}>
+              ✕ {excludedPointsCount} Excluded
+            </span>
+            <span style={{ color: '#94A3B8', fontSize: '0.78rem' }}>
+              {pdfFilterMode === 'exclude_checked'
+                ? 'Click the checkbox of any topic to remove it from the downloaded PDF.'
+                : 'Click the checkbox of any topic to include it in the downloaded PDF.'}
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             <button
               type="button"
               onClick={handleIncludeAll}
               style={{
-                background: 'rgba(255, 255, 255, 0.15)',
+                background: 'rgba(255, 255, 255, 0.1)',
                 color: '#FFFFFF',
-                border: '1px solid rgba(255, 255, 255, 0.3)',
+                border: '1px solid rgba(255, 255, 255, 0.25)',
                 borderRadius: '8px',
                 padding: '5px 12px',
                 fontSize: '0.78rem',
                 fontWeight: 600,
                 cursor: 'pointer',
               }}
+              title="Reset all topic selections so all topics are included in the PDF"
             >
               Reset (Include All)
             </button>
-          )}
-          {activeData.counsellingPoints.filter((pt) => checkedPoints[pt.id]).length < activeData.counsellingPoints.length ? (
+
             <button
               type="button"
               onClick={handleExcludeCategory}
               style={{
-                background: 'rgba(239, 68, 68, 0.18)',
+                background: 'rgba(239, 68, 68, 0.15)',
                 color: '#FECACA',
-                border: '1px solid rgba(239, 68, 68, 0.4)',
+                border: '1px solid rgba(239, 68, 68, 0.35)',
                 borderRadius: '8px',
                 padding: '5px 12px',
                 fontSize: '0.78rem',
                 fontWeight: 600,
                 cursor: 'pointer',
               }}
+              title={`Exclude all topics under Category ${activeData.code} (${activeData.title})`}
             >
-              Exclude All in Category {activeData.code}
+              Exclude Category {activeData.code}
             </button>
-          ) : (
+
             <button
               type="button"
               onClick={handleIncludeCategory}
               style={{
-                background: 'rgba(16, 185, 129, 0.18)',
+                background: 'rgba(16, 185, 129, 0.15)',
                 color: '#A7F3D0',
-                border: '1px solid rgba(16, 185, 129, 0.4)',
+                border: '1px solid rgba(16, 185, 129, 0.35)',
                 borderRadius: '8px',
                 padding: '5px 12px',
                 fontSize: '0.78rem',
                 fontWeight: 600,
                 cursor: 'pointer',
               }}
+              title={`Include all topics under Category ${activeData.code} (${activeData.title})`}
             >
-              Include All in Category {activeData.code}
+              Include Category {activeData.code}
             </button>
-          )}
+          </div>
         </div>
       </div>
 
@@ -573,7 +730,10 @@ export default function HeartHealthCounsellingPage({ onNavigate }) {
           gap: '1.5rem',
         }}>
           {activeData.counsellingPoints.map((point) => {
-            const isExcluded = !!checkedPoints[point.id]
+            const isIncluded = isPointIncludedInPdf(point.id)
+            const isExcluded = !isIncluded
+            const isChecked = !!checkedPoints[point.id]
+
             return (
               <div
                 key={point.id}
@@ -590,7 +750,7 @@ export default function HeartHealthCounsellingPage({ onNavigate }) {
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
-                  opacity: isExcluded ? 0.75 : 1,
+                  opacity: isExcluded ? 0.78 : 1,
                 }}
               >
                 <div>
@@ -598,15 +758,19 @@ export default function HeartHealthCounsellingPage({ onNavigate }) {
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', flex: 1 }}>
                       <input
                         type="checkbox"
-                        checked={isExcluded}
+                        checked={isChecked}
                         onClick={(e) => e.stopPropagation()}
                         onChange={() => toggleCheck(point.id)}
-                        aria-label={`Exclude ${point.title} from PDF`}
-                        title={isExcluded ? 'Topic excluded from PDF download. Click to include.' : 'Check to exclude this topic from PDF download.'}
+                        aria-label={`${point.title} - ${isExcluded ? 'Excluded from PDF' : 'Included in PDF'}`}
+                        title={
+                          pdfFilterMode === 'exclude_checked'
+                            ? (isChecked ? 'Currently removed from PDF. Uncheck to include.' : 'Check box to remove this topic from PDF download.')
+                            : (isChecked ? 'Currently included in PDF. Uncheck to exclude.' : 'Check box to include this topic in PDF download.')
+                        }
                         style={{
                           width: '20px',
                           height: '20px',
-                          accentColor: '#DC2626',
+                          accentColor: pdfFilterMode === 'exclude_checked' ? '#DC2626' : '#1565D8',
                           cursor: 'pointer',
                           marginTop: '2px',
                           flexShrink: 0,

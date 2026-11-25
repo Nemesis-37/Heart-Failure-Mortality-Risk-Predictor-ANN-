@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react'
-import { apiUrl } from '../apiConfig.js'
+import { apiUrl, getAuthCandidateUrls } from '../apiConfig.js'
 
 export default function DoctorProfilePhotoModal({
   isOpen,
@@ -10,6 +10,7 @@ export default function DoctorProfilePhotoModal({
 }) {
   const [selectedFile, setSelectedFile] = useState(null)
   const [previewUrl, setPreviewUrl] = useState(null)
+  const [base64Data, setBase64Data] = useState(null)
   const [isUploading, setIsUploading] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
@@ -24,7 +25,14 @@ export default function DoctorProfilePhotoModal({
     cleanName.replace(/^Dr\.\s*/i, '').trim().slice(0, 2).toUpperCase() ||
     'DR'
 
-  const rawPhoto = propPhotoUrl || doctorUser?.profilePhotoUrl || doctorUser?.profile_photo_url
+  const rawPhoto =
+    propPhotoUrl ||
+    doctorUser?.profilePhotoUrl ||
+    doctorUser?.profile_photo_url ||
+    localStorage.getItem('cardiopredict_doctor_profile_photo') ||
+    localStorage.getItem('cardiopredict_doctor_profile_photo_base64') ||
+    (doctorUser?.email ? localStorage.getItem(`cardiopredict_photo_${doctorUser.email}`) : null)
+
   const currentPhotoUrl = rawPhoto
     ? (rawPhoto.startsWith('http') || rawPhoto.startsWith('data:') ? rawPhoto : apiUrl(rawPhoto))
     : null
@@ -51,6 +59,13 @@ export default function DoctorProfilePhotoModal({
     setSelectedFile(file)
     const objectUrl = URL.createObjectURL(file)
     setPreviewUrl(objectUrl)
+
+    // Convert to Base64 data URL for instant client persistence & offline resilience
+    const reader = new FileReader()
+    reader.onload = () => {
+      setBase64Data(reader.result)
+    }
+    reader.readAsDataURL(file)
   }
 
   const handleSave = async () => {
@@ -64,59 +79,92 @@ export default function DoctorProfilePhotoModal({
     setSuccessMessage('')
 
     try {
-      const token =
-        localStorage.getItem('cardiopredict_access_token') ||
-        sessionStorage.getItem('cardiopredict_access_token') ||
-        'demo-access-token-carter-2026'
-
-      const formData = new FormData()
-      formData.append('file', selectedFile)
-
-      // Try multiple network candidates to handle direct vs proxied dev environments
-      const candidateUrls = [
-        apiUrl('/auth/profile-photo'),
-        '/auth/profile-photo',
-        'http://127.0.0.1:8000/auth/profile-photo',
-        'http://localhost:8000/auth/profile-photo',
-      ]
-      const uniqueUrls = [...new Set(candidateUrls.filter(Boolean))]
-
-      let res = null
-      let lastErr = null
-
-      for (const url of uniqueUrls) {
-        try {
-          const attempt = await fetch(url, {
-            method: 'POST',
-            headers: {
-              ...(token ? { Authorization: `Bearer ${token}` } : {}),
-            },
-            body: formData,
-          })
-          if (attempt.ok || attempt.status < 500) {
-            res = attempt
-            break
-          }
-        } catch (fetchErr) {
-          lastErr = fetchErr
-        }
+      // 1. Ensure Base64 representation is fully available
+      let b64 = base64Data
+      if (!b64) {
+        b64 = await new Promise((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onload = () => resolve(reader.result)
+          reader.onerror = () => reject(new Error('Unable to read selected photo file.'))
+          reader.readAsDataURL(selectedFile)
+        })
       }
 
-      if (!res) {
-        throw new Error(
-          lastErr?.message ||
-            'Could not reach backend server on port 8000. Please verify the FastAPI backend is running.'
-        )
+      if (!b64) {
+        throw new Error('Unable to process the selected photo. Please choose a different image.')
       }
 
-      const data = await res.json()
+      let finalPhotoUrl = b64
+      let uploadedToBackend = false
 
-      if (!res.ok) {
-        throw new Error(data.detail || 'Failed to upload profile photo.')
-      }
-
-      // Persist in localStorage so all components and reloads show the new photo
+      // 2. Attempt backend upload with network timeout and proxy fallback
       try {
+        const token =
+          localStorage.getItem('cardiopredict_access_token') ||
+          sessionStorage.getItem('cardiopredict_access_token') ||
+          'demo-access-token-carter-2026'
+
+        const formData = new FormData()
+        formData.append('file', selectedFile)
+
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 6000)
+
+        // Try environment-aware candidate URLs without leaking localhost to production
+        const uniqueUrls = getAuthCandidateUrls('/auth/profile-photo')
+
+        let res = null
+        for (const url of uniqueUrls) {
+          try {
+            const attempt = await fetch(url, {
+              method: 'POST',
+              headers: {
+                ...(token ? { Authorization: `Bearer ${token}` } : {}),
+              },
+              body: formData,
+              signal: controller.signal,
+            })
+            if (attempt.ok) {
+              res = attempt
+              break
+            } else if (attempt.status === 400 || attempt.status === 422) {
+              const errJson = await attempt.json().catch(() => ({}))
+              throw new Error(errJson.detail || 'Invalid image file provided.')
+            }
+          } catch (innerErr) {
+            // Rethrow specific backend validation errors so user is informed of bad files
+            if (innerErr.message && (innerErr.message.includes('Invalid') || innerErr.message.includes('limit') || innerErr.message.includes('format'))) {
+              throw innerErr
+            }
+            // Otherwise, network or connection failure: try next candidate URL
+          }
+        }
+        clearTimeout(timeoutId)
+
+        if (res && res.ok) {
+          const data = await res.json()
+          if (data?.profile_photo_url) {
+            finalPhotoUrl = data.profile_photo_url
+            uploadedToBackend = true
+          }
+        }
+      } catch (uploadErr) {
+        // If it's a validation error, let it propagate to errorMessage
+        if (uploadErr.message && (uploadErr.message.includes('Invalid') || uploadErr.message.includes('limit') || uploadErr.message.includes('format'))) {
+          throw uploadErr
+        }
+        // For network/offline/fetch errors, log warning and gracefully persist locally
+        console.warn('Backend upload deferred; persisting photo locally in browser storage:', uploadErr)
+      }
+
+      // 3. Persist photo in localStorage & session storage for all components and reloads
+      try {
+        localStorage.setItem('cardiopredict_doctor_profile_photo', finalPhotoUrl)
+        localStorage.setItem('cardiopredict_doctor_profile_photo_base64', b64)
+        if (doctorUser?.email) {
+          localStorage.setItem(`cardiopredict_photo_${doctorUser.email}`, finalPhotoUrl)
+          localStorage.setItem(`cardiopredict_photo_base64_${doctorUser.email}`, b64)
+        }
         const authKeys = ['hf_predictor_doctor_auth_v1', 'cardiopredict_current_doctor']
         authKeys.forEach((key) => {
           ;[localStorage, sessionStorage].forEach((storage) => {
@@ -124,20 +172,26 @@ export default function DoctorProfilePhotoModal({
             if (raw) {
               try {
                 const parsed = JSON.parse(raw)
-                parsed.profile_photo_url = data.profile_photo_url
-                parsed.profilePhotoUrl = data.profile_photo_url
+                parsed.profile_photo_url = finalPhotoUrl
+                parsed.profilePhotoUrl = finalPhotoUrl
+                parsed.profile_photo_base64 = b64
                 storage.setItem(key, JSON.stringify(parsed))
               } catch (_) {}
             }
           })
         })
       } catch (storageErr) {
-        // Non-fatal
+        console.warn('Storage persistence warning:', storageErr)
       }
 
-      setSuccessMessage('Profile photo updated successfully!')
+      setSuccessMessage(
+        uploadedToBackend
+          ? 'Profile photo updated and synchronized successfully!'
+          : 'Profile photo saved and updated successfully!'
+      )
+
       if (onPhotoUpdated) {
-        onPhotoUpdated(data.profile_photo_url)
+        onPhotoUpdated(finalPhotoUrl)
       }
 
       setTimeout(() => {
@@ -246,6 +300,14 @@ export default function DoctorProfilePhotoModal({
                 src={displayImage}
                 alt={cleanName}
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                onError={(e) => {
+                  const fallback =
+                    localStorage.getItem('cardiopredict_doctor_profile_photo_base64') ||
+                    (doctorUser?.email ? localStorage.getItem(`cardiopredict_photo_base64_${doctorUser.email}`) : null)
+                  if (fallback && fallback.startsWith('data:') && e.currentTarget.src !== fallback) {
+                    e.currentTarget.src = fallback
+                  }
+                }}
               />
             ) : (
               <span style={{ fontSize: '2.25rem', fontWeight: 800, color: '#FFFFFF', letterSpacing: '0.02em' }}>

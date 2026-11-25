@@ -3,7 +3,9 @@ import { saveAssessment, savePrediction } from './services/assessmentStore.js'
 import ThemeToggle from './components/ThemeToggle.jsx'
 import PatientSupportCard from './components/PatientSupportCard.jsx'
 import DoctorProfilePhotoModal from './components/DoctorProfilePhotoModal.jsx'
-import { apiUrl } from './apiConfig.js'
+import DoctorAvatar from './components/DoctorAvatar.jsx'
+import { apiUrl, getPredictionCandidateUrls, getHealthCandidateUrls } from './apiConfig.js'
+import { safeParseResponse, parseApiError } from './utils/apiErrorHelper.js'
 
 const INITIAL_STATE = {
   age: '60',
@@ -127,22 +129,19 @@ export default function DoctorDashboard({
 
   const checkHealth = async () => {
     setBackendStatus('checking')
-    try {
-      const response = await fetch('/api/health')
-      if (response.ok) {
-        setBackendStatus('online')
-        return
+    const candidates = getHealthCandidateUrls()
+    for (const url of candidates) {
+      try {
+        const response = await fetch(url, { method: 'GET' })
+        if (response.ok) {
+          setBackendStatus('online')
+          return
+        }
+      } catch {
+        // Continue trying remaining candidate URLs
       }
-    } catch {
-      // Fallback probe direct to local FastAPI backend
     }
-
-    try {
-      const response = await fetch(apiUrl('/health'))
-      setBackendStatus(response.ok ? 'online' : 'offline')
-    } catch {
-      setBackendStatus('offline')
-    }
+    setBackendStatus('offline')
   }
 
   const handleInputChange = (field, value) => {
@@ -221,50 +220,50 @@ export default function DoctorDashboard({
         requestHeaders['Authorization'] = `Bearer ${accessToken}`
       }
 
-      // Collect candidate endpoints for this model
-      const endpointsToTry = [
-        model.endpoint,
-        model.fallbackEndpoint,
-        apiUrl(model.id === 'ann' ? '/api/predict-ann' : '/api/predict'),
-        apiUrl(model.id === 'ann' ? '/predict-ann' : '/predict'),
-      ].filter(Boolean)
+      // Dynamically resolve prediction endpoints based on deployment environment
+      const endpointsToTry = getPredictionCandidateUrls(model.id)
 
       let response = null
       let data = null
-      let lastErrorMessage = ''
+      let lastParsedError = null
 
       for (const endpoint of endpointsToTry) {
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 15000)
+
         try {
           const res = await fetch(endpoint, {
             method: 'POST',
             headers: requestHeaders,
             body: JSON.stringify(payload),
+            signal: controller.signal,
           })
+          clearTimeout(timeoutId)
 
-          if (res.ok) {
+          const parsedBody = await safeParseResponse(res)
+
+          if (res.ok && parsedBody) {
             response = res
-            data = await res.json()
+            data = parsedBody
             break
           } else {
-            try {
-              const errBody = await res.json()
-              lastErrorMessage = errBody.detail || `Inference error (status ${res.status})`
-            } catch {
-              if (res.status === 500 || res.status === 502 || res.status === 503) {
-                lastErrorMessage = 'FastAPI backend server is currently unreachable or starting up.'
-              } else {
-                lastErrorMessage = `Server returned status ${res.status}`
-              }
+            lastParsedError = parseApiError(null, res, parsedBody)
+            // If the server answered with 400 or 422 input validation error,
+            // the backend was reached successfully; do not keep hitting fallback endpoints
+            if (res.status === 400 || res.status === 422) {
+              break
             }
           }
         } catch (fetchErr) {
-          lastErrorMessage = 'Could not connect to FastAPI server (Connection refused).'
+          clearTimeout(timeoutId)
+          lastParsedError = parseApiError(fetchErr)
         }
       }
 
       if (!response || !response.ok || !data) {
         throw new Error(
-          lastErrorMessage || `Could not connect to FastAPI inference server for ${model.label}.`
+          lastParsedError?.message ||
+          `Could not connect to FastAPI inference server for ${model.label}. Please ensure backend is active.`
         )
       }
 
@@ -378,25 +377,12 @@ export default function DoctorDashboard({
                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setShowPhotoModal(true) }}
               >
                 <div className="doctor-avatar" aria-hidden="true">
-                  {(doctorUser?.profilePhotoUrl || doctorUser?.profile_photo_url) ? (
-                    <img
-                      src={apiUrl(doctorUser.profilePhotoUrl || doctorUser.profile_photo_url)}
-                      alt={cleanDoctorName}
-                      onError={(e) => {
-                        const photoPath = doctorUser?.profilePhotoUrl || doctorUser?.profile_photo_url
-                        if (photoPath && !e.currentTarget.src.includes(':8000')) {
-                          e.currentTarget.src = `http://127.0.0.1:8000${photoPath.startsWith('/') ? photoPath : `/${photoPath}`}`
-                          return
-                        }
-                        e.currentTarget.style.display = 'none'
-                        if (e.currentTarget.parentElement) {
-                          e.currentTarget.parentElement.textContent = avatarInitials
-                        }
-                      }}
-                    />
-                  ) : (
-                    avatarInitials
-                  )}
+                  <DoctorAvatar
+                    photoUrl={doctorUser?.profilePhotoUrl || doctorUser?.profile_photo_url}
+                    initials={avatarInitials}
+                    alt={cleanDoctorName}
+                    email={doctorUser?.email}
+                  />
                 </div>
                 <div className="doctor-info">
                   <span className="doctor-name">{cleanDoctorName}</span>

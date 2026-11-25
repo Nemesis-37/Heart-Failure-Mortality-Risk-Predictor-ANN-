@@ -84,6 +84,11 @@ export default function UnifiedLogin({ onLogin, onNavigateToRegister }) {
     }
 
     const executeDemoDoctorLogin = () => {
+      const savedPhoto =
+        localStorage.getItem('cardiopredict_doctor_profile_photo') ||
+        localStorage.getItem('cardiopredict_doctor_profile_photo_base64') ||
+        localStorage.getItem('cardiopredict_photo_dr.carter@hospital.org') ||
+        null
       const demoProfile = {
         doctorId: 'demo-carter-local-2026',
         email: 'dr.carter@hospital.org',
@@ -95,6 +100,8 @@ export default function UnifiedLogin({ onLogin, onNavigateToRegister }) {
         department: 'Cardiovascular Medicine',
         avatarInitials: 'JC',
         verificationStatus: 'APPROVED',
+        profilePhotoUrl: savedPhoto,
+        profile_photo_url: savedPhoto,
       }
       const demoAuth = {
         status: 'success',
@@ -182,7 +189,18 @@ export default function UnifiedLogin({ onLogin, onNavigateToRegister }) {
               .slice(0, 2)
               .toUpperCase() || 'DR',
             verificationStatus: doctor.verification_status,
-            profilePhotoUrl: doctor.profile_photo_url || null,
+            profilePhotoUrl:
+              doctor.profile_photo_url ||
+              localStorage.getItem('cardiopredict_doctor_profile_photo') ||
+              localStorage.getItem('cardiopredict_doctor_profile_photo_base64') ||
+              (doctor.email ? localStorage.getItem(`cardiopredict_photo_${doctor.email}`) : null) ||
+              null,
+            profile_photo_url:
+              doctor.profile_photo_url ||
+              localStorage.getItem('cardiopredict_doctor_profile_photo') ||
+              localStorage.getItem('cardiopredict_doctor_profile_photo_base64') ||
+              (doctor.email ? localStorage.getItem(`cardiopredict_photo_${doctor.email}`) : null) ||
+              null,
           }
 
           if (data.refresh_token) {
