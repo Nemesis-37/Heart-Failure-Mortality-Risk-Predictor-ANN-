@@ -432,13 +432,31 @@ def _issue_and_dispatch_otp(db: Session, doctor: Doctor, enforce_cooldown: bool 
     # Dispatch via email or development sandbox
     delivered, delivery_msg, dev_code = send_email_otp(doctor.email, doctor.full_name, raw_otp)
 
-    # Prominently log verification code to server console for local testing transparency
-    logger.info(f"[OTP DISPATCH] Destination: {doctor.email} | Code: {raw_otp} | Delivered: {delivered} | Status: {delivery_msg}")
-    print(f"\n==================================================================", flush=True)
-    print(f"[AUTH OTP DISPATCH] Recipient: {doctor.email} ({doctor.full_name})", flush=True)
-    print(f"[AUTH OTP DISPATCH] 6-Digit OTP Code: {raw_otp}", flush=True)
-    print(f"[AUTH OTP DISPATCH] Status: {'SENT via SMTP' if (delivered and not dev_code) else 'DEV SANDBOX'}", flush=True)
-    print(f"==================================================================\n", flush=True)
+    _is_production = not dev_code and delivered
+    _is_dev_sandbox = bool(dev_code)
+
+    if _is_dev_sandbox:
+        # Development / local mode: log OTP to console for testing convenience
+        logger.info(f"[OTP DISPATCH] Destination: {doctor.email} | Delivered: {delivered} | Status: {delivery_msg}")
+        print(f"\n==================================================================", flush=True)
+        print(f"[AUTH OTP DISPATCH] Recipient: {doctor.email} ({doctor.full_name})", flush=True)
+        print(f"[AUTH OTP DISPATCH] 6-Digit OTP Code: {raw_otp}", flush=True)
+        print(f"[AUTH OTP DISPATCH] Status: DEV SANDBOX", flush=True)
+        print(f"==================================================================\n", flush=True)
+    elif delivered:
+        # Production SMTP success: NEVER log the OTP code
+        logger.info(f"[OTP DISPATCH] Verification email dispatched to {doctor.email} | Status: SENT via SMTP")
+        print(f"\n==================================================================", flush=True)
+        print(f"[AUTH OTP DISPATCH] Recipient: {doctor.email} ({doctor.full_name})", flush=True)
+        print(f"[AUTH OTP DISPATCH] Status: SENT via SMTP (code not logged in production)", flush=True)
+        print(f"==================================================================\n", flush=True)
+    else:
+        # Production SMTP failure: log the error, never log the OTP
+        logger.error(f"[OTP DISPATCH] Email delivery FAILED for {doctor.email} | Status: {delivery_msg}")
+        print(f"\n==================================================================", flush=True)
+        print(f"[AUTH OTP DISPATCH] Recipient: {doctor.email} ({doctor.full_name})", flush=True)
+        print(f"[AUTH OTP DISPATCH] Status: DELIVERY FAILED — {delivery_msg}", flush=True)
+        print(f"==================================================================\n", flush=True)
 
     return OTP_COOLDOWN_SECONDS, delivered, delivery_msg, dev_code
 

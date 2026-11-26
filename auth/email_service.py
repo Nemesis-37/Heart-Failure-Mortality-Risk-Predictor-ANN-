@@ -238,10 +238,13 @@ def send_email_otp(recipient_email: str, recipient_name: str, otp_code: str) -> 
         logger.info(f"[DEV/DEMO SANDBOX ACTIVE] SMTP unconfigured. Generated local dev OTP for {recipient_email}")
         return True, "Development Mode: SMTP not configured. Local verification code generated.", otp_code
 
-    logger.warning(
-        f"Email delivery BLOCKED for {recipient_email}: SMTP credentials (SMTP_HOST, SMTP_USERNAME, SMTP_PASSWORD) are not configured."
+    # Production with no SMTP credentials — block delivery and return a clear error.
+    # Never return the OTP code or silently succeed in production.
+    logger.error(
+        f"[PRODUCTION] Email delivery BLOCKED for {recipient_email}: "
+        f"SMTP_HOST, SMTP_USERNAME, and SMTP_PASSWORD must all be set in Render environment variables."
     )
-    return False, "Email delivery is BLOCKED: SMTP server credentials are not configured in environment.", None
+    return False, "Email delivery is not configured. Please contact the administrator.", None
 
 
 def send_doctor_approval_email(
@@ -406,6 +409,15 @@ def send_doctor_rejection_email(
         f"If you have questions, please contact hospital administration.\n"
         f"CardioPredict Clinical Decision Support"
     )
+
+    cfg = get_smtp_config()
+    host = cfg["host"]
+    port = cfg["port"]
+    user = cfg["username"]
+    pwd = cfg["password"]
+    from_name = cfg["from_name"]
+    from_email = cfg["from_email"]
+    use_tls = cfg["use_tls"]
 
     if host and user and pwd:
         try:
