@@ -16,8 +16,13 @@ IMPORTANT: Do NOT modify the column definitions here without also
 updating the SQL schema file and creating an Alembic migration.
 """
 
+import sys
 import uuid
 from datetime import datetime, timezone
+
+# Guarantee 'database.models' maps to this canonical module instance in sys.modules
+# to prevent duplicate DeclarativeBase class registrations under different import paths.
+sys.modules["database.models"] = sys.modules.get(__name__, sys.modules.get("backend.database.models"))
 
 from sqlalchemy import (
     DECIMAL,
@@ -70,7 +75,7 @@ class Doctor(Base):
             sqlite_where=text("username IS NOT NULL"),
             postgresql_where=text("username IS NOT NULL"),
         ),
-        {"schema": "clinical"},
+        {"schema": "clinical", "extend_existing": True},
     )
 
     # Primary key — UUID string (VARCHAR(64) in SQL Server)
@@ -121,17 +126,17 @@ class Doctor(Base):
 
     # Relationships
     assessments: Mapped[list["Assessment"]] = relationship(
-        "Assessment",
+        "backend.database.models.Assessment",
         back_populates="doctor",
         cascade="all, delete-orphan",
     )
     otps: Mapped[list["EmailOTP"]] = relationship(
-        "EmailOTP",
+        "backend.database.models.EmailOTP",
         back_populates="doctor",
         cascade="all, delete-orphan",
     )
     sessions: Mapped[list["DoctorSession"]] = relationship(
-        "DoctorSession",
+        "backend.database.models.DoctorSession",
         back_populates="doctor",
         cascade="all, delete-orphan",
     )
@@ -154,7 +159,7 @@ class DoctorSession(Base):
     __table_args__ = (
         Index("IX_DoctorSessions_DoctorId", "doctor_id", "created_at"),
         Index("IX_DoctorSessions_ExpiresAt", "expires_at"),
-        {"schema": "clinical"},
+        {"schema": "clinical", "extend_existing": True},
     )
 
     session_id: Mapped[str] = mapped_column(
@@ -179,7 +184,7 @@ class DoctorSession(Base):
     ip_address: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
     # Relationship back to doctor
-    doctor: Mapped["Doctor"] = relationship("Doctor", back_populates="sessions")
+    doctor: Mapped["Doctor"] = relationship("backend.database.models.Doctor", back_populates="sessions")
 
     def __repr__(self) -> str:
         return f"<DoctorSession id={self.session_id!r} doctor={self.doctor_id!r} revoked={self.is_revoked}>"
@@ -199,7 +204,7 @@ class EmailOTP(Base):
     __table_args__ = (
         Index("IX_EmailOTP_DoctorId", "doctor_id", "created_at"),
         Index("IX_EmailOTP_ExpiresAt", "expires_at"),
-        {"schema": "clinical"},
+        {"schema": "clinical", "extend_existing": True},
     )
 
     otp_id: Mapped[str] = mapped_column(
@@ -223,7 +228,7 @@ class EmailOTP(Base):
     )
 
     # Relationship back to doctor
-    doctor: Mapped["Doctor"] = relationship("Doctor", back_populates="otps")
+    doctor: Mapped["Doctor"] = relationship("backend.database.models.Doctor", back_populates="otps")
 
     def __repr__(self) -> str:
         return f"<EmailOTP id={self.otp_id!r} doctor={self.doctor_id!r} used={self.is_used}>"
@@ -244,7 +249,7 @@ class Administrator(Base):
         UniqueConstraint("username", name="UQ_Admin_Username"),
         UniqueConstraint("email", name="UQ_Admin_Email"),
         Index("IX_Admin_Email", "email"),
-        {"schema": "clinical"},
+        {"schema": "clinical", "extend_existing": True},
     )
 
     admin_id: Mapped[str] = mapped_column(
@@ -322,7 +327,7 @@ class Assessment(Base):
         Index("IX_Assessments_PatientRef", "patient_reference_id"),
         Index("IX_Assessments_CreatedAt", "created_at"),
         Index("IX_Assessments_DoctorId", "doctor_id", "created_at"),
-        {"schema": "clinical"},
+        {"schema": "clinical", "extend_existing": True},
     )
 
     # Internal UUID primary key (never shown directly in the UI)
@@ -389,9 +394,9 @@ class Assessment(Base):
     )
 
     # Relationships
-    doctor: Mapped["Doctor | None"] = relationship("Doctor", back_populates="assessments")
+    doctor: Mapped["Doctor | None"] = relationship("backend.database.models.Doctor", back_populates="assessments")
     predictions: Mapped[list["Prediction"]] = relationship(
-        "Prediction",
+        "backend.database.models.Prediction",
         back_populates="assessment",
         cascade="all, delete-orphan",
     )
@@ -426,7 +431,7 @@ class Prediction(Base):
         ),
         Index("IX_Predictions_AssessmentId", "assessment_id", "created_at"),
         Index("IX_Predictions_CreatedAt", "created_at"),
-        {"schema": "clinical"},
+        {"schema": "clinical", "extend_existing": True},
     )
 
     # Internal UUID primary key
@@ -467,7 +472,7 @@ class Prediction(Base):
 
     # Relationship
     assessment: Mapped["Assessment"] = relationship(
-        "Assessment", back_populates="predictions"
+        "backend.database.models.Assessment", back_populates="predictions"
     )
 
     def __repr__(self) -> str:

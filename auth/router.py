@@ -8,13 +8,16 @@ Endpoints:
 - POST /auth/register-json  : JSON registration for automated API clients
 """
 
+import logging
 import os
 import re
 import time
 import uuid
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Tuple
+
+logger = logging.getLogger(__name__)
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from fastapi.responses import FileResponse
@@ -22,6 +25,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from auth.email_service import (
+    APP_ENV,
     OTP_COOLDOWN_SECONDS,
     OTP_EXPIRY_MINUTES,
     OTP_MAX_ATTEMPTS,
@@ -56,16 +60,22 @@ from auth.session_service import (
 )
 from auth.validation import validate_doctor_fields
 try:
-    from database.models import Doctor, EmailOTP
+    from backend.database.models import Doctor, EmailOTP
 except ImportError:
-    from db_models import Doctor, EmailOTP
+    try:
+        from database.models import Doctor, EmailOTP
+    except ImportError:
+        from db_models import Doctor, EmailOTP
 
 from admin.security import create_admin_token
 
 try:
-    from database import get_db
+    from backend.database.config import get_db
 except ImportError:
-    from database.config import get_db
+    try:
+        from database import get_db
+    except ImportError:
+        from database.config import get_db
 
 router = APIRouter(prefix="/auth", tags=["Doctor Authentication"])
 
@@ -170,23 +180,44 @@ def _validate_doctor_fields(
     return clean_email
 
 
-def _check_duplicates(db: Session, email: str, registration_number: str):
-    """Check for existing doctor accounts with duplicate email or registration number."""
+def _check_duplicates(db: Session, email: str, registration_number: str) -> Optional[Doctor]:
+    """
+    Check for existing doctor accounts with duplicate email or registration number.
+    
+    Rules:
+    - If email exists and registration number matches the SAME unverified doctor record,
+      permit seamless credential resubmission and fresh OTP generation so the user is never locked out.
+    - If email exists and is already verified, or registration number is different: reject with HTTP 400.
+    - If registration number exists for any other account: reject with HTTP 400.
+    """
     clean_email = email.strip().lower()
+    clean_reg = registration_number.strip().upper()
+
     existing_email = db.query(Doctor).filter(func.lower(Doctor.email) == clean_email).first()
+    existing_reg = db.query(Doctor).filter(func.upper(Doctor.registration_number) == clean_reg).first()
+
+    # Exact same unverified physician resubmitting credentials to resume verification
+    if existing_email and existing_reg and existing_email.doctor_id == existing_reg.doctor_id:
+        if existing_email.email_verified:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="An account with this email address already exists and is verified. Please log in or use another email.",
+            )
+        return existing_email
+
     if existing_email:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="An account with this email address already exists. Please log in or use another email.",
         )
 
-    clean_reg = registration_number.strip().upper()
-    existing_reg = db.query(Doctor).filter(func.upper(Doctor.registration_number) == clean_reg).first()
     if existing_reg:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="A doctor with this medical registration number is already registered in the system.",
         )
+
+    return None
 
 
 @router.post(
@@ -223,7 +254,7 @@ async def register_doctor(
         registration_number, registration_council, password, confirm_password
     )
 
-    _check_duplicates(db, clean_email, registration_number)
+    existing_unverified = _check_duplicates(db, clean_email, registration_number)
 
     # Process supporting document upload if provided
     doc_filename = None
@@ -258,39 +289,69 @@ async def register_doctor(
     # Hash password with Argon2id
     hashed_pwd = hash_password(password)
 
-    # Create new Doctor in SQL Server
-    doctor_id = str(uuid.uuid4())
-    new_doctor = Doctor(
-        doctor_id=doctor_id,
-        full_name=full_name.strip(),
-        email=clean_email,
-        password_hash=hashed_pwd,
-        mobile=mobile.strip(),
-        medical_degree=medical_degree.strip(),
-        registration_number=registration_number.strip().upper(),
-        registration_council=registration_council.strip(),
-        email_verified=False,
-        verification_status="PENDING",
-        is_active=True,
-        created_at=datetime.now(timezone.utc),
-        document_filename=doc_filename,
-        document_path=doc_rel_path,
-        document_uploaded_at=doc_uploaded_at,
-    )
-
-    db.add(new_doctor)
-    db.commit()
-    db.refresh(new_doctor)
+    if existing_unverified:
+        # Seamlessly update credentials for physician completing their pending verification
+        existing_unverified.full_name = full_name.strip()
+        existing_unverified.email = clean_email
+        existing_unverified.password_hash = hashed_pwd
+        existing_unverified.mobile = mobile.strip()
+        existing_unverified.medical_degree = medical_degree.strip()
+        existing_unverified.registration_number = registration_number.strip().upper()
+        existing_unverified.registration_council = registration_council.strip()
+        if doc_filename:
+            existing_unverified.document_filename = doc_filename
+            existing_unverified.document_path = doc_rel_path
+            existing_unverified.document_uploaded_at = doc_uploaded_at
+        db.commit()
+        db.refresh(existing_unverified)
+        new_doctor = existing_unverified
+    else:
+        # Create new Doctor in database
+        doctor_id = str(uuid.uuid4())
+        new_doctor = Doctor(
+            doctor_id=doctor_id,
+            full_name=full_name.strip(),
+            email=clean_email,
+            password_hash=hashed_pwd,
+            mobile=mobile.strip(),
+            medical_degree=medical_degree.strip(),
+            registration_number=registration_number.strip().upper(),
+            registration_council=registration_council.strip(),
+            email_verified=False,
+            verification_status="PENDING",
+            is_active=True,
+            created_at=datetime.now(timezone.utc),
+            document_filename=doc_filename,
+            document_path=doc_rel_path,
+            document_uploaded_at=doc_uploaded_at,
+        )
+        db.add(new_doctor)
+        db.commit()
+        db.refresh(new_doctor)
 
     # Immediately issue and dispatch initial verification OTP
+    delivered = False
+    delivery_msg = "SMTP delivery not attempted."
+    dev_otp_code = None
     try:
-        _issue_and_dispatch_otp(db, new_doctor, enforce_cooldown=False)
+        _, delivered, delivery_msg, dev_otp_code = _issue_and_dispatch_otp(db, new_doctor, enforce_cooldown=False)
     except Exception as exc:
-        logger.warning(f"Initial OTP dispatch deferred: {exc}")
+        logger.warning(f"Initial OTP dispatch deferred/failed: {exc}")
+        delivery_msg = str(exc)
+
+    reg_message = (
+        "Registration submitted successfully. A 6-digit verification code has been sent to your email."
+        if (delivered and not dev_otp_code)
+        else "Registration submitted. A 6-digit verification code has been generated for identity confirmation."
+    )
+    del_status = "SENT" if (delivered and not dev_otp_code) else ("DEV_MODE" if dev_otp_code else "BLOCKED")
 
     return RegisterSuccessResponse(
         status="success",
-        message="Registration submitted successfully. A 6-digit verification code has been sent to your email.",
+        message=reg_message,
+        email_delivery_status=del_status,
+        email_delivery_message=delivery_msg,
+        dev_otp_code=dev_otp_code,
         doctor=DoctorSafeResponse(
             doctor_id=new_doctor.doctor_id,
             full_name=new_doctor.full_name,
@@ -312,10 +373,10 @@ async def register_doctor(
 # Email OTP Internal Helper
 # ---------------------------------------------------------------------------
 
-def _issue_and_dispatch_otp(db: Session, doctor: Doctor, enforce_cooldown: bool = True) -> int:
+def _issue_and_dispatch_otp(db: Session, doctor: Doctor, enforce_cooldown: bool = True) -> Tuple[int, bool, str, Optional[str]]:
     """
     Generate, hash, store, and dispatch a 6-digit verification code.
-    Returns the cooldown seconds for subsequent requests.
+    Returns (cooldown_seconds, email_delivered_bool, delivery_message, dev_otp_code).
     """
     if doctor.email_verified:
         raise HTTPException(
@@ -331,7 +392,7 @@ def _issue_and_dispatch_otp(db: Session, doctor: Doctor, enforce_cooldown: bool 
         .first()
     )
 
-    if latest_otp and enforce_cooldown:
+    if latest_otp and enforce_cooldown and APP_ENV != "development":
         now = datetime.now(timezone.utc)
         otp_created = latest_otp.created_at
         if otp_created.tzinfo is None:
@@ -368,9 +429,18 @@ def _issue_and_dispatch_otp(db: Session, doctor: Doctor, enforce_cooldown: bool 
     db.add(new_otp)
     db.commit()
 
-    # Dispatch via email
-    send_email_otp(doctor.email, doctor.full_name, raw_otp)
-    return OTP_COOLDOWN_SECONDS
+    # Dispatch via email or development sandbox
+    delivered, delivery_msg, dev_code = send_email_otp(doctor.email, doctor.full_name, raw_otp)
+
+    # Prominently log verification code to server console for local testing transparency
+    logger.info(f"[OTP DISPATCH] Destination: {doctor.email} | Code: {raw_otp} | Delivered: {delivered} | Status: {delivery_msg}")
+    print(f"\n==================================================================", flush=True)
+    print(f"[AUTH OTP DISPATCH] Recipient: {doctor.email} ({doctor.full_name})", flush=True)
+    print(f"[AUTH OTP DISPATCH] 6-Digit OTP Code: {raw_otp}", flush=True)
+    print(f"[AUTH OTP DISPATCH] Status: {'SENT via SMTP' if (delivered and not dev_code) else 'DEV SANDBOX'}", flush=True)
+    print(f"==================================================================\n", flush=True)
+
+    return OTP_COOLDOWN_SECONDS, delivered, delivery_msg, dev_code
 
 
 # ---------------------------------------------------------------------------
@@ -392,12 +462,15 @@ def send_otp_endpoint(payload: SendOTPRequest, db: Session = Depends(get_db)):
             detail="No doctor account found with this email address.",
         )
 
-    cooldown = _issue_and_dispatch_otp(db, doctor, enforce_cooldown=False)
+    cooldown, delivered, delivery_msg, dev_code = _issue_and_dispatch_otp(db, doctor, enforce_cooldown=False)
+    del_status = "SENT" if (delivered and not dev_code) else ("DEV_MODE" if dev_code else "BLOCKED")
     return OTPResponse(
-        status="sent",
-        message="A 6-digit verification code has been dispatched to your email address.",
+        status="sent" if delivered else "blocked",
+        message="A 6-digit verification code has been dispatched to your email address." if (delivered and not dev_code) else delivery_msg,
         cooldown_seconds=cooldown,
         email=doctor.email,
+        delivery_status=del_status,
+        dev_otp_code=dev_code,
     )
 
 
@@ -416,12 +489,15 @@ def resend_otp_endpoint(payload: SendOTPRequest, db: Session = Depends(get_db)):
             detail="No doctor account found with this email address.",
         )
 
-    cooldown = _issue_and_dispatch_otp(db, doctor, enforce_cooldown=True)
+    cooldown, delivered, delivery_msg, dev_code = _issue_and_dispatch_otp(db, doctor, enforce_cooldown=True)
+    del_status = "SENT" if (delivered and not dev_code) else ("DEV_MODE" if dev_code else "BLOCKED")
     return OTPResponse(
-        status="sent",
-        message="A new 6-digit verification code has been dispatched to your email address.",
+        status="sent" if delivered else "blocked",
+        message="A new 6-digit verification code has been dispatched to your email address." if (delivered and not dev_code) else delivery_msg,
         cooldown_seconds=cooldown,
         email=doctor.email,
+        delivery_status=del_status,
+        dev_otp_code=dev_code,
     )
 
 
@@ -552,33 +628,64 @@ def register_doctor_json(
         )
 
     clean_email = payload.email.strip().lower()
-    _check_duplicates(db, clean_email, payload.registration_number)
+    existing_unverified = _check_duplicates(db, clean_email, payload.registration_number)
 
     hashed_pwd = hash_password(payload.password)
-    doctor_id = str(uuid.uuid4())
 
-    new_doctor = Doctor(
-        doctor_id=doctor_id,
-        full_name=payload.full_name.strip(),
-        email=clean_email,
-        password_hash=hashed_pwd,
-        mobile=payload.mobile.strip(),
-        medical_degree=payload.medical_degree.strip(),
-        registration_number=payload.registration_number.strip().upper(),
-        registration_council=payload.registration_council.strip(),
-        email_verified=False,
-        verification_status="PENDING",
-        is_active=True,
-        created_at=datetime.now(timezone.utc),
+    if existing_unverified:
+        existing_unverified.full_name = payload.full_name.strip()
+        existing_unverified.email = clean_email
+        existing_unverified.password_hash = hashed_pwd
+        existing_unverified.mobile = payload.mobile.strip()
+        existing_unverified.medical_degree = payload.medical_degree.strip()
+        existing_unverified.registration_number = payload.registration_number.strip().upper()
+        existing_unverified.registration_council = payload.registration_council.strip()
+        db.commit()
+        db.refresh(existing_unverified)
+        new_doctor = existing_unverified
+    else:
+        doctor_id = str(uuid.uuid4())
+        new_doctor = Doctor(
+            doctor_id=doctor_id,
+            full_name=payload.full_name.strip(),
+            email=clean_email,
+            password_hash=hashed_pwd,
+            mobile=payload.mobile.strip(),
+            medical_degree=payload.medical_degree.strip(),
+            registration_number=payload.registration_number.strip().upper(),
+            registration_council=payload.registration_council.strip(),
+            email_verified=False,
+            verification_status="PENDING",
+            is_active=True,
+            created_at=datetime.now(timezone.utc),
+        )
+        db.add(new_doctor)
+        db.commit()
+        db.refresh(new_doctor)
+
+    # Immediately issue and dispatch initial verification OTP
+    delivered = False
+    delivery_msg = "SMTP delivery not attempted."
+    dev_code = None
+    try:
+        _, delivered, delivery_msg, dev_code = _issue_and_dispatch_otp(db, new_doctor, enforce_cooldown=False)
+    except Exception as exc:
+        logger.warning(f"Initial OTP dispatch deferred/failed in JSON registration: {exc}")
+        delivery_msg = str(exc)
+
+    reg_message = (
+        "Registration submitted successfully. A 6-digit verification code has been dispatched to your email."
+        if (delivered and not dev_code)
+        else "Registration submitted. A 6-digit verification code has been generated for identity confirmation."
     )
-
-    db.add(new_doctor)
-    db.commit()
-    db.refresh(new_doctor)
+    del_status = "SENT" if (delivered and not dev_code) else ("DEV_MODE" if dev_code else "BLOCKED")
 
     return RegisterSuccessResponse(
         status="success",
-        message="Registration submitted successfully. Your credentials have been submitted for verification.",
+        message=reg_message,
+        email_delivery_status=del_status,
+        email_delivery_message=delivery_msg,
+        dev_otp_code=dev_code,
         doctor=DoctorSafeResponse(
             doctor_id=new_doctor.doctor_id,
             full_name=new_doctor.full_name,
@@ -705,25 +812,34 @@ def doctor_login(
             _admin_conn.close()
 
         if not password_matches:
-            record_login_failure(clean_email)
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid email or password. Please check your credentials.",
+            # If administrator password check did not match, check if this email is also registered as a physician
+            doctor_candidate = db.query(Doctor).filter(func.lower(Doctor.email) == clean_email).first()
+            if doctor_candidate and (
+                verify_password(payload.password, doctor_candidate.password_hash)
+                or verify_legacy_password(payload.password, doctor_candidate.password_hash)
+            ):
+                # Fall through to physician authentication below
+                pass
+            else:
+                record_login_failure(clean_email)
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Invalid email or password. Please check your credentials.",
+                )
+        else:
+            reset_login_failures(clean_email)
+            return UnifiedLoginResponse(
+                role="ADMIN",
+                access_token=create_admin_token(admin_row.admin_id, admin_row.username),
+                expires_in=12 * 60 * 60,
+                admin=AdminSafeResponse(
+                    admin_id=admin_row.admin_id,
+                    username=admin_row.username,
+                    email=admin_row.email,
+                    full_name=admin_row.full_name,
+                    role=admin_row.role,
+                ),
             )
-
-        reset_login_failures(clean_email)
-        return UnifiedLoginResponse(
-            role="ADMIN",
-            access_token=create_admin_token(admin_row.admin_id, admin_row.username),
-            expires_in=12 * 60 * 60,
-            admin=AdminSafeResponse(
-                admin_id=admin_row.admin_id,
-                username=admin_row.username,
-                email=admin_row.email,
-                full_name=admin_row.full_name,
-                role=admin_row.role,
-            ),
-        )
 
     # 2. Account existence
     doctor = db.query(Doctor).filter(func.lower(Doctor.email) == clean_email).first()
@@ -737,7 +853,8 @@ def doctor_login(
     # 3. Password verification
     password_valid = False
     is_prod = os.getenv("APP_ENV", "development").lower() == "production" or bool(os.getenv("RENDER"))
-    if not is_prod and clean_email == "dr.carter@hospital.org" and payload.password in ("demo-doctor-2026", "DemoDoctor2026!", "demo_doctor_2026"):
+    demo_allowed = os.getenv("DEMO_MODE", "").strip().lower() in ("true", "1", "yes") or not is_prod
+    if demo_allowed and clean_email == "dr.carter@hospital.org" and payload.password in ("demo-doctor-2026", "DemoDoctor2026!", "demo_doctor_2026"):
         password_valid = True
     elif verify_password(payload.password, doctor.password_hash):
         password_valid = True

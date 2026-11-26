@@ -14,6 +14,8 @@
  *     if the Vite proxy ever drops or encounters an issue.
  */
 
+export const PRODUCTION_RENDER_BACKEND = 'https://heart-failure-mortality-risk-predictor-mfet.onrender.com'
+
 function resolveApiBaseUrl() {
   const envUrl = (import.meta.env.VITE_API_URL || '').trim().replace(/\/$/, '')
 
@@ -31,7 +33,13 @@ function resolveApiBaseUrl() {
       if (import.meta.env.DEV) {
         console.warn('[apiConfig] Overriding localhost VITE_API_URL on non-localhost host:', envUrl)
       }
-      return ''
+      return PRODUCTION_RENDER_BACKEND
+    }
+
+    // If deployed on Render static site without an environment variable configured,
+    // automatically target the canonical deployed Render FastAPI backend service.
+    if (!isLocalhost && !envUrl && hostname.includes('onrender.com')) {
+      return PRODUCTION_RENDER_BACKEND
     }
   }
 

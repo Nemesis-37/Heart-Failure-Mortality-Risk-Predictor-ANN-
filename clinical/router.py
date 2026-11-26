@@ -25,19 +25,25 @@ from sqlalchemy.orm import Session
 
 from auth.dependencies import get_current_doctor
 try:
-    from database.models import Doctor, Assessment
+    from backend.database.models import Doctor, Assessment, Prediction
 except ImportError:
-    from db_models import Doctor, Assessment
+    try:
+        from database.models import Doctor, Assessment
+        try:
+            from database.models import Prediction
+        except ImportError:
+            Prediction = None
+    except ImportError:
+        from db_models import Doctor, Assessment
+        Prediction = None
 
 try:
-    from database.models import Prediction
+    from backend.database.config import get_db
 except ImportError:
-    Prediction = None
-
-try:
-    from database import get_db
-except ImportError:
-    from database.config import get_db
+    try:
+        from database import get_db
+    except ImportError:
+        from database.config import get_db
 
 router = APIRouter(tags=["Patient Assessments & Clinical Dashboard"])
 

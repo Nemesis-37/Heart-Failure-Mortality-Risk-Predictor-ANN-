@@ -1412,3 +1412,218 @@
 }
 
 
+
+/* ── 15. OTP Verification & Waiting Visualizer Enhancements ─────────────────── */
+.otp-card-container {
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+.otp-digits-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin: 1.75rem 0;
+}
+
+@media (max-width: 480px) {
+  .otp-digits-wrapper {
+    gap: 6px;
+  }
+}
+
+.otp-digit-input {
+  width: 48px;
+  height: 58px;
+  text-align: center;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 1.65rem;
+  font-weight: 700;
+  color: #38BDF8;
+  background: rgba(10, 19, 36, 0.75);
+  border: 1.5px solid rgba(56, 189, 248, 0.25);
+  border-radius: 10px;
+  outline: none;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+@media (max-width: 480px) {
+  .otp-digit-input {
+    width: 40px;
+    height: 50px;
+    font-size: 1.4rem;
+    border-radius: 8px;
+  }
+}
+
+.otp-digit-input:focus {
+  border-color: #38BDF8;
+  background: rgba(14, 165, 233, 0.12);
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.4), inset 0 2px 4px rgba(0, 0, 0, 0.2);
+  transform: translateY(-2px);
+}
+
+.otp-digit-input.filled {
+  border-color: rgba(56, 189, 248, 0.6);
+  background: rgba(14, 165, 233, 0.08);
+}
+
+.otp-masked-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(14, 165, 233, 0.08);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  border-radius: 8px;
+  padding: 4px 12px;
+  font-family: ui-monospace, monospace;
+  font-size: 0.82rem;
+  color: #7DD3FC;
+  margin-top: 0.5rem;
+}
+
+/* Waiting Quotes Carousel Card */
+.otp-quotes-card {
+  margin-top: 1.25rem;
+  background: rgba(13, 24, 45, 0.65);
+  border: 1px solid rgba(56, 189, 248, 0.15);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+}
+
+.otp-quotes-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #38BDF8, #34D399, transparent);
+}
+
+.otp-quotes-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.otp-quotes-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #38BDF8;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.otp-quotes-counter {
+  font-size: 0.65rem;
+  color: #64748B;
+  font-family: ui-monospace, monospace;
+}
+
+.otp-quote-text {
+  font-size: 0.88rem;
+  font-style: italic;
+  color: #E2E8F0;
+  line-height: 1.5;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  transition: opacity 0.4s ease-in-out, transform 0.4s ease-in-out;
+}
+
+.otp-quote-text.fade-in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.otp-quote-text.fade-out {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+
+/* Animated Medical Visualizer inside OTP Left Panel */
+.otp-visual-container {
+  width: 100%;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(10, 19, 36, 0.8) 0%, rgba(15, 29, 54, 0.7) 100%);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  padding: 1.5rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+  position: relative;
+  overflow: hidden;
+}
+
+.otp-heart-pulse-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  height: 110px;
+  margin-bottom: 0.5rem;
+}
+
+.otp-heart-svg {
+  filter: drop-shadow(0 0 16px rgba(239, 68, 68, 0.6));
+  animation: heartThump 1.2s infinite ease-in-out;
+  transform-origin: center;
+}
+
+@keyframes heartThump {
+  0% { transform: scale(1); filter: drop-shadow(0 0 12px rgba(239, 68, 68, 0.5)); }
+  14% { transform: scale(1.18); filter: drop-shadow(0 0 24px rgba(239, 68, 68, 0.9)); }
+  28% { transform: scale(1.04); filter: drop-shadow(0 0 16px rgba(239, 68, 68, 0.6)); }
+  42% { transform: scale(1.22); filter: drop-shadow(0 0 28px rgba(239, 68, 68, 0.95)); }
+  70% { transform: scale(1); filter: drop-shadow(0 0 12px rgba(239, 68, 68, 0.5)); }
+  100% { transform: scale(1); filter: drop-shadow(0 0 12px rgba(239, 68, 68, 0.5)); }
+}
+
+.otp-orbital-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px dashed rgba(56, 189, 248, 0.35);
+  pointer-events: none;
+}
+
+.otp-orbital-ring.ring-1 {
+  width: 90px;
+  height: 90px;
+  animation: orbitSpin 12s linear infinite;
+}
+
+.otp-orbital-ring.ring-2 {
+  width: 140px;
+  height: 140px;
+  border-color: rgba(52, 211, 153, 0.25);
+  animation: orbitSpinRev 18s linear infinite;
+}
+
+@keyframes orbitSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes orbitSpinRev {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .otp-heart-svg,
+  .otp-orbital-ring.ring-1,
+  .otp-orbital-ring.ring-2,
+  .otp-quote-text {
+    animation: none !important;
+    transition: none !important;
+  }
+}

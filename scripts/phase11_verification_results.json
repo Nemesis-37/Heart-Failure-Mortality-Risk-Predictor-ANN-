@@ -123,12 +123,12 @@
     {
       "name": "CSS bundle exists",
       "passed": true,
-      "details": "Found: ['index-_g1zc1Gj.css']"
+      "details": "Found: ['index-CWUlW1-6.css']"
     },
     {
       "name": "JS bundle exists",
       "passed": true,
-      "details": "Found: ['index-BPuzUNOl.js']"
+      "details": "Found: ['index-DRxGJGgE.js']"
     },
     {
       "name": "CSS has .med-ai-visualizer-card",

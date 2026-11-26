@@ -32,16 +32,68 @@ logger = logging.getLogger(__name__)
 _ENV_PATH = Path(__file__).resolve().parent.parent / ".env"
 load_dotenv(dotenv_path=_ENV_PATH)
 
-# SMTP Settings
-SMTP_HOST = os.getenv("SMTP_HOST", "").strip()
-SMTP_PORT = int(os.getenv("SMTP_PORT", "587").strip() or "587")
-SMTP_EMAIL = os.getenv("SMTP_EMAIL", os.getenv("SMTP_USERNAME", "")).strip()
-SMTP_USERNAME = SMTP_EMAIL
-SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "").strip()
-SMTP_FROM_EMAIL = os.getenv("SMTP_FROM_EMAIL", SMTP_EMAIL or "no-reply@cardiopredict.org").strip()
-SMTP_FROM_NAME = os.getenv("SMTP_FROM_NAME", "CardioPredict Portal").strip()
-SMTP_USE_TLS = os.getenv("SMTP_USE_TLS", "yes").strip().lower() in ("yes", "true", "1")
-APP_ENV = os.getenv("APP_ENV", "development").strip().lower()
+# SMTP Settings & Dynamic Resolver
+def get_smtp_config():
+    """
+    Dynamically read and resolve SMTP settings from environment with robust fallbacks.
+    Handles Gmail domain resolution when SMTP_USERNAME is set without domain.
+    """
+    smtp_host = os.getenv("SMTP_HOST", "").strip()
+    smtp_port_raw = os.getenv("SMTP_PORT", "587").strip() or "587"
+    try:
+        smtp_port = int(smtp_port_raw)
+    except ValueError:
+        smtp_port = 587
+
+    raw_user = os.getenv("SMTP_USERNAME", os.getenv("SMTP_EMAIL", "")).strip()
+    from_email = os.getenv("SMTP_FROM_EMAIL", "").strip()
+    admin_email = os.getenv("ADMIN_EMAIL", "").strip()
+
+    # Smart username resolution: If SMTP_USERNAME is set without domain (e.g. 'debashish'),
+    # but SMTP_FROM_EMAIL or ADMIN_EMAIL contains '@' (e.g. 'debashish.g333@gmail.com'),
+    # automatically resolve the username to the full email address for Gmail / standard SMTP.
+    if raw_user and "@" not in raw_user:
+        if "@" in from_email and ("@" + raw_user in from_email or "gmail" in smtp_host.lower()):
+            smtp_user = from_email
+        elif "@" in admin_email and ("@" + raw_user in admin_email or "gmail" in smtp_host.lower()):
+            smtp_user = admin_email
+        elif "gmail" in smtp_host.lower():
+            smtp_user = f"{raw_user}@gmail.com"
+        else:
+            smtp_user = raw_user
+    else:
+        smtp_user = raw_user or from_email or admin_email
+
+    smtp_password = os.getenv("SMTP_PASSWORD", "").strip()
+    smtp_from_email = from_email or smtp_user or "no-reply@cardiopredict.org"
+    smtp_from_name = os.getenv("SMTP_FROM_NAME", "CardioPredict Portal").strip()
+    smtp_use_tls = os.getenv("SMTP_USE_TLS", "yes").strip().lower() in ("yes", "true", "1")
+    app_env = os.getenv("APP_ENV", "development").strip().lower()
+    demo_mode = os.getenv("DEMO_MODE", "").strip().lower() in ("true", "1", "yes")
+
+    return {
+        "host": smtp_host,
+        "port": smtp_port,
+        "username": smtp_user,
+        "password": smtp_password,
+        "from_email": smtp_from_email,
+        "from_name": smtp_from_name,
+        "use_tls": smtp_use_tls,
+        "app_env": app_env,
+        "demo_mode": demo_mode,
+    }
+
+# Default module-level exports for backwards compatibility
+_initial_cfg = get_smtp_config()
+SMTP_HOST = _initial_cfg["host"]
+SMTP_PORT = _initial_cfg["port"]
+SMTP_EMAIL = _initial_cfg["username"]
+SMTP_USERNAME = _initial_cfg["username"]
+SMTP_PASSWORD = _initial_cfg["password"]
+SMTP_FROM_EMAIL = _initial_cfg["from_email"]
+SMTP_FROM_NAME = _initial_cfg["from_name"]
+SMTP_USE_TLS = _initial_cfg["use_tls"]
+APP_ENV = _initial_cfg["app_env"]
 
 OTP_EXPIRY_MINUTES = 5
 OTP_MAX_ATTEMPTS = 5
@@ -83,11 +135,11 @@ def verify_otp_hash(raw_otp: str, stored_hash: str) -> bool:
         return False
 
 
-def send_email_otp(recipient_email: str, recipient_name: str, otp_code: str) -> Tuple[bool, str]:
+def send_email_otp(recipient_email: str, recipient_name: str, otp_code: str) -> Tuple[bool, str, Optional[str]]:
     """
     Deliver the 6-digit verification code to the doctor's email.
-    If SMTP server is configured, delivers real email.
-    If running locally without SMTP credentials, logs the delivery safely.
+    If SMTP server is configured, delivers real email via SMTP.
+    In development mode without SMTP credentials, activates dev sandbox mode with local test code.
     """
     subject = f"{otp_code} is your CardioPredict Verification Code"
 
@@ -141,37 +193,55 @@ def send_email_otp(recipient_email: str, recipient_name: str, otp_code: str) -> 
     )
 
     # Deliver via SMTP if configured
-    if SMTP_HOST and SMTP_USERNAME and SMTP_PASSWORD:
+    cfg = get_smtp_config()
+    host = cfg["host"]
+    port = cfg["port"]
+    user = cfg["username"]
+    pwd = cfg["password"]
+    from_name = cfg["from_name"]
+    from_email = cfg["from_email"]
+    use_tls = cfg["use_tls"]
+    app_env = cfg["app_env"]
+    demo_mode = cfg["demo_mode"]
+
+    if host and user and pwd:
         try:
             msg = MIMEMultipart("alternative")
             msg["Subject"] = subject
-            msg["From"] = f"{SMTP_FROM_NAME} <{SMTP_FROM_EMAIL}>"
+            msg["From"] = f"{from_name} <{from_email}>"
             msg["To"] = recipient_email
 
             msg.attach(MIMEText(plain_content, "plain"))
             msg.attach(MIMEText(html_content, "html"))
 
-            server = smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=10)
-            if SMTP_USE_TLS:
-                server.starttls()
-            server.login(SMTP_USERNAME, SMTP_PASSWORD)
+            if port == 465:
+                server = smtplib.SMTP_SSL(host, port, timeout=12)
+            else:
+                server = smtplib.SMTP(host, port, timeout=12)
+                if use_tls:
+                    server.starttls()
+            server.login(user, pwd)
             server.send_message(msg)
             server.quit()
 
             logger.info(f"Verification email dispatched via SMTP to {recipient_email}")
-            return True, "Verification email sent successfully."
+            return True, "Verification email sent successfully via SMTP.", None
         except Exception as exc:
-            logger.error(f"SMTP dispatch failed: {exc}")
-            # Fallback to local development log
-            if APP_ENV == "development":
-                logger.info(f"[DEV MODE DISPATCH] To: {recipient_email} | OTP: {otp_code}")
-                return True, "Dev Mode: Verification code generated and logged."
-            return False, f"Email delivery failed: {str(exc)}"
+            logger.error(f"SMTP dispatch failed to {recipient_email}: {exc}")
+            if app_env == "development" or demo_mode:
+                logger.info(f"[DEV/DEMO SANDBOX ACTIVE] SMTP dispatch failed ({exc}); local dev OTP enabled for {recipient_email}")
+                return True, f"Dev Sandbox: SMTP delivery failed ({exc}). Local test code ready.", otp_code
+            return False, f"Email delivery failed: {str(exc)}", None
 
-    # If no SMTP configured, use development delivery log
-    logger.info(f"[LOCAL DEV SMTP SIMULATION] Verification email dispatched to: {recipient_email}")
-    logger.info(f"[LOCAL DEV SMTP SIMULATION] Code: {otp_code} (Valid for 5 mins)")
-    return True, "Verification code sent (Local development simulation active)."
+    # If no SMTP configured, use development sandbox mode in development or demo mode
+    if app_env == "development" or demo_mode:
+        logger.info(f"[DEV/DEMO SANDBOX ACTIVE] SMTP unconfigured. Generated local dev OTP for {recipient_email}")
+        return True, "Development Mode: SMTP not configured. Local verification code generated.", otp_code
+
+    logger.warning(
+        f"Email delivery BLOCKED for {recipient_email}: SMTP credentials (SMTP_HOST, SMTP_USERNAME, SMTP_PASSWORD) are not configured."
+    )
+    return False, "Email delivery is BLOCKED: SMTP server credentials are not configured in environment.", None
 
 
 def send_doctor_approval_email(
@@ -244,19 +314,31 @@ def send_doctor_approval_email(
         f"CardioPredict Clinical Decision Support"
     )
 
-    if SMTP_HOST and SMTP_USERNAME and SMTP_PASSWORD:
+    cfg = get_smtp_config()
+    host = cfg["host"]
+    port = cfg["port"]
+    user = cfg["username"]
+    pwd = cfg["password"]
+    from_name = cfg["from_name"]
+    from_email = cfg["from_email"]
+    use_tls = cfg["use_tls"]
+
+    if host and user and pwd:
         try:
             msg = MIMEMultipart("alternative")
             msg["Subject"] = subject
-            msg["From"] = f"{SMTP_FROM_NAME} <{SMTP_FROM_EMAIL}>"
+            msg["From"] = f"{from_name} <{from_email}>"
             msg["To"] = recipient_email
             msg.attach(MIMEText(plain_content, "plain"))
             msg.attach(MIMEText(html_content, "html"))
 
-            server = smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=10)
-            if SMTP_USE_TLS:
-                server.starttls()
-            server.login(SMTP_USERNAME, SMTP_PASSWORD)
+            if port == 465:
+                server = smtplib.SMTP_SSL(host, port, timeout=12)
+            else:
+                server = smtplib.SMTP(host, port, timeout=12)
+                if use_tls:
+                    server.starttls()
+            server.login(user, pwd)
             server.send_message(msg)
             server.quit()
             logger.info(f"Doctor approval email dispatched to {recipient_email}")
@@ -325,19 +407,22 @@ def send_doctor_rejection_email(
         f"CardioPredict Clinical Decision Support"
     )
 
-    if SMTP_HOST and SMTP_USERNAME and SMTP_PASSWORD:
+    if host and user and pwd:
         try:
             msg = MIMEMultipart("alternative")
             msg["Subject"] = subject
-            msg["From"] = f"{SMTP_FROM_NAME} <{SMTP_FROM_EMAIL}>"
+            msg["From"] = f"{from_name} <{from_email}>"
             msg["To"] = recipient_email
             msg.attach(MIMEText(plain_content, "plain"))
             msg.attach(MIMEText(html_content, "html"))
 
-            server = smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=10)
-            if SMTP_USE_TLS:
-                server.starttls()
-            server.login(SMTP_USERNAME, SMTP_PASSWORD)
+            if port == 465:
+                server = smtplib.SMTP_SSL(host, port, timeout=12)
+            else:
+                server = smtplib.SMTP(host, port, timeout=12)
+                if use_tls:
+                    server.starttls()
+            server.login(user, pwd)
             server.send_message(msg)
             server.quit()
             logger.info(f"Doctor rejection email dispatched to {recipient_email}")

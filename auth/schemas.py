@@ -72,6 +72,9 @@ class RegisterSuccessResponse(BaseModel):
     status: str = "success"
     message: str
     doctor: DoctorSafeResponse
+    email_delivery_status: Optional[str] = None
+    email_delivery_message: Optional[str] = None
+    dev_otp_code: Optional[str] = None
 
 
 class SendOTPRequest(BaseModel):
@@ -104,6 +107,8 @@ class OTPResponse(BaseModel):
     message: str
     cooldown_seconds: Optional[int] = None
     email: Optional[str] = None
+    delivery_status: Optional[str] = None
+    dev_otp_code: Optional[str] = None
 
 
 class DoctorLoginRequest(BaseModel):

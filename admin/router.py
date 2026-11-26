@@ -70,14 +70,20 @@ except ImportError:
     from frontend_metrics import VERIFIED_ANN_METRICS, VERIFIED_LR_METRICS
 
 try:
-    from database import get_db
+    from backend.database.config import get_db
 except ImportError:
-    from database.config import get_db
+    try:
+        from database import get_db
+    except ImportError:
+        from database.config import get_db
 
 try:
-    from database.models import Administrator, Assessment, Doctor, DoctorSession, Prediction
+    from backend.database.models import Administrator, Assessment, Doctor, DoctorSession, Prediction, EmailOTP
 except ImportError:
-    from db_models import Assessment, Doctor, EmailOTP
+    try:
+        from database.models import Administrator, Assessment, Doctor, DoctorSession, Prediction
+    except ImportError:
+        from db_models import Assessment, Doctor, EmailOTP
     from database.models import Administrator, DoctorSession
     Prediction = None
 
@@ -500,8 +506,13 @@ def get_admin_overview(
     db: Session = Depends(get_db),
 ):
     """Aggregated statistics across all doctors, assessments, and predictions."""
-    total_docs = db.query(Doctor).count()
-    pending_docs = db.query(Doctor).filter(Doctor.verification_status == "PENDING").count()
+    # Enforce Business Rule: Only email-verified doctors appear in the admin overview / approval queue
+    total_docs = db.query(Doctor).filter(Doctor.email_verified == True).count()
+    pending_docs = (
+        db.query(Doctor)
+        .filter(Doctor.email_verified == True, Doctor.verification_status == "PENDING")
+        .count()
+    )
     approved_docs = db.query(Doctor).filter(Doctor.verification_status == "APPROVED").count()
     rejected_docs = db.query(Doctor).filter(Doctor.verification_status == "REJECTED").count()
     total_asms = db.query(Assessment).count()
@@ -552,9 +563,10 @@ def get_recent_activity(
     - Recent doctor credential verifications (approved/rejected)
     - Total assessments & predictions performed in the last 7 days
     """
-    # 1. Recent registrations (latest 5)
+    # 1. Recent registrations (latest 5 email-verified doctors)
     recent_regs = (
         db.query(Doctor)
+        .filter(Doctor.email_verified == True)
         .order_by(Doctor.created_at.desc())
         .limit(5)
         .all()
@@ -809,7 +821,8 @@ def list_doctors(
         limit = 100
 
     try:
-        query = db.query(Doctor)
+        # Enforce Business Rule: Only email-verified doctors appear in the admin verification directory
+        query = db.query(Doctor).filter(Doctor.email_verified == True)
 
         if status_filter and status_filter.upper() != "ALL":
             query = query.filter(Doctor.verification_status == status_filter.upper())
@@ -858,10 +871,10 @@ def get_doctor_detail(
 ):
     """Retrieve full profile and verification audit trail for a single doctor."""
     doctor = db.query(Doctor).filter(Doctor.doctor_id == doctor_id).first()
-    if not doctor:
+    if not doctor or not doctor.email_verified:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Doctor not found.",
+            detail="Doctor not found or registration is pending email verification.",
         )
     return _build_doctor_admin_view(doctor, db)
 
@@ -1011,6 +1024,12 @@ def reject_doctor(
             detail="Doctor not found.",
         )
 
+    if not doctor.email_verified:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot review or reject doctor: Email address has not been verified.",
+        )
+
     now = datetime.now(timezone.utc)
     doctor.verification_status = "REJECTED"
     doctor.verified_at = now
@@ -1060,6 +1079,12 @@ def toggle_doctor_active(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Doctor not found.",
+        )
+
+    if not doctor.email_verified:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot review or reject doctor: Email address has not been verified.",
         )
 
     doctor.is_active = not doctor.is_active

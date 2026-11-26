@@ -21,19 +21,20 @@ export const ErrorTypes = {
 
 /**
  * Safely parse JSON from a response, falling back to text if response is HTML or malformed.
+ * Returns the parsed JSON object directly, or an object with { detail: text } if non-JSON.
  */
 export async function safeParseResponse(res) {
-  if (!res) return { data: null, text: '' }
+  if (!res) return null
   try {
     const text = await res.text()
+    if (!text) return null
     try {
-      const data = JSON.parse(text)
-      return { data, text }
+      return JSON.parse(text)
     } catch {
-      return { data: null, text }
+      return { detail: text }
     }
   } catch (err) {
-    return { data: null, text: '' }
+    return null
   }
 }
 
@@ -44,27 +45,46 @@ export function extractFieldErrors(errorData) {
   const fieldErrors = {}
   if (!errorData) return fieldErrors
 
+  // Handle nested error payload if passed { data: ... }
+  const data = errorData.data !== undefined ? errorData.data : errorData
+
+  // Helper to store both camelCase and snake_case keys so React forms bind reliably
+  const setNormalized = (key, msg) => {
+    fieldErrors[key] = msg
+    const camel = key.replace(/_([a-z])/g, (_, char) => char.toUpperCase())
+    fieldErrors[camel] = msg
+  }
+
   // Handle Pydantic v2 validation error array: detail = [{ loc: ['body', 'field'], msg: '...' }]
-  if (Array.isArray(errorData.detail)) {
-    errorData.detail.forEach((item) => {
+  if (Array.isArray(data.detail)) {
+    data.detail.forEach((item) => {
       if (item && item.loc && item.loc.length > 0) {
-        const fieldName = item.loc[item.loc.length - 1]
-        // Clean up Pydantic error strings (e.g. 'Value error, ...' -> '...')
+        const fieldName = String(item.loc[item.loc.length - 1])
         const cleanMsg = (item.msg || 'Invalid value').replace(/^Value error,\s*/i, '')
-        fieldErrors[fieldName] = cleanMsg
+        setNormalized(fieldName, cleanMsg)
       }
     })
-  } else if (typeof errorData.detail === 'string') {
+  } else if (typeof data.detail === 'string') {
     // Check if the detail string mentions a specific known field
-    const detailLower = errorData.detail.toLowerCase()
-    if (detailLower.includes('email')) {
-      fieldErrors.email = errorData.detail
-    } else if (detailLower.includes('registration number') || detailLower.includes('registration_number')) {
-      fieldErrors.registrationNumber = errorData.detail
+    const detailLower = data.detail.toLowerCase()
+    if (detailLower.includes('match') || detailLower.includes('confirm')) {
+      fieldErrors.confirmPassword = data.detail
     } else if (detailLower.includes('password')) {
-      fieldErrors.password = errorData.detail
+      fieldErrors.password = data.detail
+    } else if (detailLower.includes('email')) {
+      fieldErrors.email = data.detail
+    } else if (detailLower.includes('registration number') || detailLower.includes('registration_number')) {
+      fieldErrors.registrationNumber = data.detail
     } else if (detailLower.includes('patient reference') || detailLower.includes('patient_reference')) {
-      fieldErrors.patientRef = errorData.detail
+      fieldErrors.patientRef = data.detail
+    } else if (detailLower.includes('full name') || detailLower.includes('full_name')) {
+      fieldErrors.fullName = data.detail
+    } else if (detailLower.includes('degree') || detailLower.includes('qualification')) {
+      fieldErrors.medicalDegree = data.detail
+    } else if (detailLower.includes('council')) {
+      fieldErrors.registrationCouncil = data.detail
+    } else if (detailLower.includes('contact') || detailLower.includes('phone') || detailLower.includes('mobile')) {
+      fieldErrors.mobile = data.detail
     }
   }
 
@@ -76,6 +96,7 @@ export function extractFieldErrors(errorData) {
  */
 export function parseApiError(error, response = null, responseBody = null) {
   const isDev = Boolean(import.meta.env?.DEV)
+  const actualBody = responseBody?.data !== undefined ? responseBody.data : responseBody
 
   // Safe developer logging (strip any sensitive payload data)
   if (isDev) {
@@ -83,7 +104,7 @@ export function parseApiError(error, response = null, responseBody = null) {
       name: error?.name,
       message: error?.message,
       status: response?.status,
-      body: responseBody,
+      body: actualBody,
     })
   }
 
@@ -101,8 +122,8 @@ export function parseApiError(error, response = null, responseBody = null) {
   // 2. HTTP Status Code Errors
   if (response) {
     const status = response.status
-    const fieldErrors = extractFieldErrors(responseBody)
-    const detailMsg = typeof responseBody?.detail === 'string' ? responseBody.detail : ''
+    const fieldErrors = extractFieldErrors(actualBody)
+    const detailMsg = typeof actualBody?.detail === 'string' ? actualBody.detail : ''
 
     // 400 Bad Request / 422 Unprocessable Entity
     if (status === 400 || status === 422) {
@@ -110,13 +131,24 @@ export function parseApiError(error, response = null, responseBody = null) {
         detailMsg ||
         (Object.keys(fieldErrors).length > 0
           ? `Please review the highlighted input fields: ${Object.values(fieldErrors).join('; ')}`
-          : 'Invalid data format or out-of-range clinical parameters provided.')
+          : 'Validation failed. Please verify that all required fields are correctly formatted.')
 
       return {
         type: ErrorTypes.VALIDATION_ERROR,
         status,
         message: summaryMsg,
         fieldErrors,
+        isRetryable: false,
+      }
+    }
+
+    // 405 Method Not Allowed
+    if (status === 405) {
+      return {
+        type: ErrorTypes.SERVER_ERROR,
+        status,
+        message: 'Endpoint method not allowed (405). The server routing module may be reloading. Please refresh and try again.',
+        fieldErrors: {},
         isRetryable: false,
       }
     }

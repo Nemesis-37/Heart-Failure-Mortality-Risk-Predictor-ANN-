@@ -224,19 +224,32 @@ export default function DoctorRegister({ onNavigateToLogin, onRegisterSuccess })
         if (lastParsedError?.fieldErrors && Object.keys(lastParsedError.fieldErrors).length > 0) {
           setErrors((prev) => ({ ...prev, ...lastParsedError.fieldErrors }))
         }
+        try {
+          window.scrollTo({ top: 0, behavior: 'smooth' })
+        } catch (_) {}
         return
       }
 
-      setRegisteredDoctor(
-        successfulData.doctor || {
+      const doctorProfile = {
+        ...(successfulData.doctor || {
           full_name: formData.fullName,
           email: formData.email,
           registration_number: formData.registrationNumber,
           registration_council: formData.registrationCouncil,
+        }),
+        dev_otp_code: successfulData.dev_otp_code,
+        email_delivery_status: successfulData.email_delivery_status,
+      }
+      try {
+        sessionStorage.setItem('cardiopredict_pending_otp_email', formData.email.trim().toLowerCase())
+        if (successfulData.dev_otp_code) {
+          sessionStorage.setItem('cardiopredict_dev_otp_code', successfulData.dev_otp_code)
         }
-      )
+      } catch (_) {}
+
+      setRegisteredDoctor(doctorProfile)
       setRegistrationComplete(true)
-      if (onRegisterSuccess) onRegisterSuccess(successfulData.doctor)
+      if (onRegisterSuccess) onRegisterSuccess(doctorProfile)
     } catch (err) {
       setServerError(err.message || 'An unexpected error occurred during physician registration.')
     } finally {
@@ -854,6 +867,18 @@ export default function DoctorRegister({ onNavigateToLogin, onRegisterSuccess })
                     {errors.document && <span className="auth-field-error-text">{errors.document}</span>}
                   </div>
                 </div>
+
+                {/* Bottom Error Notice if registration failed */}
+                {serverError && (
+                  <div className="auth-alert-error" role="alert" style={{ marginBottom: '1rem' }}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0 }}>
+                      <circle cx="12" cy="12" r="10" />
+                      <line x1="12" y1="8" x2="12" y2="12" />
+                      <line x1="12" y1="16" x2="12.01" y2="16" />
+                    </svg>
+                    <span>{serverError}</span>
+                  </div>
+                )}
 
                 {/* Submit Button */}
                 <button

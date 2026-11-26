@@ -1,10 +1,18 @@
 
 import logging
 import os
+import sys
 import uuid
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from pathlib import Path
+
+# Add project root and backend directory to sys.path early
+_BASE_DIR = Path(__file__).resolve().parent
+if str(_BASE_DIR / "backend") not in sys.path:
+    sys.path.insert(0, str(_BASE_DIR / "backend"))
+if str(_BASE_DIR) not in sys.path:
+    sys.path.insert(0, str(_BASE_DIR))
 
 import joblib
 import pandas as pd
@@ -16,7 +24,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, model_validator
 
 # Load .env as early as possible so ADMIN_EMAIL / ADMIN_PASSWORD are available
-_ENV_PATH = Path(__file__).resolve().parent / ".env"
+_ENV_PATH = _BASE_DIR / ".env"
 if _ENV_PATH.exists():
     load_dotenv(dotenv_path=_ENV_PATH)
 
@@ -166,13 +174,14 @@ def _seed_admin_on_startup() -> None:
 
 def _seed_demo_doctor_on_startup() -> None:
     """
-    Ensure the local development demo doctor account (dr.carter@hospital.org) exists
+    Ensure the synthetic demo physician account (dr.carter@hospital.org) exists
     with password 'demo-doctor-2026' and verification_status='APPROVED'.
-    Enables instant Quick Demo Access strictly in local development environments.
-    Explicitly disabled in production to prevent unauthorized access.
+    Enables instant Quick Demo Access when running in development or when DEMO_MODE=true in environment.
     """
-    if os.getenv("APP_ENV", "development").lower() == "production" or os.getenv("RENDER"):
-        logger.info("[startup] Production mode active: demo doctor seeding is strictly disabled.")
+    is_prod = os.getenv("APP_ENV", "development").lower() == "production" or bool(os.getenv("RENDER"))
+    demo_allowed = os.getenv("DEMO_MODE", "").strip().lower() in ("true", "1", "yes") or not is_prod
+    if not demo_allowed:
+        logger.info("[startup] Production mode active and DEMO_MODE is false: demo doctor seeding is skipped.")
         return
     try:
         from auth.security import hash_password
@@ -360,7 +369,11 @@ try:
     from auth.router import router as auth_router
     app.include_router(auth_router)
     app.include_router(auth_router, prefix="/api")
+    logger.info("[startup] Authentication router mounted successfully at /auth and /api/auth.")
 except Exception as _auth_err:
+    logger.error(f"[startup] CRITICAL: Failed to mount auth router: {_auth_err}")
+    if is_prod_env:
+        raise RuntimeError(f"CRITICAL: Production startup failed - auth router could not load: {_auth_err}") from _auth_err
     logger.warning(f"Auth router deferred: {_auth_err}")
 
 # Mount Administrator Verification Router (both root /admin and /api/admin)
@@ -368,7 +381,11 @@ try:
     from admin.router import router as admin_router
     app.include_router(admin_router)
     app.include_router(admin_router, prefix="/api")
+    logger.info("[startup] Administrator router mounted successfully at /admin and /api/admin.")
 except Exception as _admin_err:
+    logger.error(f"[startup] CRITICAL: Failed to mount admin router: {_admin_err}")
+    if is_prod_env:
+        raise RuntimeError(f"CRITICAL: Production startup failed - admin router could not load: {_admin_err}") from _admin_err
     logger.warning(f"Admin router deferred: {_admin_err}")
 
 # Mount Protected Clinical Router (Assessments, Dashboard, History, Stats)
@@ -376,7 +393,11 @@ try:
     from clinical.router import router as clinical_router
     app.include_router(clinical_router)
     app.include_router(clinical_router, prefix="/api")
+    logger.info("[startup] Clinical router mounted successfully at /assessments and /api/assessments.")
 except Exception as _clin_err:
+    logger.error(f"[startup] CRITICAL: Failed to mount clinical router: {_clin_err}")
+    if is_prod_env:
+        raise RuntimeError(f"CRITICAL: Production startup failed - clinical router could not load: {_clin_err}") from _clin_err
     logger.warning(f"Clinical router deferred: {_clin_err}")
 
 

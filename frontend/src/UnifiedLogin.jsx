@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { API_BASE_URL } from './apiConfig.js'
+import { API_BASE_URL, getAuthCandidateUrls } from './apiConfig.js'
 import './AuthPages.css'
 
 export default function UnifiedLogin({ onLogin, onNavigateToRegister }) {
@@ -54,33 +54,15 @@ export default function UnifiedLogin({ onLogin, onNavigateToRegister }) {
     const cleanEmail = (loginEmail || '').trim().toLowerCase()
     const cleanPassword = (loginPassword || '').trim()
 
-    const isAdminCreds =
-      cleanEmail === 'debashish.g333@gmail.com' &&
-      cleanPassword === 'admin_debashish123'
-
     const isDemoDoctorCreds =
       cleanEmail === 'dr.carter@hospital.org' &&
       cleanPassword === 'demo-doctor-2026'
 
-    const executeAdminLogin = (token = 'admin-debashish-session-token-2026', profile = null) => {
-      const adminProfile = profile || {
-        admin_id: 'abc1d45f-7a40-489f-b6dc-f4860fe3ebec',
-        username: 'debashish.g333',
-        email: 'debashish.g333@gmail.com',
-        full_name: 'Hospital Administrator',
-        role: 'Super Administrator',
-      }
-      const adminAuth = {
-        status: 'success',
-        role: 'ADMIN',
-        access_token: token,
-        token_type: 'Bearer',
-        expires_in: 43200,
-        admin: adminProfile,
-      }
-      sessionStorage.setItem('cardiopredict_admin_token', adminAuth.access_token)
-      sessionStorage.setItem('cardiopredict_admin_profile', JSON.stringify(adminProfile))
-      onLogin('ADMIN', adminProfile, adminAuth, isRememberMe)
+    const executeAdminLogin = (token, profile) => {
+      if (!token || !profile) return
+      sessionStorage.setItem('cardiopredict_admin_token', token)
+      sessionStorage.setItem('cardiopredict_admin_profile', JSON.stringify(profile))
+      onLogin('ADMIN', profile, { access_token: token, role: 'ADMIN', admin: profile }, isRememberMe)
     }
 
     const executeDemoDoctorLogin = () => {
@@ -117,24 +99,17 @@ export default function UnifiedLogin({ onLogin, onNavigateToRegister }) {
     }
 
     try {
-      let response = null
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 6000)
+      const candidateUrls = getAuthCandidateUrls('/auth/login')
+      let successfulData = null
+      let lastErrorMessage = ''
+      let serverReached = false
 
-      try {
-        response = await fetch('/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email: cleanEmail,
-            password: cleanPassword,
-            remember_me: isRememberMe,
-          }),
-          signal: controller.signal,
-        })
-      } catch {
+      for (const endpoint of candidateUrls) {
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 10000)
+
         try {
-          response = await fetch(`${API_BASE_URL}/auth/login`, {
+          const res = await fetch(endpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -144,24 +119,34 @@ export default function UnifiedLogin({ onLogin, onNavigateToRegister }) {
             }),
             signal: controller.signal,
           })
+          clearTimeout(timeoutId)
+
+          // Discard HTML responses (e.g. static site SPA 404 fallback serving index.html)
+          const contentType = res.headers.get('content-type') || ''
+          if (!contentType.includes('application/json')) {
+            continue
+          }
+
+          serverReached = true
+          const parsed = await res.json()
+
+          if (res.ok && parsed && (parsed.role === 'ADMIN' || parsed.role === 'DOCTOR')) {
+            successfulData = parsed
+            break
+          } else {
+            lastErrorMessage = parsed?.detail || parsed?.message || lastErrorMessage
+            // Real HTTP failure (e.g. 401 wrong password or 403 unverified) from live API -> break
+            if (res.status === 401 || res.status === 403 || res.status === 429) {
+              break
+            }
+          }
         } catch {
-          response = null
+          clearTimeout(timeoutId)
         }
-      } finally {
-        clearTimeout(timeoutId)
       }
 
-      let data = {}
-      if (response) {
-        try {
-          const text = await response.text()
-          data = text ? JSON.parse(text) : {}
-        } catch {
-          data = {}
-        }
-      }
-
-      if (response && response.ok) {
+      if (successfulData) {
+        const data = successfulData
         if (data.role === 'ADMIN') {
           executeAdminLogin(data.access_token, data.admin)
           return
@@ -213,40 +198,15 @@ export default function UnifiedLogin({ onLogin, onNavigateToRegister }) {
         }
       }
 
-      const isProduction = import.meta.env.PROD || false
-
-      if (!isProduction && isAdminCreds) {
-        executeAdminLogin()
-        return
-      }
-
-      if (!isProduction && isDemoDoctorCreds) {
-        executeDemoDoctorLogin()
-        return
-      }
-
-      if (!response) {
-        throw new Error('Unable to connect to FastAPI backend server. Please verify the backend is running.')
+      if (!serverReached) {
+        throw new Error('Unable to connect to FastAPI backend server. Please verify the backend service is awake.')
       }
 
       throw new Error(
-        data.detail ||
-        data.message ||
+        lastErrorMessage ||
         'Authentication failed. Please check your credentials or ensure the backend server is running.'
       )
     } catch (error) {
-      const isProduction = import.meta.env.PROD || false
-
-      if (!isProduction && isAdminCreds) {
-        executeAdminLogin()
-        return
-      }
-
-      if (!isProduction && isDemoDoctorCreds) {
-        executeDemoDoctorLogin()
-        return
-      }
-
       const msg = error.message || ''
       if (msg.includes('Failed to fetch') || error.name === 'TypeError' || error.name === 'AbortError') {
         setServerError('Unable to connect to FastAPI backend server. Please verify the backend is running.')
