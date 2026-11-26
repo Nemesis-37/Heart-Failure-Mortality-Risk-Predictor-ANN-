@@ -14,6 +14,74 @@ import { apiUrl } from './apiConfig.js'
 
 const DOCTOR_AUTH_KEY = 'hf_predictor_doctor_auth_v1'
 
+class PageErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props)
+    this.state = { hasError: false, errorMessage: '' }
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, errorMessage: error?.message || 'Unexpected rendering error.' }
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error('Clinical portal rendering error:', error, errorInfo)
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: '#070B14',
+          color: '#E2E8F0',
+          padding: '2rem',
+          fontFamily: 'system-ui, -apple-system, sans-serif',
+        }}>
+          <div style={{
+            maxWidth: '480px',
+            width: '100%',
+            background: '#0F172A',
+            border: '1px solid rgba(239, 68, 68, 0.35)',
+            borderRadius: '16px',
+            padding: '2rem',
+            textAlign: 'center',
+          }}>
+            <h2 style={{ margin: '0 0 0.75rem', fontSize: '1.25rem', color: '#F87171' }}>
+              Display Recovery Required
+            </h2>
+            <p style={{ margin: '0 0 1.25rem', fontSize: '0.9rem', color: '#94A3B8', lineHeight: 1.5 }}>
+              {this.state.errorMessage}
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                this.setState({ hasError: false, errorMessage: '' })
+                if (this.props.onReset) this.props.onReset()
+              }}
+              style={{
+                background: '#2563EB',
+                color: '#FFFFFF',
+                border: 'none',
+                borderRadius: '10px',
+                padding: '0.65rem 1.25rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              Return to Safe View
+            </button>
+          </div>
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
+
 export default function App() {
   const [doctorUser, setDoctorUser] = useState(() => {
     try {
@@ -171,8 +239,9 @@ export default function App() {
   }
 
   if (!doctorUser) {
+    let authView = null
     if (authMode === 'register') {
-      return (
+      authView = (
         <DoctorRegister
           onNavigateToLogin={() => setAuthMode('login')}
           onRegisterSuccess={(doctor) => {
@@ -181,10 +250,8 @@ export default function App() {
           }}
         />
       )
-    }
-
-    if (authMode === 'otp') {
-      return (
+    } else if (authMode === 'otp') {
+      authView = (
         <DoctorOtpVerification
           email={pendingDoctor?.email || ''}
           doctorData={pendingDoctor}
@@ -194,77 +261,83 @@ export default function App() {
           onNavigateToLogin={() => setAuthMode('login')}
         />
       )
-    }
-
-    if (authMode === 'admin') {
-      return (
+    } else if (authMode === 'admin') {
+      authView = (
         <AdminDashboard
           onExitAdmin={() => setAuthMode('login')}
+        />
+      )
+    } else {
+      authView = (
+        <UnifiedLogin
+          onLogin={handleLogin}
+          onNavigateToRegister={() => setAuthMode('register')}
         />
       )
     }
 
     return (
-      <UnifiedLogin
-        onLogin={handleLogin}
-        onNavigateToRegister={() => setAuthMode('register')}
-      />
+      <PageErrorBoundary key={`auth-${authMode}`} onReset={() => setAuthMode('login')}>
+        {authView}
+      </PageErrorBoundary>
     )
   }
 
   return (
-    <AppLayout
-      doctorUser={doctorUser}
-      onLogout={handleLogout}
-      activePage={activePage}
-      onNavigate={(page) => {
-        if (page !== 'prediction') {
-          setSelectedRecordForPrediction(null)
-        }
-        setActivePage(page)
-      }}
-      onUpdateDoctorUser={handleUpdateDoctorUser}
-    >
-      {activePage === 'dashboard' && (
-        <DashboardHome doctorUser={doctorUser} onNavigate={setActivePage} />
-      )}
+    <PageErrorBoundary key={`app-${activePage}`} onReset={() => setActivePage('dashboard')}>
+      <AppLayout
+        doctorUser={doctorUser}
+        onLogout={handleLogout}
+        activePage={activePage}
+        onNavigate={(page) => {
+          if (page !== 'prediction') {
+            setSelectedRecordForPrediction(null)
+          }
+          setActivePage(page)
+        }}
+        onUpdateDoctorUser={handleUpdateDoctorUser}
+      >
+        {activePage === 'dashboard' && (
+          <DashboardHome doctorUser={doctorUser} onNavigate={setActivePage} />
+        )}
 
-      {activePage === 'prediction' && (
-        <DoctorDashboard
-          key={selectedRecordForPrediction ? selectedRecordForPrediction.id : 'default-pred'}
-          doctorUser={doctorUser}
-          onLogout={handleLogout}
-          embedded={true}
-          initialRecord={selectedRecordForPrediction}
-          onUpdateDoctorUser={handleUpdateDoctorUser}
-        />
-      )}
+        {activePage === 'prediction' && (
+          <DoctorDashboard
+            key={selectedRecordForPrediction ? selectedRecordForPrediction.id : 'default-pred'}
+            doctorUser={doctorUser}
+            onLogout={handleLogout}
+            embedded={true}
+            initialRecord={selectedRecordForPrediction}
+            onUpdateDoctorUser={handleUpdateDoctorUser}
+          />
+        )}
 
-      {activePage === 'assessments' && (
-        <PatientAssessmentsPage
-          doctorUser={doctorUser}
-          onNavigate={setActivePage}
-          onSelectForPrediction={handleSelectRecordForPrediction}
-        />
-      )}
+        {activePage === 'assessments' && (
+          <PatientAssessmentsPage
+            doctorUser={doctorUser}
+            onNavigate={setActivePage}
+            onSelectForPrediction={handleSelectRecordForPrediction}
+          />
+        )}
 
-      {activePage === 'parameters' && (
-        <ClinicalGuidePage onNavigate={setActivePage} />
-      )}
+        {activePage === 'parameters' && (
+          <ClinicalGuidePage onNavigate={setActivePage} />
+        )}
 
-      {activePage === 'history' && (
-        <PredictionHistoryPage
-          doctorUser={doctorUser}
-          onNavigate={setActivePage}
-          onSelectAssessment={() => {
-            setActivePage('assessments')
-          }}
-        />
-      )}
+        {activePage === 'history' && (
+          <PredictionHistoryPage
+            doctorUser={doctorUser}
+            onNavigate={setActivePage}
+            onSelectAssessment={() => {
+              setActivePage('assessments')
+            }}
+          />
+        )}
 
-      {activePage === 'counselling' && (
-        <HeartHealthCounsellingPage onNavigate={setActivePage} />
-      )}
-    </AppLayout>
+        {activePage === 'counselling' && (
+          <HeartHealthCounsellingPage onNavigate={setActivePage} />
+        )}
+      </AppLayout>
+    </PageErrorBoundary>
   )
 }
