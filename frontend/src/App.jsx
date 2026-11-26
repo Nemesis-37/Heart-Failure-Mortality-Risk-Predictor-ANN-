@@ -4,13 +4,14 @@ import DoctorRegister from './DoctorRegister.jsx'
 import DoctorOtpVerification from './DoctorOtpVerification.jsx'
 import AdminDashboard from './AdminDashboard.jsx'
 import DoctorDashboard from './DoctorDashboard.jsx'
+import PredictionResultsPage from './pages/PredictionResultsPage.jsx'
 import AppLayout from './layouts/AppLayout.jsx'
 import DashboardHome from './pages/DashboardHome.jsx'
 import PatientAssessmentsPage from './pages/PatientAssessmentsPage.jsx'
 import ClinicalGuidePage from './pages/ClinicalGuidePage.jsx'
 import PredictionHistoryPage from './pages/PredictionHistoryPage.jsx'
 import HeartHealthCounsellingPage from './pages/HeartHealthCounsellingPage.jsx'
-import { apiUrl } from './apiConfig.js'
+import { apiUrl, authorizedFetch } from './apiConfig.js'
 
 const DOCTOR_AUTH_KEY = 'hf_predictor_doctor_auth_v1'
 
@@ -106,18 +107,38 @@ export default function App() {
 
   const [activePage, setActivePage] = useState('dashboard')
   const [selectedRecordForPrediction, setSelectedRecordForPrediction] = useState(null)
+  const [predictionDraft, setPredictionDraft] = useState(null)
+  const [predictionResultState, setPredictionResultState] = useState(null)
+  const [formSessionKey, setFormSessionKey] = useState(0)
   const [authMode, setAuthMode] = useState(() =>
     sessionStorage.getItem('cardiopredict_admin_token') ? 'admin' : 'login',
   )
   const [pendingDoctor, setPendingDoctor] = useState(null)
 
-  // Sync latest doctor profile (including profile photo) on mount if logged in
+  // Sync latest doctor profile (including profile photo) on mount if logged in,
+  // and handle expired sessions cleanly so stale JWTs do not loop 401 requests.
   useEffect(() => {
+    const handleSessionExpired = () => {
+      setDoctorUser(null)
+      setActivePage('dashboard')
+      setSelectedRecordForPrediction(null)
+      setPredictionDraft(null)
+      setPredictionResultState(null)
+      try {
+        localStorage.removeItem(DOCTOR_AUTH_KEY)
+        sessionStorage.removeItem(DOCTOR_AUTH_KEY)
+        localStorage.removeItem('cardiopredict_access_token')
+        localStorage.removeItem('cardiopredict_refresh_token')
+        localStorage.removeItem('cardiopredict_current_doctor')
+      } catch {
+        // Storage fallback
+      }
+    }
+    window.addEventListener('cardiopredict:session-expired', handleSessionExpired)
+
     const token = localStorage.getItem('cardiopredict_access_token')
     if (token && doctorUser) {
-      fetch(apiUrl('/auth/me'), {
-        headers: { Authorization: `Bearer ${token}` },
-      })
+      authorizedFetch('/auth/me')
         .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
           if (data) {
@@ -144,6 +165,8 @@ export default function App() {
         })
         .catch(() => {})
     }
+
+    return () => window.removeEventListener('cardiopredict:session-expired', handleSessionExpired)
   }, [])
 
   const handleUpdateDoctorUser = (updatedFields) => {
@@ -220,6 +243,8 @@ export default function App() {
     setDoctorUser(null)
     setActivePage('dashboard')
     setSelectedRecordForPrediction(null)
+    setPredictionDraft(null)
+    setPredictionResultState(null)
     try {
       localStorage.removeItem(DOCTOR_AUTH_KEY)
       sessionStorage.removeItem(DOCTOR_AUTH_KEY)
@@ -235,7 +260,43 @@ export default function App() {
 
   const handleSelectRecordForPrediction = (record) => {
     setSelectedRecordForPrediction(record)
+    setPredictionDraft(null)
+    setPredictionResultState(null)
+    setFormSessionKey((k) => k + 1)
     setActivePage('prediction')
+    if (typeof window !== 'undefined' && window.scrollTo) {
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  }
+
+  const handlePredictionSuccess = (resultPayload) => {
+    setPredictionResultState(resultPayload)
+    if (resultPayload?.draft) {
+      setPredictionDraft(resultPayload.draft)
+    }
+    setActivePage('prediction-results')
+    if (typeof window !== 'undefined' && window.scrollTo) {
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  }
+
+  const handleBackToPatientForm = () => {
+    setFormSessionKey((k) => k + 1)
+    setActivePage('prediction')
+    if (typeof window !== 'undefined' && window.scrollTo) {
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  }
+
+  const handleStartNewAssessment = () => {
+    setSelectedRecordForPrediction(null)
+    setPredictionDraft(null)
+    setPredictionResultState(null)
+    setFormSessionKey((k) => k + 1)
+    setActivePage('prediction')
+    if (typeof window !== 'undefined' && window.scrollTo) {
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
   }
 
   if (!doctorUser) {
@@ -290,7 +351,11 @@ export default function App() {
         onLogout={handleLogout}
         activePage={activePage}
         onNavigate={(page) => {
-          if (page !== 'prediction') {
+          if (page === 'prediction') {
+            setSelectedRecordForPrediction(null)
+            setPredictionDraft(null)
+            setFormSessionKey((k) => k + 1)
+          } else if (page !== 'prediction-results') {
             setSelectedRecordForPrediction(null)
           }
           setActivePage(page)
@@ -303,12 +368,22 @@ export default function App() {
 
         {activePage === 'prediction' && (
           <DoctorDashboard
-            key={selectedRecordForPrediction ? selectedRecordForPrediction.id : 'default-pred'}
+            key={selectedRecordForPrediction ? `rec-${selectedRecordForPrediction.id}-${formSessionKey}` : `pred-form-${formSessionKey}`}
             doctorUser={doctorUser}
             onLogout={handleLogout}
             embedded={true}
             initialRecord={selectedRecordForPrediction}
+            initialDraft={predictionDraft}
+            onPredictionSuccess={handlePredictionSuccess}
             onUpdateDoctorUser={handleUpdateDoctorUser}
+          />
+        )}
+
+        {activePage === 'prediction-results' && (
+          <PredictionResultsPage
+            resultState={predictionResultState}
+            onBackToForm={handleBackToPatientForm}
+            onNewAssessment={handleStartNewAssessment}
           />
         )}
 

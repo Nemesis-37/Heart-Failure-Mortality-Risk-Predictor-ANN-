@@ -3,8 +3,8 @@ import React, { createContext, useContext, useState, useEffect } from 'react'
 const THEME_STORAGE_KEY = 'app_theme'
 
 const ThemeContext = createContext({
-  theme: 'light',
-  isDark: false,
+  theme: 'dark',
+  isDark: true,
   toggleTheme: () => {},
   setTheme: () => {},
 })
@@ -19,8 +19,7 @@ export function ThemeProvider({ children }) {
     } catch {
       // Storage unavailable fallback
     }
-    // Default to Light Mode per user requirement
-    return 'light'
+    return 'dark'
   })
 
   useEffect(() => {
@@ -57,8 +56,8 @@ export function useTheme() {
   const context = useContext(ThemeContext)
   if (!context) {
     return {
-      theme: 'light',
-      isDark: false,
+      theme: 'dark',
+      isDark: true,
       toggleTheme: () => {},
       setTheme: () => {},
     }

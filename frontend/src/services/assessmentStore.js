@@ -4,7 +4,7 @@
  * Ensures data entered during physician sessions persists cleanly without fabricating fake records.
  */
 
-import { apiUrl } from '../apiConfig.js'
+import { apiUrl, authorizedFetch } from '../apiConfig.js'
 
 const STORAGE_KEY = 'hf_patient_assessments_v1'
 
@@ -207,9 +207,7 @@ export const fetchBackendAssessments = async () => {
   if (!token) return getAssessments()
 
   try {
-    const res = await fetch(apiUrl('/api/assessments'), {
-      headers: { Authorization: `Bearer ${token}` },
-    })
+    const res = await authorizedFetch('/api/assessments')
     if (res.ok) {
       const data = await res.json()
       if (Array.isArray(data) && data.length > 0) {
@@ -257,9 +255,7 @@ export const fetchBackendPredictions = async () => {
   if (!token) return getPredictions()
 
   try {
-    const res = await fetch(apiUrl('/api/history'), {
-      headers: { Authorization: `Bearer ${token}` },
-    })
+    const res = await authorizedFetch('/api/history')
     if (res.ok) {
       const data = await res.json()
       if (Array.isArray(data) && data.length > 0) {

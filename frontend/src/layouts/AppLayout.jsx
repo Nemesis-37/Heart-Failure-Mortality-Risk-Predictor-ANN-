@@ -84,13 +84,13 @@ export default function AppLayout({
     },
     {
       id: 'prediction',
-      label: 'Heart Failure Prediction',
+      label: 'Patient Risk Assessment',
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
         </svg>
       ),
-      badge: 'Dual Model',
+      badge: null,
     },
     {
       id: 'assessments',
@@ -147,7 +147,9 @@ export default function AppLayout({
       case 'dashboard':
         return 'Doctor Dashboard'
       case 'prediction':
-        return 'Heart Failure Prediction'
+        return 'Patient Risk Assessment'
+      case 'prediction-results':
+        return 'Prediction Results'
       case 'assessments':
         return 'Patient Assessments'
       case 'parameters':
@@ -166,7 +168,9 @@ export default function AppLayout({
       case 'dashboard':
         return 'Overview of clinical risk assessments and predictive analytics'
       case 'prediction':
-        return 'Enter clinical parameters to generate a dual-model heart failure mortality prediction.'
+        return 'Enter patient clinical parameters to generate an individualized mortality risk estimate.'
+      case 'prediction-results':
+        return 'Model-estimated probability, influential clinical factors, and review guidance.'
       case 'assessments':
         return 'View and manage recorded clinical assessment details.'
       case 'parameters':
@@ -240,7 +244,9 @@ export default function AppLayout({
           </div>
 
           {navItems.map((item) => {
-            const isActive = activePage === item.id
+            const isActive =
+              activePage === item.id ||
+              (item.id === 'prediction' && activePage === 'prediction-results')
             return (
               <button
                 key={item.id}

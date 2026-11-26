@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react'
-import { apiUrl } from '../apiConfig.js'
+import { authorizedFetch } from '../apiConfig.js'
+import { getAssessments, getPredictions } from '../services/assessmentStore.js'
 
 function fetchWithAuth(path) {
-  const token = localStorage.getItem('cardiopredict_access_token')
-  return fetch(apiUrl(path), {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
-  })
+  return authorizedFetch(path)
 }
 
 export default function DashboardHome({ doctorUser, onNavigate }) {
@@ -27,7 +25,43 @@ export default function DashboardHome({ doctorUser, onNavigate }) {
 
   useEffect(() => {
     let cancelled = false
+
+    const buildLocalFallback = () => {
+      const localAsms = getAssessments()
+      const localPreds = getPredictions()
+      const lrCnt = localPreds.filter((p) => !String(p.modelName || '').includes('Neural') && !String(p.modelName || '').includes('ANN')).length
+      const annCnt = localPreds.filter((p) => String(p.modelName || '').includes('Neural') || String(p.modelName || '').includes('ANN')).length
+      const c1 = localPreds.filter((p) => Number(p.predictedClass) === 1).length
+      const c0 = localPreds.length - c1
+      return {
+        stats: {
+          total_assessments: localAsms.length,
+          total_predictions: localPreds.length,
+          logistic_regression_predictions: lrCnt,
+          ann_predictions: annCnt,
+          class_0_predictions: c0,
+          class_1_predictions: c1,
+        },
+        recentAsms: localAsms.slice(0, 5).map((a) => ({
+          assessment_id: a.assessmentCode || a.id,
+          patient_reference: a.patientReferenceId,
+          created_at: a.createdAt,
+          prediction_count: a.predictedProbability !== null && a.predictedProbability !== undefined ? 1 : 0,
+        })),
+        recentPreds: localPreds.slice(0, 5).map((p) => ({
+          prediction_id: p.predictionCode || p.id,
+          assessment_id: p.assessmentCode || p.assessmentId || '—',
+          model_name: p.modelName,
+          predicted_class: p.predictedClass,
+          predicted_label: p.predictedLabel,
+          predicted_probability: p.predictedProbability,
+          created_at: p.createdAt,
+        })),
+      }
+    }
+
     async function loadDashboard() {
+      const fallback = buildLocalFallback()
       try {
         const [summaryRes, recentAsmRes, recentPredRes] = await Promise.all([
           fetchWithAuth('/dashboard/summary'),
@@ -35,20 +69,34 @@ export default function DashboardHome({ doctorUser, onNavigate }) {
           fetchWithAuth('/dashboard/recent-predictions'),
         ])
         if (cancelled) return
+
+        let remoteStats = null
+        let remoteAsms = []
+        let remotePreds = []
+
         if (summaryRes.ok) {
-          const data = await summaryRes.json()
-          setStats(data)
+          remoteStats = await summaryRes.json()
         }
         if (recentAsmRes.ok) {
           const data = await recentAsmRes.json()
-          setRecentAssessments(Array.isArray(data) ? data.slice(0, 5) : [])
+          remoteAsms = Array.isArray(data) ? data.slice(0, 5) : []
         }
         if (recentPredRes.ok) {
           const data = await recentPredRes.json()
-          setRecentPredictions(Array.isArray(data) ? data.slice(0, 5) : [])
+          remotePreds = Array.isArray(data) ? data.slice(0, 5) : []
         }
+
+        const hasRemoteRecords = remoteStats && (remoteStats.total_assessments > 0 || remoteStats.total_predictions > 0)
+        setStats(hasRemoteRecords ? remoteStats : fallback.stats)
+        setRecentAssessments(remoteAsms.length > 0 ? remoteAsms : fallback.recentAsms)
+        setRecentPredictions(remotePreds.length > 0 ? remotePreds : fallback.recentPreds)
       } catch (err) {
         console.warn('Dashboard data fetch error:', err)
+        if (!cancelled) {
+          setStats(fallback.stats)
+          setRecentAssessments(fallback.recentAsms)
+          setRecentPredictions(fallback.recentPreds)
+        }
       } finally {
         if (!cancelled) setLoading(false)
       }
@@ -542,9 +590,9 @@ export default function DashboardHome({ doctorUser, onNavigate }) {
           </div>
 
           {loading ? (
-            <div style={{ textAlign: 'center', padding: '3rem', color: '#64748B' }}>Loading assessments…</div>
+            <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>Loading assessments…</div>
           ) : recentAssessments.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '3rem 1.5rem', background: '#F8FAFC', borderRadius: '12px', border: '1px dashed #CBD5E1' }}>
+            <div className="dash-empty-box" style={{ textAlign: 'center', padding: '3rem 1.5rem', background: '#F8FAFC', borderRadius: '12px', border: '1px dashed #CBD5E1' }}>
               <div style={{ fontSize: '1.75rem', marginBottom: '8px' }}>📋</div>
               <h4 style={{ margin: '0 0 6px', color: '#0B1F3A', fontSize: '0.95rem' }}>No Assessments Recorded Yet</h4>
               <p style={{ margin: '0 0 14px', color: '#64748B', fontSize: '0.82rem', lineHeight: '1.5' }}>
@@ -667,9 +715,9 @@ export default function DashboardHome({ doctorUser, onNavigate }) {
           </div>
 
           {loading ? (
-            <div style={{ textAlign: 'center', padding: '3rem', color: '#64748B' }}>Loading predictions…</div>
+            <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>Loading predictions…</div>
           ) : recentPredictions.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '3rem 1.5rem', background: '#F8FAFC', borderRadius: '12px', border: '1px dashed #CBD5E1' }}>
+            <div className="dash-empty-box" style={{ textAlign: 'center', padding: '3rem 1.5rem', background: '#F8FAFC', borderRadius: '12px', border: '1px dashed #CBD5E1' }}>
               <div style={{ fontSize: '1.75rem', marginBottom: '8px' }}>⚡</div>
               <h4 style={{ margin: '0 0 6px', color: '#0B1F3A', fontSize: '0.95rem' }}>No Predictions Generated Yet</h4>
               <p style={{ margin: '0 0 14px', color: '#64748B', fontSize: '0.82rem', lineHeight: '1.5' }}>

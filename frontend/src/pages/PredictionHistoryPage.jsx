@@ -33,12 +33,6 @@ export default function PredictionHistoryPage({ doctorUser, onNavigate, onSelect
     }
   }
 
-  // Summary Metrics calculated strictly from real records
-  const totalPredictions = predictions.length
-  const annCount = predictions.filter((p) => p.modelName === 'Artificial Neural Network').length
-  const lrCount = predictions.filter((p) => p.modelName === 'Logistic Regression').length
-  const mostRecent = predictions.length > 0 ? predictions[0] : null
-
   // Filter and sort records
   const filteredPredictions = predictions
     .filter((p) => {
@@ -114,105 +108,7 @@ export default function PredictionHistoryPage({ doctorUser, onNavigate, onSelect
         </div>
       </section>
 
-      {/* 2. Four Real Statistics Summary Cards */}
-      <section className="history-stats-grid" aria-label="Prediction Telemetry Metrics">
-        {/* Total Predictions */}
-        <div className="history-stat-card">
-          <div className="stat-card-header">
-            <span className="stat-card-tag">Inference Volume</span>
-            <div className="stat-card-icon icon-blue" aria-hidden="true">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10" />
-                <polyline points="12 6 12 12 16 14" />
-              </svg>
-            </div>
-          </div>
-          <div className="stat-card-main">
-            <span className="stat-card-value">{totalPredictions}</span>
-            <span className="stat-card-label">Total Predictions</span>
-          </div>
-          <div className="stat-card-footer">
-            <span className="stat-card-sub">Recorded across clinical sessions</span>
-          </div>
-        </div>
-
-        {/* ANN Predictions */}
-        <div className="history-stat-card">
-          <div className="stat-card-header">
-            <span className="stat-card-tag">Deep Learning</span>
-            <div className="stat-card-icon icon-purple" aria-hidden="true">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="4" y="4" width="16" height="16" rx="2" ry="2" />
-                <rect x="9" y="9" width="6" height="6" />
-                <line x1="9" y1="1" x2="9" y2="4" />
-                <line x1="15" y1="1" x2="15" y2="4" />
-                <line x1="9" y1="20" x2="9" y2="23" />
-                <line x1="15" y1="20" x2="15" y2="23" />
-              </svg>
-            </div>
-          </div>
-          <div className="stat-card-main">
-            <span className="stat-card-value">{annCount}</span>
-            <span className="stat-card-label">ANN Predictions</span>
-          </div>
-          <div className="stat-card-footer">
-            <span className="stat-card-sub">PyTorch neural architecture</span>
-          </div>
-        </div>
-
-        {/* Logistic Regression Predictions */}
-        <div className="history-stat-card">
-          <div className="stat-card-header">
-            <span className="stat-card-tag">Statistical Baseline</span>
-            <div className="stat-card-icon icon-teal" aria-hidden="true">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="18" y1="20" x2="18" y2="10" />
-                <line x1="12" y1="20" x2="12" y2="4" />
-                <line x1="6" y1="20" x2="6" y2="14" />
-              </svg>
-            </div>
-          </div>
-          <div className="stat-card-main">
-            <span className="stat-card-value">{lrCount}</span>
-            <span className="stat-card-label">LR Predictions</span>
-          </div>
-          <div className="stat-card-footer">
-            <span className="stat-card-sub">Linear statistical baseline</span>
-          </div>
-        </div>
-
-        {/* Most Recent Prediction */}
-        <div className="history-stat-card">
-          <div className="stat-card-header">
-            <span className="stat-card-tag">Latest Inference</span>
-            <div className="stat-card-icon icon-emerald" aria-hidden="true">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                <polyline points="22 4 12 14.01 9 11.01" />
-              </svg>
-            </div>
-          </div>
-          <div className="stat-card-main">
-            <span className="stat-card-value recent-val">
-              {mostRecent ? (
-                `${(mostRecent.predictedProbability * 100).toFixed(1)}%`
-              ) : (
-                'None yet'
-              )}
-            </span>
-            <span className="stat-card-label">
-              {mostRecent ? mostRecent.modelName : 'No Runs Yet'}
-            </span>
-          </div>
-          <div className="stat-card-footer">
-            <span className="stat-card-sub">
-              {mostRecent?.displayCreatedAt || 'Awaiting first patient inference'}
-            </span>
-          </div>
-        </div>
-      </section>
-
-      {/* 3. Search and Filters Card */}
+      {/* 2. Search and Filters Card */}
       <div className="history-controls-card">
         {/* Search */}
         <div className="history-search-wrap">

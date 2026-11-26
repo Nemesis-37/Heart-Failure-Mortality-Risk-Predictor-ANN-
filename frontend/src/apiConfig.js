@@ -143,4 +143,78 @@ export function getHealthCandidateUrls() {
   return [...new Set(candidates.filter(Boolean))]
 }
 
+let _inFlightRefreshPromise = null
+
+/**
+ * Single-flight refresh of expired short-lived JWT access token using refresh_token.
+ * Returns the new access_token string or null if refresh fails/unavailable.
+ */
+export async function refreshAccessToken() {
+  if (_inFlightRefreshPromise) return _inFlightRefreshPromise
+
+  _inFlightRefreshPromise = (async () => {
+    try {
+      const refreshToken = localStorage.getItem('cardiopredict_refresh_token')
+      if (!refreshToken) return null
+
+      const res = await fetch(apiUrl('/auth/refresh'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: refreshToken }),
+      })
+      const ct = res.headers.get('content-type') || ''
+      if (!res.ok || !ct.includes('application/json')) {
+        return null
+      }
+      const data = await res.json()
+      if (data && data.access_token) {
+        localStorage.setItem('cardiopredict_access_token', data.access_token)
+        if (data.refresh_token) {
+          localStorage.setItem('cardiopredict_refresh_token', data.refresh_token)
+        }
+        return data.access_token
+      }
+      return null
+    } catch {
+      return null
+    } finally {
+      _inFlightRefreshPromise = null
+    }
+  })()
+
+  return _inFlightRefreshPromise
+}
+
+/**
+ * Authenticated fetch wrapper:
+ * - Attaches Bearer token from localStorage
+ * - On HTTP 401, refreshes access token via /auth/refresh once and retries
+ * - Dispatches 'cardiopredict:session-expired' if refresh fails
+ */
+export async function authorizedFetch(path, options = {}) {
+  const token = localStorage.getItem('cardiopredict_access_token')
+  const headers = {
+    ...(options.headers || {}),
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  }
+
+  let res = await fetch(apiUrl(path), { ...options, headers })
+
+  if (res.status === 401) {
+    const newToken = await refreshAccessToken()
+    if (newToken) {
+      const retryHeaders = {
+        ...(options.headers || {}),
+        Authorization: `Bearer ${newToken}`,
+      }
+      res = await fetch(apiUrl(path), { ...options, headers: retryHeaders })
+    }
+    if (res.status === 401 && typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('cardiopredict:session-expired'))
+    }
+  }
+
+  return res
+}
+
 export default API_BASE_URL

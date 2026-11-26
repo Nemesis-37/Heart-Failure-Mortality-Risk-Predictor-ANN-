@@ -1,0 +1,495 @@
+{
+  "lr_intercept_std": -0.974402302110774,
+  "lr_features": [
+    {
+      "feature": "age",
+      "std_coef": 0.6392282638345748,
+      "std_se": 0.15214357000034617,
+      "wald_z": 4.2014806398530045,
+      "odds_ratio_per_1sd": 1.8950178610280235,
+      "or_95ci_low": 1.4063910253473888,
+      "or_95ci_high": 2.5534098475409417,
+      "raw_coef_per_unit": 0.05383019535877063,
+      "scaler_mean": 60.83389297658862,
+      "scaler_std": 11.874901429842655,
+      "abs_std_coef": 0.6392282638345748
+    },
+    {
+      "feature": "anaemia",
+      "std_coef": 0.1985182270895735,
+      "std_se": 0.14622172386680507,
+      "wald_z": 1.3576520768583324,
+      "odds_ratio_per_1sd": 1.2195942568654246,
+      "or_95ci_low": 0.9156909595025169,
+      "or_95ci_high": 1.624358235651052,
+      "raw_coef_per_unit": 0.40082265504044895,
+      "scaler_mean": 0.431438127090301,
+      "scaler_std": 0.49527696249988684,
+      "abs_std_coef": 0.1985182270895735
+    },
+    {
+      "feature": "creatinine_phosphokinase",
+      "std_coef": 0.2702409996173335,
+      "std_se": 0.13576228881786434,
+      "wald_z": 1.9905454008652048,
+      "odds_ratio_per_1sd": 1.3102801897095526,
+      "or_95ci_low": 1.004155523878253,
+      "or_95ci_high": 1.7097293543877925,
+      "raw_coef_per_unit": 0.00027898322728900045,
+      "scaler_mean": 581.8394648829432,
+      "scaler_std": 968.6639668032415,
+      "abs_std_coef": 0.2702409996173335
+    },
+    {
+      "feature": "diabetes",
+      "std_coef": 0.07042939955347048,
+      "std_se": 0.1441065275613177,
+      "wald_z": 0.4887315012396131,
+      "odds_ratio_per_1sd": 1.0729688146791563,
+      "or_95ci_low": 0.8089490082797447,
+      "or_95ci_high": 1.423157783111927,
+      "raw_coef_per_unit": 0.14278926020321703,
+      "scaler_mean": 0.4180602006688963,
+      "scaler_std": 0.49324017403854936,
+      "abs_std_coef": 0.07042939955347048
+    },
+    {
+      "feature": "ejection_fraction",
+      "std_coef": -0.7996422874215593,
+      "std_se": 0.1702378132271318,
+      "wald_z": -4.697207231830887,
+      "odds_ratio_per_1sd": 0.44948972349065486,
+      "or_95ci_low": 0.32196629869705234,
+      "or_95ci_high": 0.6275222355300352,
+      "raw_coef_per_unit": -0.06768006963093588,
+      "scaler_mean": 38.08361204013378,
+      "scaler_std": 11.815033462318585,
+      "abs_std_coef": 0.7996422874215593
+    },
+    {
+      "feature": "high_blood_pressure",
+      "std_coef": 0.19452718673785366,
+      "std_se": 0.1434214650647184,
+      "wald_z": 1.3563324475180476,
+      "odds_ratio_per_1sd": 1.2147365071591116,
+      "or_95ci_low": 0.9170632035939656,
+      "or_95ci_high": 1.6090328082539023,
+      "raw_coef_per_unit": 0.4075266175314493,
+      "scaler_mean": 0.3511705685618729,
+      "scaler_std": 0.4773361502524231,
+      "abs_std_coef": 0.19452718673785366
+    },
+    {
+      "feature": "platelets",
+      "std_coef": -0.06647791729230963,
+      "std_se": 0.15456507216938353,
+      "wald_z": -0.43009663411833654,
+      "odds_ratio_per_1sd": 0.9356835780551361,
+      "or_95ci_low": 0.6911313000337611,
+      "or_95ci_high": 1.2667690758605414,
+      "raw_coef_per_unit": -6.808433472488428e-07,
+      "scaler_mean": 263358.02926421404,
+      "scaler_std": 97640.54765451424,
+      "abs_std_coef": 0.06647791729230963
+    },
+    {
+      "feature": "serum_creatinine",
+      "std_coef": 0.6604168511983366,
+      "std_se": 0.17312304994401462,
+      "wald_z": 3.8147251415216257,
+      "odds_ratio_per_1sd": 1.9355990230280384,
+      "or_95ci_low": 1.3786374733920632,
+      "or_95ci_high": 2.717569810959025,
+      "raw_coef_per_unit": 0.6394563263170718,
+      "scaler_mean": 1.3938795986622072,
+      "scaler_std": 1.0327786652795918,
+      "abs_std_coef": 0.6604168511983366
+    },
+    {
+      "feature": "serum_sodium",
+      "std_coef": -0.24684842339204718,
+      "std_se": 0.14434683995443426,
+      "wald_z": -1.7101061822341899,
+      "odds_ratio_per_1sd": 0.7812591051620258,
+      "or_95ci_low": 0.5887414066375538,
+      "or_95ci_high": 1.0367298486520893,
+      "raw_coef_per_unit": -0.056037059413338794,
+      "scaler_mean": 136.62541806020067,
+      "scaler_std": 4.405092379513557,
+      "abs_std_coef": 0.24684842339204718
+    },
+    {
+      "feature": "sex",
+      "std_coef": -0.1783601657628662,
+      "std_se": 0.1634017646851274,
+      "wald_z": -1.09154369358595,
+      "odds_ratio_per_1sd": 0.8366410397596454,
+      "or_95ci_low": 0.6073636189379575,
+      "or_95ci_high": 1.152469801589487,
+      "raw_coef_per_unit": -0.37365736005652717,
+      "scaler_mean": 0.6488294314381271,
+      "scaler_std": 0.4773361502524231,
+      "abs_std_coef": 0.1783601657628662
+    },
+    {
+      "feature": "smoking",
+      "std_coef": 0.056452730060125245,
+      "std_se": 0.1590610278924142,
+      "wald_z": 0.3549123931118362,
+      "odds_ratio_per_1sd": 1.05807659840091,
+      "or_95ci_low": 0.7746787245009652,
+      "or_95ci_high": 1.4451488761419389,
+      "raw_coef_per_unit": 0.12091286231488717,
+      "scaler_mean": 0.3210702341137124,
+      "scaler_std": 0.46688771549471964,
+      "abs_std_coef": 0.056452730060125245
+    }
+  ],
+  "oof_permutation_importance_auroc_drop": {
+    "age": {
+      "lr_mean_drop": 0.07471306161745828,
+      "lr_sd_drop": 0.04869021731237963,
+      "ann_mean_drop": 0.040655594779632015,
+      "ann_sd_drop": 0.04434243101950199
+    },
+    "anaemia": {
+      "lr_mean_drop": -0.000286767222935409,
+      "lr_sd_drop": 0.015020814162696102,
+      "ann_mean_drop": -0.006763692768506632,
+      "ann_sd_drop": 0.02232425399433924
+    },
+    "creatinine_phosphokinase": {
+      "lr_mean_drop": 0.019772282841249458,
+      "lr_sd_drop": 0.02566183644838811,
+      "ann_mean_drop": 0.003945325203252043,
+      "ann_sd_drop": 0.034389273084571424
+    },
+    "diabetes": {
+      "lr_mean_drop": -3.250962772787469e-05,
+      "lr_sd_drop": 0.007817359281355761,
+      "ann_mean_drop": -0.01711935173299101,
+      "ann_sd_drop": 0.019091130102982617
+    },
+    "ejection_fraction": {
+      "lr_mean_drop": 0.1213321459135644,
+      "lr_sd_drop": 0.05564839862176746,
+      "ann_mean_drop": 0.08707461489088575,
+      "ann_sd_drop": 0.061927729949360674
+    },
+    "high_blood_pressure": {
+      "lr_mean_drop": 0.00531930894308941,
+      "lr_sd_drop": 0.013755670986099195,
+      "ann_mean_drop": -0.00029686563970902376,
+      "ann_sd_drop": 0.01698181911135644
+    },
+    "platelets": {
+      "lr_mean_drop": -0.001143945228925991,
+      "lr_sd_drop": 0.009186480161519793,
+      "ann_mean_drop": -0.005895721009841668,
+      "ann_sd_drop": 0.014987228027335596
+    },
+    "serum_creatinine": {
+      "lr_mean_drop": 0.06960272785622593,
+      "lr_sd_drop": 0.03532002344105932,
+      "ann_mean_drop": 0.07266969405220369,
+      "ann_sd_drop": 0.0493604888087819
+    },
+    "serum_sodium": {
+      "lr_mean_drop": 0.013958290543431732,
+      "lr_sd_drop": 0.015939851959441906,
+      "ann_mean_drop": 0.009518602909713318,
+      "ann_sd_drop": 0.021902925659559525
+    },
+    "sex": {
+      "lr_mean_drop": 0.004230027813436008,
+      "lr_sd_drop": 0.014955774847057957,
+      "ann_mean_drop": -0.0008540757381257969,
+      "ann_sd_drop": 0.02265606492459175
+    },
+    "smoking": {
+      "lr_mean_drop": -0.006364409499358177,
+      "lr_sd_drop": 0.013340845692350372,
+      "ann_mean_drop": -0.015534039366709456,
+      "ann_sd_drop": 0.019535483257043518
+    }
+  },
+  "ann_global_integrated_gradients": {
+    "age": {
+      "mean_abs_ig_logit": 0.6717464327812195,
+      "mean_signed_ig_logit": 0.11385598033666611,
+      "mean_abs_ig_prob": 0.12086369097232819
+    },
+    "anaemia": {
+      "mean_abs_ig_logit": 0.3306903541088104,
+      "mean_signed_ig_logit": 0.009108318947255611,
+      "mean_abs_ig_prob": 0.059783656150102615
+    },
+    "creatinine_phosphokinase": {
+      "mean_abs_ig_logit": 0.1302107274532318,
+      "mean_signed_ig_logit": 0.04104912653565407,
+      "mean_abs_ig_prob": 0.02310887537896633
+    },
+    "diabetes": {
+      "mean_abs_ig_logit": 0.17091527581214905,
+      "mean_signed_ig_logit": -0.03740047290921211,
+      "mean_abs_ig_prob": 0.029732175171375275
+    },
+    "ejection_fraction": {
+      "mean_abs_ig_logit": 0.6124758124351501,
+      "mean_signed_ig_logit": 0.11978606134653091,
+      "mean_abs_ig_prob": 0.11241468787193298
+    },
+    "high_blood_pressure": {
+      "mean_abs_ig_logit": 0.29264217615127563,
+      "mean_signed_ig_logit": 0.005046541336923838,
+      "mean_abs_ig_prob": 0.05461271107196808
+    },
+    "platelets": {
+      "mean_abs_ig_logit": 0.10807158797979355,
+      "mean_signed_ig_logit": -0.02061600051820278,
+      "mean_abs_ig_prob": 0.017886854708194733
+    },
+    "serum_creatinine": {
+      "mean_abs_ig_logit": 0.42828842997550964,
+      "mean_signed_ig_logit": -0.10907603800296783,
+      "mean_abs_ig_prob": 0.07577810436487198
+    },
+    "serum_sodium": {
+      "mean_abs_ig_logit": 0.14955562353134155,
+      "mean_signed_ig_logit": 0.016553634777665138,
+      "mean_abs_ig_prob": 0.027505498379468918
+    },
+    "sex": {
+      "mean_abs_ig_logit": 0.2170567810535431,
+      "mean_signed_ig_logit": -0.07486452162265778,
+      "mean_abs_ig_prob": 0.0364585816860199
+    },
+    "smoking": {
+      "mean_abs_ig_logit": 0.22620169818401337,
+      "mean_signed_ig_logit": -0.02453157864511013,
+      "mean_abs_ig_prob": 0.0433853380382061
+    }
+  },
+  "local_profile_explanations": {
+    "Low_Risk_Baseline": {
+      "prod_lr_prob": 0.039148902046625925,
+      "prod_ann_prob": 0.029616406187415123,
+      "lr_intercept": -0.974402302110774,
+      "lr_logodds_contrib": {
+        "age": -0.5831905754257785,
+        "anaemia": -0.1729301755860131,
+        "creatinine_phosphokinase": -0.11545426949259645,
+        "diabetes": -0.059694506773920165,
+        "ejection_fraction": -0.4681016187183124,
+        "high_blood_pressure": -0.14311135398261599,
+        "platelets": -0.00860720167157443,
+        "serum_creatinine": -0.3158144338034849,
+        "serum_sodium": -0.189101648655715,
+        "sex": -0.1312174675783791,
+        "smoking": -0.03882152101079989
+      },
+      "ann_ig_logit_contrib": {
+        "age": -0.7452670931816101,
+        "anaemia": -0.2624213993549347,
+        "creatinine_phosphokinase": -0.15351702272891998,
+        "diabetes": -0.11916190385818481,
+        "ejection_fraction": -0.33659860491752625,
+        "high_blood_pressure": -0.042080752551555634,
+        "platelets": 0.033003322780132294,
+        "serum_creatinine": -0.3642542362213135,
+        "serum_sodium": -0.141546368598938,
+        "sex": -0.19722765684127808,
+        "smoking": -0.020239923149347305
+      },
+      "ann_ig_prob_contrib": {
+        "age": -0.06732659041881561,
+        "anaemia": -0.02319958806037903,
+        "creatinine_phosphokinase": -0.012520990334451199,
+        "diabetes": -0.010759329423308372,
+        "ejection_fraction": -0.031894199550151825,
+        "high_blood_pressure": -0.005002597812563181,
+        "platelets": 0.0025606921408325434,
+        "serum_creatinine": -0.03310471400618553,
+        "serum_sodium": -0.011822916567325592,
+        "sex": -0.015779942274093628,
+        "smoking": -0.00391292804852128
+      }
+    },
+    "Cohort_Median_Profile": {
+      "prod_lr_prob": 0.13470611060644375,
+      "prod_ann_prob": 0.10308915376663208,
+      "lr_intercept": -0.974402302110774,
+      "lr_logodds_contrib": {
+        "age": -0.04488862183807226,
+        "anaemia": -0.1729301755860131,
+        "creatinine_phosphokinase": -0.09257764485489842,
+        "diabetes": -0.059694506773920165,
+        "ejection_fraction": 0.005658868698238798,
+        "high_blood_pressure": -0.14311135398261599,
+        "platelets": 0.000924605189909371,
+        "serum_creatinine": -0.18792316854007043,
+        "serum_sodium": -0.0209904704156986,
+        "sex": -0.1312174675783791,
+        "smoking": -0.03882152101079989
+      },
+      "ann_ig_logit_contrib": {
+        "age": -0.040080778300762177,
+        "anaemia": -0.3349685072898865,
+        "creatinine_phosphokinase": -0.10028278082609177,
+        "diabetes": -0.0751800611615181,
+        "ejection_fraction": -0.006462280172854662,
+        "high_blood_pressure": -0.04640760272741318,
+        "platelets": -0.008643663488328457,
+        "serum_creatinine": -0.2101162225008011,
+        "serum_sodium": -0.012314863502979279,
+        "sex": -0.13257387280464172,
+        "smoking": -0.05703778564929962
+      },
+      "ann_ig_prob_contrib": {
+        "age": -0.005317801609635353,
+        "anaemia": -0.04258395731449127,
+        "creatinine_phosphokinase": -0.01353494357317686,
+        "diabetes": -0.011580285616219044,
+        "ejection_fraction": -0.000867084541823715,
+        "high_blood_pressure": -0.007672459818422794,
+        "platelets": -0.0011527437018230557,
+        "serum_creatinine": -0.028383329510688782,
+        "serum_sodium": -0.0016350668156519532,
+        "sex": -0.018379148095846176,
+        "smoking": -0.008242410607635975
+      }
+    },
+    "Borderline_Cardiorenal": {
+      "prod_lr_prob": 0.6685476252062541,
+      "prod_ann_prob": 0.7116570472717285,
+      "lr_intercept": -0.974402302110774,
+      "lr_logodds_contrib": {
+        "age": 0.49341333174963403,
+        "anaemia": 0.2278924794544359,
+        "creatinine_phosphokinase": -0.06467932212599838,
+        "diabetes": 0.08309475342929688,
+        "ejection_fraction": 0.5470994257457258,
+        "high_blood_pressure": 0.2644152635488334,
+        "platelets": 0.015903158829383913,
+        "serum_creatinine": 0.13180499461846548,
+        "serum_sodium": 0.14712070782431777,
+        "sex": -0.1312174675783791,
+        "smoking": -0.03882152101079989
+      },
+      "ann_ig_logit_contrib": {
+        "age": 0.6908571124076843,
+        "anaemia": 0.3846077620983124,
+        "creatinine_phosphokinase": -0.022069264203310013,
+        "diabetes": 0.1174420639872551,
+        "ejection_fraction": 0.6869292855262756,
+        "high_blood_pressure": 0.4286116659641266,
+        "platelets": 0.025358501821756363,
+        "serum_creatinine": 0.14217114448547363,
+        "serum_sodium": 0.030892154201865196,
+        "sex": -0.12385156750679016,
+        "smoking": -0.31723320484161377
+      },
+      "ann_ig_prob_contrib": {
+        "age": 0.1580255627632141,
+        "anaemia": 0.08926814794540405,
+        "creatinine_phosphokinase": -0.004890854004770517,
+        "diabetes": 0.025535235181450844,
+        "ejection_fraction": 0.15875586867332458,
+        "high_blood_pressure": 0.09827166050672531,
+        "platelets": 0.0060958401300013065,
+        "serum_creatinine": 0.03263285383582115,
+        "serum_sodium": 0.00736749405041337,
+        "sex": -0.02818090282380581,
+        "smoking": -0.07354851067066193
+      }
+    },
+    "High_Risk_Critical": {
+      "prod_lr_prob": 0.9318747182350126,
+      "prod_ann_prob": 0.9108287692070007,
+      "lr_intercept": -0.974402302110774,
+      "lr_logodds_contrib": {
+        "age": 0.7625643085434871,
+        "anaemia": 0.2278924794544359,
+        "creatinine_phosphokinase": 4.478660504973421e-05,
+        "diabetes": 0.08309475342929688,
+        "ejection_fraction": 1.2239001220550847,
+        "high_blood_pressure": 0.2644152635488334,
+        "platelets": -0.0011179248518371576,
+        "serum_creatinine": 0.7073156883038301,
+        "serum_sodium": 0.371268945477673,
+        "sex": -0.1312174675783791,
+        "smoking": 0.08209134130408727
+      },
+      "ann_ig_logit_contrib": {
+        "age": 0.6979345679283142,
+        "anaemia": 0.26028013229370117,
+        "creatinine_phosphokinase": 0.00015724195691291243,
+        "diabetes": 0.13777519762516022,
+        "ejection_fraction": 1.1553418636322021,
+        "high_blood_pressure": 0.3939656913280487,
+        "platelets": 0.0006400460260920227,
+        "serum_creatinine": 0.34223517775535583,
+        "serum_sodium": 0.20253708958625793,
+        "sex": -0.1252451241016388,
+        "smoking": 0.394635409116745
+      },
+      "ann_ig_prob_contrib": {
+        "age": 0.1346292942762375,
+        "anaemia": 0.04879077896475792,
+        "creatinine_phosphokinase": -2.034567660302855e-05,
+        "diabetes": 0.028576528653502464,
+        "ejection_fraction": 0.22047576308250427,
+        "high_blood_pressure": 0.07535964995622635,
+        "platelets": 9.219485946232453e-05,
+        "serum_creatinine": 0.07025742530822754,
+        "serum_sodium": 0.03304438665509224,
+        "sex": -0.023702671751379967,
+        "smoking": 0.08043733984231949
+      }
+    },
+    "Female_Hypertensive_Moderate": {
+      "prod_lr_prob": 0.33723158424845506,
+      "prod_ann_prob": 0.2461099922657013,
+      "lr_intercept": -0.974402302110774,
+      "lr_logodds_contrib": {
+        "age": -0.1525490125556135,
+        "anaemia": 0.2278924794544359,
+        "creatinine_phosphokinase": -0.10373697394645844,
+        "diabetes": -0.059694506773920165,
+        "ejection_fraction": 0.20869907759104644,
+        "high_blood_pressure": 0.2644152635488334,
+        "platelets": -0.024947442005546657,
+        "serum_creatinine": -0.18792316854007043,
+        "serum_sodium": -0.07702752982903739,
+        "sex": 0.24243989247814807,
+        "smoking": -0.03882152101079989
+      },
+      "ann_ig_logit_contrib": {
+        "age": -0.1780814230442047,
+        "anaemia": 0.6255466938018799,
+        "creatinine_phosphokinase": -0.08044705539941788,
+        "diabetes": -0.2395375818014145,
+        "ejection_fraction": 0.2506927251815796,
+        "high_blood_pressure": 0.37785831093788147,
+        "platelets": 0.041109055280685425,
+        "serum_creatinine": -0.3398815393447876,
+        "serum_sodium": -0.08987458050251007,
+        "sex": 0.02458236552774906,
+        "smoking": -0.3739064931869507
+      },
+      "ann_ig_prob_contrib": {
+        "age": -0.032880764454603195,
+        "anaemia": 0.11560940742492676,
+        "creatinine_phosphokinase": -0.014815459959208965,
+        "diabetes": -0.04415116831660271,
+        "ejection_fraction": 0.04629893973469734,
+        "high_blood_pressure": 0.0696561187505722,
+        "platelets": 0.007585725747048855,
+        "serum_creatinine": -0.06275442987680435,
+        "serum_sodium": -0.01661732979118824,
+        "sex": 0.004465894307941198,
+        "smoking": -0.06906449049711227
+      }
+    }
+  }
+}

@@ -29,6 +29,7 @@ if _ENV_PATH.exists():
     load_dotenv(dotenv_path=_ENV_PATH)
 
 from models.ann_model import HeartFailureANN
+from models.lr_explainer import explain_logistic_prediction
 from backend.database.config import (
     Base,
     DB_DATABASE,
@@ -580,6 +581,7 @@ def predict_logistic_regression(patient: PatientData, current_doctor = Depends(g
         probability = float(
             lr_model.predict_proba(input_data)[0][1]
         )
+        explanation = explain_logistic_prediction(lr_model, input_data, lr_feature_names)
 
         return {
             "model": "Logistic Regression",
@@ -591,6 +593,13 @@ def predict_logistic_regression(patient: PatientData, current_doctor = Depends(g
                 else "No death event predicted"
             ),
             "predicted_probability": round(probability, 4),
+            "threshold": 0.5,
+            "prediction_timestamp": datetime.now(timezone.utc).isoformat(),
+            "baseline_intercept": explanation["baseline_intercept"],
+            "logit": explanation["logit"],
+            "reconstructed_logit": explanation["reconstructed_logit"],
+            "logit_reconstruction_error": explanation["logit_reconstruction_error"],
+            "feature_contributions": explanation["feature_contributions"],
             "notice": (
                 "Educational prototype only; "
                 "not for medical decisions."

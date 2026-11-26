@@ -381,10 +381,11 @@ export default function HeartHealthCounsellingPage({ onNavigate }) {
           <button
             type="button"
             onClick={handleDownloadPdf}
+            className="counselling-download-btn"
             style={{
-              background: '#FFFFFF',
-              color: '#0B1F3A',
-              border: 'none',
+              background: 'linear-gradient(135deg, #0D9488 0%, #0284C7 100%)',
+              color: '#FFFFFF',
+              border: '1px solid rgba(255, 255, 255, 0.28)',
               padding: '12px 20px',
               borderRadius: '10px',
               fontWeight: 700,
@@ -393,17 +394,17 @@ export default function HeartHealthCounsellingPage({ onNavigate }) {
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
-              boxShadow: '0 4px 14px rgba(0, 0, 0, 0.15)',
+              boxShadow: '0 4px 16px rgba(13, 148, 136, 0.35)',
               transition: 'all 0.15s ease',
             }}
             title={`Download personalized counselling guide as a formatted PDF (${includedPointsCount} of ${totalPoints} topics included)`}
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
               <polyline points="7 10 12 15 17 10" />
               <line x1="12" y1="15" x2="12" y2="3" />
             </svg>
-            <span>
+            <span style={{ color: '#FFFFFF' }}>
               Download PDF {`(${includedPointsCount} of ${totalPoints} Included)`}
             </span>
           </button>
